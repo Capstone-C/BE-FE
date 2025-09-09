@@ -1,4 +1,3 @@
-HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -42,3 +41,58 @@ logs/
 
 ### Application specific ###
 application-local.properties
+
+
+dist/
+build/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Java / JVM
+*.class
+*.jar
+*.war
+*.ear
+.target/
+
+# Logs & diagnostics
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Docker
+*.tar
+**/docker-data/
+
+# Cache / Misc
+.cache/
+.tmp/
+.tmp/**
+coverage-final.json
+
+# OS
+Thumbs.db
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Local only
+local-
+secrets.local.*
+
+# Test artifacts
+junit-report.xml
+
+.env
