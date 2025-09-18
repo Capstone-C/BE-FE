@@ -1,30 +1,16 @@
 ---
-name: Development task
-about: Track a granular implementation, refactor, or chore
-title: "chore: <short description>"
+name: Development Task
+about: Implementation / refactor / chore tracked in a single sprint
+title: "<type>: <short description>"  # e.g. feat: add diary entity
 labels: [task]
 assignees: []
 ---
 
 ## Goal
-What needs to be accomplished.
 
-## Description
-Detail of the work to do.
 
-## Subtasks
-- [ ] 
-- [ ] 
 
-## Definition of Done
-- [ ] Code implemented
-- [ ] Tests added/updated
-- [ ] CI green
-- [ ] Documentation updated (if needed)
-- [ ] Reviewed & approved
+## Dependencies / Blocking (Optional)
 
-## Risks / Mitigations
-Potential risks and how to mitigate them.
 
-## Additional Context
-Anything else helpful.
+## Notes / Additional Context (Optional)
