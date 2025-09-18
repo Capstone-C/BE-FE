@@ -1,4 +1,3 @@
-HELP.md
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -44,22 +43,11 @@ logs/
 application-local.properties
 
 
-
-# Node / TypeScript
-node_modules/
 dist/
 build/
 coverage/
 .nyc_output/
 *.tsbuildinfo
-
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.venv/
-.env
-.env.*
 
 # Java / JVM
 *.class
@@ -107,3 +95,4 @@ secrets.local.*
 # Test artifacts
 junit-report.xml
 
+.env

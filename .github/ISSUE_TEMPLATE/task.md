@@ -1,13 +1,12 @@
 ---
 name: Development Task
 about: Implementation / refactor / chore tracked in a single sprint
-title: "<type>: <short description>"  # e.g. feat: add diary entity
+title: ""  # e.g. feat: add diary entity
 labels: [task]
 assignees: []
 ---
 
 ## Goal
-
 
 
 ## Dependencies / Blocking (Optional)
