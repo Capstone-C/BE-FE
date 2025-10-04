@@ -1,13 +1,13 @@
-package com.capstone.be;
+package com.capstone.web;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class BeApplication {
+public class CcBeApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(BeApplication.class, args);
+        SpringApplication.run(CcBeApplication.class, args);
     }
 
 }

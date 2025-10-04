@@ -1,14 +1,13 @@
-package com.capstone.be;
+package com.capstone.web;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class BeApplicationTests {
+class CcBeApplicationTests {
 
     @Test
     void contextLoads() {
-        // This test verifies that the Spring Boot application context loads successfully
     }
 
 }
