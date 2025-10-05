@@ -41,14 +41,14 @@ services:
     ports:
       - "8080:8080"
 
-  frontend:
-    build:
-      context: ./CC_FE
-      dockerfile: Dockerfile
-    container_name: cc_frontend
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
+#  frontend:
+#    build:
+#      context: ./CC_FE
+#      dockerfile: Dockerfile
+#    container_name: cc_frontend
+#    restart: unless-stopped
+#    ports:
+#      - "3000:3000"
     # 환경변수/볼륨 등은 FE Dockerfile 완성 후 추가 예정
     # depends_on:
     #   - backend
