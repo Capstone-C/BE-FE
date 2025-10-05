@@ -1,48 +1,8 @@
-version: "3.9"
-
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: cc_mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_DATABASE: ccdb
-      MYSQL_USER: ccuser
-      MYSQL_PASSWORD: devpass
-      MYSQL_ROOT_PASSWORD: rootpass
-      TZ: Asia/Seoul
-    ports:
-      - "3306:3306"
-    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    volumes:
-      - mysql_data:/var/lib/mysql
-
-  backend:
-    image: gradle:8.10-jdk17
-    container_name: cc_backend
-    working_dir: /workspace
-    depends_on:
-      mysql:
-        condition: service_healthy
-    environment:
-      SPRING_PROFILES_ACTIVE: local
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_DATABASE: ccdb
-      MYSQL_USER: ccuser
-      MYSQL_PASSWORD: devpass
-    ports:
-      - "8080:8080"
-    command: gradle bootRun
-    volumes:
-      - ./:/workspace
-      - gradle_cache:/home/gradle/.gradle
-
-volumes:
-  mysql_data:
-  gradle_cache:
+###############################################################
+# [DEPRECATED] 이 파일은 더 이상 사용하지 않습니다.
+# 프로젝트 루트(../compose.yaml)를 사용하세요.
+#
+# 백엔드/프론트엔드/DB 통합 관리는 루트 compose.yaml에서!
+#
+# 삭제해도 무방합니다.
+###############################################################
