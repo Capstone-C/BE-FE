@@ -14,16 +14,62 @@
 ## 3. 기술 스택 (Technology Stack)
 ### Frontend (미정)
 
-### Backend (미정)
+### Backend
 | 항목 | 선택 | 비고 |
 |------|------|------|
 | Language | Java 17 |  |
-| Framework | Spring Boot 3.2.0 |  |
+| Framework | Spring Boot 3.5.6 | build.gradle 기준 |
 | Persistence | Spring Data JPA |  |
-| DB (Prod) | MySQL 8.0 |  |
-| DB (Test) | H2 |  |
-| Build | Gradle | (Maven에서 Gradle로 전환 예정/진행) |
-| Validation | Spring Validation |  |
+| DB (Prod) | MySQL 8.0 | Docker compose 사용 |
+| DB (Test) | H2 (Memory) | test scope |
+## 3-1. 개발 환경 (Docker Compose)
+
+- 모든 서비스(DB, 백엔드, 프론트엔드)는 프로젝트 루트의 `compose.yaml`에서 통합 관리합니다.
+- 백엔드(Spring Boot)는 멀티스테이지 Dockerfile로 빌드/실행됩니다.
+- 프론트엔드는 추후 Dockerfile 추가 예정입니다.
+
+### 개발/실행 방법
+
+#### 1) DB만 컨테이너로 띄우고 백엔드는 로컬에서 개발
+```bash
+docker compose up -d mysql
+# IntelliJ 등에서 ./gradlew bootRun
+```
+
+#### 2) FE/BE/DB 전체 컨테이너로 실행(통합/시연/배포)
+```bash
+docker compose up --build
+```
+
+#### 3) 서비스 중지/초기화
+```bash
+docker compose down
+docker compose down -v  # 데이터까지 초기화
+```
+
+### 주요 환경 변수
+- DB: ccdb / ccuser / devpass / rootpass
+- 백엔드 포트: 8080
+- 프론트엔드 포트: 3000 (추후)
+
+### 자주 발생하는 이슈
+- 3306 포트 충돌: 로컬 MySQL 중지 필요
+- DB 초기화 지연: healthcheck 후 백엔드 기동
+
+| 권한 오류 (Access denied) | 계정/비밀번호 불일치 | compose.yaml 환경변수와 `application.yml` 기본값 확인 |
+
+### 개발 생산성 팁
+- 코드 수정 시 backend 컨테이너는 Gradle `bootRun`을 실행 중이므로 변경 사항이 재시작되며 반영(Hot reload 수준) 되지만 큰 변경 후에는 컨테이너 재시작 권장.
+- 의존성 추가 후에는 `docker compose up --build` 대신 현재 구성에서는 Gradle 이미지를 재사용하므로 컨테이너를 내려(`down`) 다시 올리면 됨.
+
+### 백엔드 (IntelliJ에서 개발할 경우, 루트 디렉토리가 해당 github repo일 때)
+- IntelliJ에서 직접 Gradle 프로젝트 추가해야 함.
+지금 열려 있는 IntelliJ 프로젝트에서:
+	1.	메뉴 → File → New → Module from Existing Sources…
+	2.	CC_BE/build.gradle 파일 선택
+	3.	Import as Gradle Project 선택
+
+→ 이렇게 하면 기존 프로젝트 안에 백엔드 모듈이 추가됨.
 
 ---
 ## 4. 협업 (Collaboration)

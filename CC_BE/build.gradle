@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.capstone'
+version = '0.0.1-SNAPSHOT'
+description = 'CC_BE'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // --- Spring Boot 기본 기능 ---
+    implementation 'org.springframework.boot:spring-boot-starter-web'         // 웹 서버
+//    implementation 'org.springframework.boot:spring-boot-starter-security'    // 인증/인가
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'    // JPA/DB
+    implementation 'org.springframework.boot:spring-boot-starter-validation'  // 입력값 검증
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'    // 모니터링/헬스체크
+
+    // --- 개발 편의/도구 ---
+    compileOnly 'org.projectlombok:lombok'                                   // 코드 자동 생성
+    annotationProcessor 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'     // 도커 연동
+
+    // --- DB 드라이버 ---
+    runtimeOnly 'com.mysql:mysql-connector-j'                                 // MySQL
+
+    // --- 테스트 ---
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'    // 테스트
+    testImplementation 'org.springframework.security:spring-security-test'     // 시큐리티 테스트
+    testImplementation 'com.h2database:h2'                                    // 인메모리 DB
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'              // JUnit 런처
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+// 생성되는 Boot JAR 이름 고정
+bootJar {
+    archiveFileName = 'cc-be.jar'
+}
