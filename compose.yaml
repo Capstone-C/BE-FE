@@ -34,7 +34,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: local
       MYSQL_HOST: mysql
-      MYSQL_PORT: 3307
+      MYSQL_PORT: 3306
       MYSQL_DATABASE: ccdb
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
