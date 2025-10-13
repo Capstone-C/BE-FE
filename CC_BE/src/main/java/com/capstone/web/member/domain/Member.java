@@ -1,12 +1,11 @@
 package com.capstone.web.member.domain;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -73,8 +72,8 @@ public class Member {
     public boolean isDeleted() {
         return this.deletedAt != null;
     }
-}
 
-enum MemberRole {
-    USER, MODERATOR, SUB_MODERATOR, ADMIN
+    public void markLoggedIn(LocalDateTime loginAt) {
+        this.lastLoginAt = loginAt;
+    }
 }

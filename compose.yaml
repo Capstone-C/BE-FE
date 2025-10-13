@@ -7,6 +7,7 @@ services:
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: ccdb
+      MYSQL_TEST_DATABASE: ccdb_test
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
       MYSQL_ROOT_PASSWORD: rootpass
@@ -21,6 +22,7 @@ services:
       retries: 10
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./CC_BE/mysql-init:/docker-entrypoint-initdb.d
 
   backend:
     build:
@@ -53,5 +55,6 @@ services:
     # depends_on:
     #   - backend
 
+
 volumes:
-  mysql_data:
+  mysql_data: {}

@@ -1,5 +1,8 @@
 package com.capstone.web.common.exception;
 
+import com.capstone.web.auth.exception.AuthErrorCode;
+import com.capstone.web.auth.exception.InvalidCredentialsException;
+import com.capstone.web.auth.exception.WithdrawnMemberException;
 import com.capstone.web.common.response.ErrorResponse;
 import com.capstone.web.member.exception.DuplicateEmailException;
 import com.capstone.web.member.exception.DuplicateNicknameException;
@@ -40,6 +43,16 @@ public class GlobalExceptionHandler {
         return buildMemberErrorResponse(ex.getErrorCode());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return buildAuthErrorResponse(ex.getErrorCode());
+    }
+
+    @ExceptionHandler(WithdrawnMemberException.class)
+    public ResponseEntity<ErrorResponse> handleWithdrawnMember(WithdrawnMemberException ex) {
+        return buildAuthErrorResponse(ex.getErrorCode());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unexpected error", ex);
@@ -52,6 +65,12 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> buildMemberErrorResponse(MemberErrorCode errorCode) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
+        ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.status()).body(response);
+    }
+
+    private ResponseEntity<ErrorResponse> buildAuthErrorResponse(AuthErrorCode errorCode) {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
         ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
         return ResponseEntity.status(errorCode.status()).body(response);

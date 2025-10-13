@@ -18,3 +18,7 @@ logging:
   level:
     org.hibernate.SQL: warn
     org.hibernate.type.descriptor.sql.BasicBinder: off
+
+jwt:
+  secret: dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw
+  expiration-millis: 3600000
