@@ -3,6 +3,10 @@
 공동 캡스톤 프로젝트로 식단 기록, 공유, 추천 및 커뮤니티 기능을 통합 제공하는 플랫폼입니다. (이 문서는 BE + FE 전체 관점 README이며, 기술 스택이 확정되지 않은 부분은 이후 채워 넣을 예정입니다.)
 
 ---
+1. docker compose 실행 후 <img width="1728" height="1117" alt="image" src="./image11.png" />
+2. swaggerUI 혹은 [postman](https://web.postman.co/workspace/My-Workspace~78fa8ea8-b9e6-4499-8386-848952566b31/collection/41646314-8ca7d4f0-1d1e-47c0-955d-9a3dc11e13a4?action=share&source=copy-link&creator=41646314) 사용해서 api 테스트
+
+---
 ## 1. 프로젝트 개요 (Overview)
 사용자는 식단을 기록(다이어리), 식재료/냉장고 상태를 관리하고, 이에 맞는 레시피 및 쇼핑 정보를 탐색·추천받으며 커뮤니티에서 소통할 수 있습니다. 추가로 Q&A 전문가 시스템, 게시판 관리자 선거, 알림/검색 등 확장형 기능을 포함합니다.
 
