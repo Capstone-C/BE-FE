@@ -55,11 +55,11 @@ docker compose down -v  # 데이터까지 초기화
 - 3306 포트 충돌: 로컬 MySQL 중지 필요
 - DB 초기화 지연: healthcheck 후 백엔드 기동
 
-| 권한 오류 (Access denied) | 계정/비밀번호 불일치 | compose.yaml 환경변수와 `application.yml` 기본값 확인 |
+### 참고 (Swagger UI 확인)
+http://localhost:8080/swagger-ui/index.html
 
-### 개발 생산성 팁
-- 코드 수정 시 backend 컨테이너는 Gradle `bootRun`을 실행 중이므로 변경 사항이 재시작되며 반영(Hot reload 수준) 되지만 큰 변경 후에는 컨테이너 재시작 권장.
-- 의존성 추가 후에는 `docker compose up --build` 대신 현재 구성에서는 Gradle 이미지를 재사용하므로 컨테이너를 내려(`down`) 다시 올리면 됨.
+JSON -> http://localhost:8080/v3/api-docs
+
 
 ### 백엔드 (IntelliJ에서 개발할 경우, 루트 디렉토리가 해당 github repo일 때)
 - IntelliJ에서 직접 Gradle 프로젝트 추가해야 함.
