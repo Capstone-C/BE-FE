@@ -28,16 +28,17 @@ public class MemberQueryController {
         if (member.isDeleted()) {
             throw new com.capstone.web.auth.exception.WithdrawnMemberException();
         }
-    MemberProfileResponse response = new MemberProfileResponse(
-        member.getId(),
-        member.getEmail(),
-        member.getNickname(),
-        member.getRole(),
-        member.getProfile(),
-        member.getExportScore(),
-        member.getRepresentativeBadgeId(),
-        member.getJoinedAt(),
-        member.getLastLoginAt());
+        MemberProfileResponse response = new MemberProfileResponse(
+            member.getId(),
+            member.getEmail(),
+            member.getNickname(),
+            member.getRole(),
+            member.getProfile(),
+            member.getExportScore(),
+            member.getRepresentativeBadgeId(),
+            member.getJoinedAt(),
+            member.getLastLoginAt()
+        );
         return ResponseEntity.ok(response);
     }
 
