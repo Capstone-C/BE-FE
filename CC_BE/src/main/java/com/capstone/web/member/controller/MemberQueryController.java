@@ -1,3 +1,4 @@
+
 package com.capstone.web.member.controller;
 
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
@@ -23,6 +24,10 @@ public class MemberQueryController {
     public ResponseEntity<MemberProfileResponse> me(Authentication authentication) {
         MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
         Member member = memberRepository.findById(principal.id()).orElseThrow();
+        // 탈퇴 회원 접근 차단
+        if (member.isDeleted()) {
+            throw new com.capstone.web.auth.exception.WithdrawnMemberException();
+        }
     MemberProfileResponse response = new MemberProfileResponse(
         member.getId(),
         member.getEmail(),
@@ -38,11 +43,25 @@ public class MemberQueryController {
 
     @PatchMapping(value = "/me", consumes = {"multipart/form-data"})
     public ResponseEntity<MemberProfileResponse> updateMe(Authentication authentication,
-                                                         @RequestPart(required = false) String nickname,
-                                                         @RequestPart(required = false) MultipartFile profileImage) {
+                                                         @RequestPart(value = "nickname", required = false) String nickname,
+                                                         @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
         MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
         Member member = memberRepository.findById(principal.id()).orElseThrow();
+        if (member.isDeleted()) {
+            throw new com.capstone.web.auth.exception.WithdrawnMemberException();
+        }
         MemberProfileResponse updated = memberUpdateService.update(member, nickname, profileImage);
         return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> withdrawMe(Authentication authentication) {
+        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
+        Member member = memberRepository.findById(principal.id()).orElseThrow();
+        if (!member.isDeleted()) {
+            member.softDelete();
+            memberRepository.save(member);
+        }
+        return ResponseEntity.ok().build();
     }
 }

@@ -60,15 +60,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         Long memberId = jwtTokenProvider.extractMemberId(token);
         Member member = memberRepository.findById(memberId).orElse(null);
-        if (member == null || member.isDeleted()) {
+        if (member == null) {
             unauthorized(response, "AUTH_MEMBER_NOT_FOUND", "회원 정보를 찾을 수 없습니다.");
             return;
         }
+
+        boolean withdrawn = member.isDeleted();
 
         // 권한 부여 - 단순 Role -> ROLE_ 접두사
         Collection<? extends GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()));
         Authentication auth = new UsernamePasswordAuthenticationToken(new MemberPrincipal(member), token, authorities);
         SecurityContextHolder.getContext().setAuthentication(auth);
+        if (withdrawn) {
+            request.setAttribute("WITHDRAWN_MEMBER", true);
+        }
         filterChain.doFilter(request, response);
     }
 
