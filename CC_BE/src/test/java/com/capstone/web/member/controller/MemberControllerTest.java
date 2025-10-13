@@ -112,7 +112,7 @@ class MemberControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[0].field").value("password"))
-                .andExpect(jsonPath("$.errors[0].message").value("비밀번호는 8자 이상 20자 이하이며 대문자/소문자/숫자/특수문자 중 2가지 이상을 포함해야 합니다."));
+                .andExpect(jsonPath("$.errors[0].message").value("대문자/소문자/숫자/특수문자 중 2종 이상을 포함해야 합니다."));
     }
 
     @DisplayName("비밀번호와 비밀번호 확인이 다르면 400을 반환한다")

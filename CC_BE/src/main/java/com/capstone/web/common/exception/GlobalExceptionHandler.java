@@ -13,6 +13,7 @@ import com.capstone.web.member.exception.MemberErrorCode;
 import com.capstone.web.member.exception.InvalidOldPasswordException;
 import com.capstone.web.member.exception.SameAsOldPasswordException;
 import com.capstone.web.member.exception.PasswordChangeErrorCode;
+import com.capstone.web.member.exception.RecentPasswordReuseException;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-    @ExceptionHandler({InvalidOldPasswordException.class, SameAsOldPasswordException.class})
+    @ExceptionHandler({InvalidOldPasswordException.class, SameAsOldPasswordException.class, RecentPasswordReuseException.class})
     public ResponseEntity<ErrorResponse> handlePasswordChange(RuntimeException ex) {
         log.info("비밀번호 예외 핸들러 진입: {}", ex.getClass().getSimpleName());
         PasswordChangeErrorCode errorCode = null;
@@ -35,6 +36,8 @@ public class GlobalExceptionHandler {
             errorCode = ((InvalidOldPasswordException) ex).getErrorCode();
         } else if (ex instanceof SameAsOldPasswordException) {
             errorCode = ((SameAsOldPasswordException) ex).getErrorCode();
+        } else if (ex instanceof RecentPasswordReuseException) {
+            errorCode = ((RecentPasswordReuseException) ex).getErrorCode();
         }
         if (errorCode != null) {
             ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
