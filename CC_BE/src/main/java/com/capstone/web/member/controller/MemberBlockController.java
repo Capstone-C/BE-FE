@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
 
@@ -20,6 +22,7 @@ public class MemberBlockController {
     private final MemberBlockService memberBlockService;
 
     // POST /api/v1/members/blocks
+    @Operation(summary = "회원 차단", description = "특정 회원을 차단합니다.\n제약: 자기 자신 차단 불가, 이미 차단한 대상 재요청 시 400.\n중복/자기차단 로직은 서비스 단에서 검증.", security = @SecurityRequirement(name = "JWT"))
     @PostMapping
     public ResponseEntity<Void> block(@Valid @RequestBody BlockRequest request, Authentication authentication) {
         Long memberId = extractMemberId(authentication);
@@ -28,6 +31,7 @@ public class MemberBlockController {
     }
 
     // DELETE /api/v1/members/blocks/{blockedId}
+    @Operation(summary = "차단 해제", description = "차단한 회원을 차단 해제합니다.", security = @SecurityRequirement(name = "JWT"))
     @DeleteMapping("/{blockedId}")
     public ResponseEntity<Void> unblock(@PathVariable("blockedId") Long blockedId, Authentication authentication) {
         Long memberId = extractMemberId(authentication);
@@ -36,6 +40,7 @@ public class MemberBlockController {
     }
 
     // GET /api/v1/members/blocks
+    @Operation(summary = "차단 목록 조회", description = "내가 차단한 회원 목록을 최신순(createdAt DESC)으로 반환합니다.", security = @SecurityRequirement(name = "JWT"))
     @GetMapping
     public ResponseEntity<List<BlockListResponse>> list(Authentication authentication) {
         Long memberId = extractMemberId(authentication);
