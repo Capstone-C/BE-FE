@@ -23,9 +23,9 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-            .requestMatchers("/api/v1/auth/login", "/api/v1/auth/logout", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-            .requestMatchers("/api/v1/members/me").authenticated()
-            .anyRequest().permitAll()
+                    .requestMatchers("/api/v1/auth/login", "/api/v1/auth/logout", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
+                    .requestMatchers("/api/v1/members/me").authenticated()
+                    .anyRequest().permitAll()
                 )
         // 인증 -> 블랙리스트 순서 유지 (이미 블랙리스트 필터는 공개 엔드포인트에서 스킵)
         .addFilterBefore(authenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
