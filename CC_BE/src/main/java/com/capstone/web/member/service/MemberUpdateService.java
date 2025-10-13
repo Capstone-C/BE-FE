@@ -1,0 +1,98 @@
+package com.capstone.web.member.service;
+
+import com.capstone.web.member.domain.Member;
+import com.capstone.web.member.dto.MemberProfileResponse;
+import com.capstone.web.member.exception.*;
+import com.capstone.web.member.repository.MemberRepository;
+import java.io.IOException;
+import java.util.Set;
+import java.util.regex.Pattern;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class MemberUpdateService {
+
+    private static final Pattern NICKNAME_PATTERN = Pattern.compile("^[A-Za-z0-9가-힣]{2,10}$");
+    private static final long MAX_BYTES = 5L * 1024 * 1024; // 5MB
+    private static final Set<String> ALLOWED_EXT = Set.of(".jpg", ".jpeg", ".png", ".gif");
+
+    private final MemberRepository memberRepository;
+    private final ProfileImageStorage imageStorage;
+
+    public MemberProfileResponse update(Member member, String nickname, MultipartFile profileImage) {
+        // 닉네임 처리
+        if (StringUtils.hasText(nickname) && !nickname.equals(member.getNickname())) {
+            validateNickname(nickname, member.getId());
+            memberChangeNickname(member, nickname);
+        }
+
+        // 이미지 처리
+        if (profileImage != null && !profileImage.isEmpty()) {
+            validateImage(profileImage);
+            try {
+                String url = imageStorage.store(member.getId(), profileImage);
+                setProfile(member, url);
+            } catch (IOException e) {
+                throw new RuntimeException("프로필 이미지 저장 실패", e);
+            }
+        }
+
+        Member saved = memberRepository.save(member);
+        return new MemberProfileResponse(saved.getId(), saved.getEmail(), saved.getNickname(), saved.getRole(), saved.getProfile(), saved.getExportScore(), saved.getRepresentativeBadgeId(), saved.getJoinedAt(), saved.getLastLoginAt());
+    }
+
+    private void validateNickname(String nickname, Long selfId) {
+        if (!NICKNAME_PATTERN.matcher(nickname).matches()) {
+            throw new InvalidNicknameException();
+        }
+        if (memberRepository.existsByNickname(nickname)) {
+            // 자기 자신 제외
+            memberRepository.findById(selfId).ifPresent(m -> {
+                if (!m.getNickname().equals(nickname)) {
+                    throw new DuplicateNicknameException();
+                }
+            });
+        }
+    }
+
+    private void validateImage(MultipartFile file) {
+        if (file.getSize() > MAX_BYTES) {
+            throw new InvalidProfileImageSizeException();
+        }
+        String original = file.getOriginalFilename();
+        if (original == null || !original.contains(".")) {
+            throw new InvalidProfileImageTypeException();
+        }
+        String ext = original.substring(original.lastIndexOf('.')).toLowerCase();
+        if (!ALLOWED_EXT.contains(ext)) {
+            throw new InvalidProfileImageTypeException();
+        }
+    }
+
+    private void memberChangeNickname(Member member, String nickname) {
+        // reflection 대신 엔티티에 세터/메서드 추가가 바람직하나 일단 간단히 필드 접근 (패키지 동일 가정)
+        try {
+            var f = Member.class.getDeclaredField("nickname");
+            f.setAccessible(true);
+            f.set(member, nickname);
+        } catch (Exception e) {
+            throw new IllegalStateException("닉네임 변경 실패", e);
+        }
+    }
+
+    private void setProfile(Member member, String url) {
+        try {
+            var f = Member.class.getDeclaredField("profile");
+            f.setAccessible(true);
+            f.set(member, url);
+        } catch (Exception e) {
+            throw new IllegalStateException("프로필 변경 실패", e);
+        }
+    }
+}

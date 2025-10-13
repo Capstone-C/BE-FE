@@ -36,9 +36,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String path = request.getRequestURI();
+    String path = request.getRequestURI();
+    String method = request.getMethod();
         // 공개 엔드포인트: 로그인, 로그아웃, Swagger 문서 -> 인증 시도 생략
-        if (isPublic(path)) {
+        if (isPublic(path, method)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -71,8 +72,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private boolean isPublic(String path) {
-        return path.startsWith("/api/v1/auth/login")
+    private boolean isPublic(String path, String method) {
+        // 회원가입: POST /api/v1/members 허용
+        boolean isSignup = "/api/v1/members".equals(path) && "POST".equalsIgnoreCase(method);
+        return isSignup
+                || path.startsWith("/api/v1/auth/login")
                 || path.startsWith("/api/v1/auth/logout")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui");
