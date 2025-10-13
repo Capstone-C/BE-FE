@@ -4,7 +4,8 @@ import org.springframework.http.HttpStatus;
 
 public enum PasswordChangeErrorCode {
     INVALID_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "MEMBER_INVALID_OLD_PASSWORD", "기존 비밀번호가 일치하지 않습니다.", "oldPassword"),
-    SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "MEMBER_SAME_AS_OLD_PASSWORD", "새 비밀번호가 기존 비밀번호와 동일합니다.", "newPassword");
+    SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "MEMBER_SAME_AS_OLD_PASSWORD", "새 비밀번호가 기존 비밀번호와 동일합니다.", "newPassword"),
+    RECENT_PASSWORD_REUSE(HttpStatus.BAD_REQUEST, "MEMBER_RECENT_PASSWORD_REUSE", "최근에 사용한 비밀번호는 사용할 수 없습니다.", "newPassword");
 
     private final HttpStatus status;
     private final String code;
