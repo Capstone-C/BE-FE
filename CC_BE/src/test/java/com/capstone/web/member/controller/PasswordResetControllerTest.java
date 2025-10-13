@@ -5,6 +5,7 @@ import com.capstone.web.member.domain.PasswordResetToken;
 import com.capstone.web.member.dto.PasswordResetRequest;
 import com.capstone.web.member.dto.PasswordResetConfirmRequest;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import com.capstone.web.member.repository.PasswordResetTokenRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,12 +35,14 @@ class PasswordResetControllerTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired MemberRepository memberRepository;
+    @Autowired MemberBlockRepository memberBlockRepository;
     @Autowired PasswordResetTokenRepository tokenRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
         tokenRepository.deleteAll();
+        if (memberBlockRepository != null) memberBlockRepository.deleteAll();
         memberRepository.deleteAll();
     }
 

@@ -5,6 +5,7 @@ import com.capstone.web.member.domain.PasswordResetToken;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,9 +15,9 @@ public interface PasswordResetTokenRepository extends JpaRepository<PasswordRese
     Optional<PasswordResetToken> findByToken(String token);
 
     @Query("select t from PasswordResetToken t where t.member = :member and t.usedAt is null and t.invalidatedAt is null and t.expiresAt > :now")
-    List<PasswordResetToken> findActiveTokens(Member member, LocalDateTime now);
+    List<PasswordResetToken> findActiveTokens(@Param("member") Member member, @Param("now") LocalDateTime now);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update PasswordResetToken t set t.invalidatedAt = :now where t.member = :member and t.usedAt is null and t.invalidatedAt is null and t.expiresAt > :now")
-    int invalidateActiveTokens(Member member, LocalDateTime now);
+    int invalidateActiveTokens(@Param("member") Member member, @Param("now") LocalDateTime now);
 }

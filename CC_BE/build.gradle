@@ -61,3 +61,10 @@ tasks.named('test') {
 bootJar {
     archiveFileName = 'cc-be.jar'
 }
+
+// Ensure Java compiler retains parameter names for reflection-based frameworks (e.g., Spring Data @Query named params)
+tasks.withType(JavaCompile).configureEach {
+    if (!options.compilerArgs.contains('-parameters')) {
+        options.compilerArgs += '-parameters'
+    }
+}

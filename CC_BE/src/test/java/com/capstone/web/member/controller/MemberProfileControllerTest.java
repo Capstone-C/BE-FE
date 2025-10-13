@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.capstone.web.auth.dto.LoginRequest;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,10 +36,15 @@ class MemberProfileControllerTest {
     @Autowired
     private MemberRepository memberRepository;
     @Autowired
+    private MemberBlockRepository memberBlockRepository;
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @BeforeEach
-    void setup() { memberRepository.deleteAll(); }
+    void setup() {
+        if (memberBlockRepository != null) memberBlockRepository.deleteAll();
+        memberRepository.deleteAll();
+    }
 
     private String loginAndGetToken(String email, String rawPassword, String nickname) throws Exception {
         Member m = Member.builder()

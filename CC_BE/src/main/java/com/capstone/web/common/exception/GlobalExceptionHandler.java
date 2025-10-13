@@ -16,6 +16,8 @@ import com.capstone.web.member.exception.PasswordChangeErrorCode;
 import com.capstone.web.member.exception.RecentPasswordReuseException;
 import com.capstone.web.member.exception.PasswordResetException;
 import com.capstone.web.member.exception.PasswordResetErrorCode;
+import com.capstone.web.member.exception.MemberBlockException;
+import com.capstone.web.member.exception.MemberBlockErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -109,6 +111,20 @@ public class GlobalExceptionHandler {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(code.field(), code.message());
         ErrorResponse response = ErrorResponse.of(code.status(), code.code(), code.message(), List.of(fieldError));
         return ResponseEntity.status(code.status()).body(response);
+    }
+
+    @ExceptionHandler(MemberBlockException.class)
+    public ResponseEntity<ErrorResponse> handleMemberBlock(MemberBlockException ex) {
+        MemberBlockErrorCode code = ex.getErrorCode();
+        // 매핑 규칙: SELF_BLOCK/DUPLICATE_BLOCK/NOT_BLOCKED -> 400, MEMBER_NOT_FOUND -> 404
+        HttpStatus status;
+        switch (code) {
+            case MEMBER_NOT_FOUND -> status = HttpStatus.NOT_FOUND;
+            default -> status = HttpStatus.BAD_REQUEST;
+        }
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("memberBlock", code.name());
+        ErrorResponse response = ErrorResponse.of(status, "MEMBER_BLOCK_" + code.name(), code.name(), List.of(fieldError));
+        return ResponseEntity.status(status).body(response);
     }
 
     private ErrorResponse.FieldError toFieldError(FieldError error) {

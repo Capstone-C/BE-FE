@@ -4,6 +4,7 @@ import com.capstone.web.auth.dto.LoginRequest;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberPasswordHistoryRepository;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,12 +32,15 @@ class MemberControllerPasswordChangeTest {
     @Autowired MockMvc mockMvc;
     @Autowired ObjectMapper objectMapper;
     @Autowired MemberRepository memberRepository;
+    @Autowired MemberBlockRepository memberBlockRepository;
     @Autowired MemberPasswordHistoryRepository memberPasswordHistoryRepository;
     @Autowired PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setup() {
+        // Clean up FK-dependent tables first
         memberPasswordHistoryRepository.deleteAll();
+        memberBlockRepository.deleteAll();
         memberRepository.deleteAll();
     }
 

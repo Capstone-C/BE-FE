@@ -3,6 +3,7 @@ package com.capstone.web.member.controller;
 import com.capstone.web.auth.dto.LoginRequest;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,11 +29,15 @@ class MemberWithdrawControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
-    @Autowired private MemberRepository memberRepository;
+        @Autowired private MemberRepository memberRepository;
+        @Autowired private MemberBlockRepository memberBlockRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
-    @BeforeEach
-    void setup() { memberRepository.deleteAll(); }
+        @BeforeEach
+        void setup() {
+                if (memberBlockRepository != null) memberBlockRepository.deleteAll();
+                memberRepository.deleteAll();
+        }
 
     private String loginAndGetToken(String email, String rawPassword, String nickname) throws Exception {
         Member m = Member.builder()
