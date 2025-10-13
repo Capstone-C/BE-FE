@@ -10,6 +10,9 @@ import com.capstone.web.member.exception.InvalidNicknameException;
 import com.capstone.web.member.exception.InvalidProfileImageSizeException;
 import com.capstone.web.member.exception.InvalidProfileImageTypeException;
 import com.capstone.web.member.exception.MemberErrorCode;
+import com.capstone.web.member.exception.InvalidOldPasswordException;
+import com.capstone.web.member.exception.SameAsOldPasswordException;
+import com.capstone.web.member.exception.PasswordChangeErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +27,22 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler({InvalidOldPasswordException.class, SameAsOldPasswordException.class})
+    public ResponseEntity<ErrorResponse> handlePasswordChange(RuntimeException ex) {
+        log.info("비밀번호 예외 핸들러 진입: {}", ex.getClass().getSimpleName());
+        PasswordChangeErrorCode errorCode = null;
+        if (ex instanceof InvalidOldPasswordException) {
+            errorCode = ((InvalidOldPasswordException) ex).getErrorCode();
+        } else if (ex instanceof SameAsOldPasswordException) {
+            errorCode = ((SameAsOldPasswordException) ex).getErrorCode();
+        }
+        if (errorCode != null) {
+            ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
+            ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
+            return ResponseEntity.status(errorCode.status()).body(response);
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorResponse.of(HttpStatus.BAD_REQUEST, "MEMBER_PASSWORD_CHANGE_ERROR", ex.getMessage()));
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
