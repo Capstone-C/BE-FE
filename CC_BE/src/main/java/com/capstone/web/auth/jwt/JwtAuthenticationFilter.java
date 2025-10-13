@@ -83,6 +83,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return isSignup
                 || path.startsWith("/api/v1/auth/login")
                 || path.startsWith("/api/v1/auth/logout")
+                // 비밀번호 재설정 (요청 & 확인) 공개 엔드포인트
+                || path.startsWith("/api/v1/auth/password-reset")
                 || path.startsWith("/v3/api-docs")
                 || path.startsWith("/swagger-ui");
     }

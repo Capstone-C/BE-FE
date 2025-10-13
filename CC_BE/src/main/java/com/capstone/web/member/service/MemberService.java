@@ -89,4 +89,32 @@ public class MemberService {
         Member saved = memberRepository.save(member);
         return MemberRegisterResponse.of(saved.getId(), saved.getEmail(), saved.getNickname());
     }
+
+    // 비밀번호 재설정(Old Password 검증 없음) - 정책: 최근 재사용 금지, 동일 비밀번호 금지 재활용
+    public void resetPassword(Member member, String rawNewPassword) {
+        if (passwordEncoder.matches(rawNewPassword, member.getPassword())) {
+            throw new SameAsOldPasswordException();
+        }
+        var recentHistories = memberPasswordHistoryRepository.findTop5ByMemberOrderByChangedAtDesc(member);
+        for (MemberPasswordHistory history : recentHistories) {
+            if (passwordEncoder.matches(rawNewPassword, history.getPassword())) {
+                throw new RecentPasswordReuseException();
+            }
+        }
+        String encoded = passwordEncoder.encode(rawNewPassword);
+        member.changePassword(encoded);
+        MemberPasswordHistory history = MemberPasswordHistory.builder()
+                .member(member)
+                .password(encoded)
+                .changedAt(java.time.LocalDateTime.now())
+                .build();
+        memberPasswordHistoryRepository.save(history);
+        long historyCount = memberPasswordHistoryRepository.countByMember(member);
+        if (historyCount > 5) {
+            var histories = memberPasswordHistoryRepository.findByMemberOrderByChangedAtDesc(member);
+            for (int i = 5; i < histories.size(); i++) {
+                memberPasswordHistoryRepository.delete(histories.get(i));
+            }
+        }
+    }
 }
