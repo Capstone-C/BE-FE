@@ -6,6 +6,9 @@ import com.capstone.web.auth.exception.WithdrawnMemberException;
 import com.capstone.web.common.response.ErrorResponse;
 import com.capstone.web.member.exception.DuplicateEmailException;
 import com.capstone.web.member.exception.DuplicateNicknameException;
+import com.capstone.web.member.exception.InvalidNicknameException;
+import com.capstone.web.member.exception.InvalidProfileImageSizeException;
+import com.capstone.web.member.exception.InvalidProfileImageTypeException;
 import com.capstone.web.member.exception.MemberErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +44,22 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateNicknameException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateNickname(DuplicateNicknameException ex) {
         return buildMemberErrorResponse(ex.getErrorCode());
+    }
+
+    @ExceptionHandler(InvalidNicknameException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidNickname(InvalidNicknameException ex) {
+        return buildMemberErrorResponse(ex.getErrorCode());
+    }
+
+    @ExceptionHandler({InvalidProfileImageTypeException.class, InvalidProfileImageSizeException.class})
+    public ResponseEntity<ErrorResponse> handleInvalidProfileImage(RuntimeException ex) {
+        if (ex instanceof InvalidProfileImageTypeException e) {
+            return buildMemberErrorResponse(e.getErrorCode());
+        } else if (ex instanceof InvalidProfileImageSizeException e) {
+            return buildMemberErrorResponse(e.getErrorCode());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of(HttpStatus.BAD_REQUEST, "MEMBER_PROFILE_INVALID", ex.getMessage()));
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
