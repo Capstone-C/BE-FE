@@ -76,23 +76,10 @@ public class MemberUpdateService {
     }
 
     private void memberChangeNickname(Member member, String nickname) {
-        // reflection 대신 엔티티에 세터/메서드 추가가 바람직하나 일단 간단히 필드 접근 (패키지 동일 가정)
-        try {
-            var f = Member.class.getDeclaredField("nickname");
-            f.setAccessible(true);
-            f.set(member, nickname);
-        } catch (Exception e) {
-            throw new IllegalStateException("닉네임 변경 실패", e);
-        }
+        member.changeNickname(nickname);
     }
 
     private void setProfile(Member member, String url) {
-        try {
-            var f = Member.class.getDeclaredField("profile");
-            f.setAccessible(true);
-            f.set(member, url);
-        } catch (Exception e) {
-            throw new IllegalStateException("프로필 변경 실패", e);
-        }
+        member.changeProfile(url);
     }
 }

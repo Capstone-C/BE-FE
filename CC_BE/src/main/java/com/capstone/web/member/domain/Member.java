@@ -76,4 +76,13 @@ public class Member {
     public void markLoggedIn(LocalDateTime loginAt) {
         this.lastLoginAt = loginAt;
     }
+
+    // 도메인 변경 메서드들 (reflection 제거 용)
+    public void changeNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public void changeProfile(String profileUrl) {
+        this.profile = profileUrl;
+    }
 }
