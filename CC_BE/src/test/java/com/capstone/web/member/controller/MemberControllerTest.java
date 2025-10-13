@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.dto.MemberRegisterRequest;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,14 +36,17 @@ class MemberControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Autowired
-    private MemberRepository memberRepository;
+        @Autowired
+        private MemberRepository memberRepository;
+        @Autowired
+        private MemberBlockRepository memberBlockRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
         @BeforeEach
         void setUp() {
+                if (memberBlockRepository != null) memberBlockRepository.deleteAll();
                 memberRepository.deleteAll();
         }
 

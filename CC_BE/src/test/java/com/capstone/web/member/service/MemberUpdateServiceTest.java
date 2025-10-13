@@ -8,6 +8,7 @@ import com.capstone.web.member.exception.InvalidNicknameException;
 import com.capstone.web.member.exception.InvalidProfileImageSizeException;
 import com.capstone.web.member.exception.InvalidProfileImageTypeException;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.member.repository.MemberBlockRepository;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,9 +30,14 @@ class MemberUpdateServiceTest {
 
     @Autowired
     private MemberRepository memberRepository;
+    @Autowired
+    private MemberBlockRepository memberBlockRepository;
 
     @BeforeEach
-    void setup() { memberRepository.deleteAll(); }
+    void setup() {
+        if (memberBlockRepository != null) memberBlockRepository.deleteAll();
+        memberRepository.deleteAll();
+    }
 
     private Member create(String email, String nickname) {
         Member m = Member.builder()

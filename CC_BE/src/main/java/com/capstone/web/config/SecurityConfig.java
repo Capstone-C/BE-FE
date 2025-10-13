@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                     .requestMatchers("/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password-reset", "/api/v1/auth/password-reset/confirm", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                     .requestMatchers("/api/v1/members/me").authenticated()
+                    .requestMatchers("/api/v1/members/blocks/**").authenticated()
                     .anyRequest().permitAll()
                 )
         // 인증 -> 블랙리스트 순서 유지 (이미 블랙리스트 필터는 공개 엔드포인트에서 스킵)
