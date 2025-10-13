@@ -67,4 +67,9 @@ public class JwtTokenProvider {
         String roleName = claims.get("role", String.class);
         return MemberRole.valueOf(roleName);
     }
+
+    public long getExpirationEpochMillis(String token) {
+        Claims claims = parseClaims(token);
+        return claims.getExpiration().getTime();
+    }
 }
