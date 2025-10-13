@@ -14,6 +14,8 @@ import com.capstone.web.member.exception.InvalidOldPasswordException;
 import com.capstone.web.member.exception.SameAsOldPasswordException;
 import com.capstone.web.member.exception.PasswordChangeErrorCode;
 import com.capstone.web.member.exception.RecentPasswordReuseException;
+import com.capstone.web.member.exception.PasswordResetException;
+import com.capstone.web.member.exception.PasswordResetErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
@@ -99,6 +101,14 @@ public class GlobalExceptionHandler {
         log.error("Unexpected error", ex);
         ErrorResponse response = ErrorResponse.of(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    @ExceptionHandler(PasswordResetException.class)
+    public ResponseEntity<ErrorResponse> handlePasswordReset(PasswordResetException ex) {
+        PasswordResetErrorCode code = ex.getErrorCode();
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(code.field(), code.message());
+        ErrorResponse response = ErrorResponse.of(code.status(), code.code(), code.message(), List.of(fieldError));
+        return ResponseEntity.status(code.status()).body(response);
     }
 
     private ErrorResponse.FieldError toFieldError(FieldError error) {
