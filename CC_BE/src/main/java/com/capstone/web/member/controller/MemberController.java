@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -23,6 +25,7 @@ public class MemberController {
 
     private final MemberService memberService;
 
+    @Operation(summary = "비밀번호 변경", description = "로그인한 회원이 비밀번호를 변경합니다.\n정책: 최소 길이/문자 조합/최근 N회(5) 사용 비밀번호 재사용 금지/동일 비밀번호 금지. 위반시 400 응답.\n성공 시 204(No Content) 반환.", security = @SecurityRequirement(name = "JWT"))
     @PatchMapping("/password")
     public ResponseEntity<Void> changePassword(Authentication authentication,
                                               @Valid @RequestBody MemberPasswordChangeRequest request) {
@@ -31,6 +34,7 @@ public class MemberController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "회원가입", description = "새로운 회원을 등록합니다. 이메일, 닉네임, 비밀번호를 입력해야 합니다.")
     @PostMapping
     public ResponseEntity<MemberRegisterResponse> register(@Valid @RequestBody MemberRegisterRequest request) {
         MemberRegisterResponse response = memberService.register(request);
