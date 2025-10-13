@@ -85,4 +85,8 @@ public class Member {
     public void changeProfile(String profileUrl) {
         this.profile = profileUrl;
     }
+
+    public void changePassword(String encodedPassword) {
+        this.password = encodedPassword;
+    }
 }

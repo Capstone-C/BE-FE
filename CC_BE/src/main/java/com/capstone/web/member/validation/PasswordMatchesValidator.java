@@ -1,23 +1,39 @@
+
 package com.capstone.web.member.validation;
 
 import com.capstone.web.member.dto.MemberRegisterRequest;
+import com.capstone.web.member.dto.MemberPasswordChangeRequest;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
-public class PasswordMatchesValidator implements ConstraintValidator<PasswordMatches, MemberRegisterRequest> {
+public class PasswordMatchesValidator implements ConstraintValidator<PasswordMatches, Object> {
 
     @Override
-    public boolean isValid(MemberRegisterRequest value, ConstraintValidatorContext context) {
+    public boolean isValid(Object value, ConstraintValidatorContext context) {
         if (value == null) {
             return true;
         }
 
-        boolean matches = value.password() != null && value.password().equals(value.passwordConfirm());
+        String password = null;
+        String passwordConfirm = null;
+        String confirmField = "passwordConfirm";
+
+        if (value instanceof MemberRegisterRequest req) {
+            password = req.password();
+            passwordConfirm = req.passwordConfirm();
+            confirmField = "passwordConfirm";
+        } else if (value instanceof MemberPasswordChangeRequest req) {
+            password = req.newPassword();
+            passwordConfirm = req.newPasswordConfirm();
+            confirmField = "newPasswordConfirm";
+        }
+
+        boolean matches = password != null && password.equals(passwordConfirm);
 
         if (!matches) {
             context.disableDefaultConstraintViolation();
             context.buildConstraintViolationWithTemplate(context.getDefaultConstraintMessageTemplate())
-                    .addPropertyNode("passwordConfirm")
+                    .addPropertyNode(confirmField)
                     .addConstraintViolation();
         }
 
