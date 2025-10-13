@@ -35,19 +35,23 @@ public class Member {
     private MemberRole role = MemberRole.USER;
 
     @CreatedDate
-    @Column(nullable = false, updatable = false)
+    @Column(name = "joined_at", nullable = false, updatable = false)
     private LocalDateTime joinedAt;
 
     @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
-    @Column(nullable = false)
+    @Column(name = "export_score", nullable = false)
     private Long exportScore = 0L;
 
+    @Column(name = "representative_badge_id")
     private Long representativeBadgeId;
 
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     // 주문(Order) 엔티티가 생성되면, 

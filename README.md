@@ -20,8 +20,7 @@
 | Language | Java 17 |  |
 | Framework | Spring Boot 3.5.6 | build.gradle 기준 |
 | Persistence | Spring Data JPA |  |
-| DB (Prod) | MySQL 8.0 | Docker compose 사용 |
-| DB (Test) | H2 (Memory) | test scope |
+| DB (Prod, Test) | MySQL 8.0 | Docker compose 사용 |
 ## 3-1. 개발 환경 (Docker Compose)
 
 - 모든 서비스(DB, 백엔드, 프론트엔드)는 프로젝트 루트의 `compose.yaml`에서 통합 관리합니다.

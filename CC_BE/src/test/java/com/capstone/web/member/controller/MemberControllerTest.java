@@ -18,10 +18,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @Transactional
 class MemberControllerTest {
 
@@ -39,10 +41,10 @@ class MemberControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @BeforeEach
-    void setUp() {
-        memberRepository.deleteAll();
-    }
+        @BeforeEach
+        void setUp() {
+                memberRepository.deleteAll();
+        }
 
     @DisplayName("정상적인 회원가입 요청은 201 응답과 함께 사용자 정보를 저장한다")
     @Test
@@ -64,6 +66,10 @@ class MemberControllerTest {
 
         Member saved = memberRepository.findByEmail("test@example.com").orElseThrow();
         assertThat(passwordEncoder.matches("Abcd1234!", saved.getPassword())).isTrue();
+                assertThat(saved.getRole()).isNotNull();
+                assertThat(saved.getExportScore()).isZero();
+                assertThat(saved.getJoinedAt()).isNotNull();
+                assertThat(saved.getUpdatedAt()).isNotNull();
     }
 
     @DisplayName("중복 이메일로 요청하면 409와 오류 메시지를 반환한다")

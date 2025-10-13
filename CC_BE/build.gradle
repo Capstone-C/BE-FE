@@ -44,7 +44,6 @@ dependencies {
     // --- 테스트 ---
     testImplementation 'org.springframework.boot:spring-boot-starter-test'    // 테스트
     testImplementation 'org.springframework.security:spring-security-test'     // 시큐리티 테스트
-    testImplementation 'com.h2database:h2'                                    // 인메모리 DB
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'              // JUnit 런처
 }
 
