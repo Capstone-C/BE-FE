@@ -1,7 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '@/index.css';
-import App from '@/pages/App';
+// import App from '@/pages/App';
+import Router from '@/Router'; // App 대신 Router를 import 합니다.
 
 // 1. TanStack Query에서 필요한 것들을 import 합니다.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -15,7 +16,11 @@ createRoot(document.getElementById('root')!).render(
     {/* 3. 기존 App 컴포넌트를 QueryClientProvider로 감싸줍니다. */}
     {/* client prop으로 위에서 만든 queryClient를 전달해야 합니다. */}
     <QueryClientProvider client={queryClient}>
-      <App />
+      <Router />
+      {/*
+        이제 App 컴포넌트와 그 하위 컴포넌트들에서
+        TanStack Query의 기능들을 사용할 수 있습니다.
+      */}
     </QueryClientProvider>
   </StrictMode>,
 );
