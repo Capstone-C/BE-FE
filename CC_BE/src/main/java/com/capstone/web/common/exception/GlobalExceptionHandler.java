@@ -20,6 +20,8 @@ import com.capstone.web.member.exception.MemberBlockException;
 import com.capstone.web.member.exception.MemberBlockErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.capstone.web.posts.exception.PostNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,13 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    @ExceptionHandler(PostNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePostNotFoundException(PostNotFoundException ex) {
+        // new ErrorResponse(...) 대신 ErrorResponse.of(...) 사용
+        ErrorResponse response = ErrorResponse.of(HttpStatus.NOT_FOUND, "POST_NOT_FOUND", ex.getMessage());
+
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
     @ExceptionHandler({InvalidOldPasswordException.class, SameAsOldPasswordException.class, RecentPasswordReuseException.class})
     public ResponseEntity<ErrorResponse> handlePasswordChange(RuntimeException ex) {
         log.info("비밀번호 예외 핸들러 진입: {}", ex.getClass().getSimpleName());

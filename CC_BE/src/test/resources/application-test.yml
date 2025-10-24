@@ -4,6 +4,7 @@ spring:
     username: ${MYSQL_USER:ccuser}
     password: ${MYSQL_PASSWORD:devpass}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
   jpa:
     hibernate:
       ddl-auto: create-drop
