@@ -4,15 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "packageManager": "pnpm@10.18.2",
-  "engines": {
-    "node": ">=22.21.0 <23"
-  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "postinstall": "node -e \"const v=process.version; if(!/^v22\\.21\\./.test(v)){console.error('Use Node 22.21.x (see .nvmrc). Current: '+v); process.exit(1);}\""
+    "preview": "vite preview"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.2",
@@ -29,7 +25,7 @@
     "@vitejs/plugin-react": "^5.0.4",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
     "prettier": "^3.6.2",
