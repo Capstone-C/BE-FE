@@ -1,2 +1,5 @@
 packages:
-  - "CC_FE"
+  - CC_FE
+
+onlyBuiltDependencies:
+  - esbuild
