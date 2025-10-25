@@ -1,13 +1,18 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { fileURLToPath, URL } from 'node:url'
 
-// https://vite.dev/config/
+// npm i -D babel-plugin-react-compiler (또는 pnpm add -D ...)
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react({
+      // Compiler는 Babel 플러그인 체인의 "맨 앞"에 배치
+      babel: { plugins: ['babel-plugin-react-compiler'] },
+    }),
+  ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-});
+})
