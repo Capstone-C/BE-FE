@@ -1,5 +1,0 @@
-packages:
-  - CC_FE
-
-onlyBuiltDependencies:
-  - esbuild
