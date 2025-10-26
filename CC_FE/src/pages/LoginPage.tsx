@@ -119,6 +119,9 @@ export default function LoginPage() {
           <Link to="/signup" className="text-blue-600 hover:underline">
             회원가입
           </Link>
+          <Link to="/find-password" className="text-blue-600 hover:underline">
+            비밀번호 찾기
+          </Link>
         </div>
       </div>
     </div>

@@ -7,6 +7,8 @@ import type {
   MemberProfileResponse,
   WithdrawRequest,
   ChangePasswordRequest,
+  PasswordResetRequest,
+  PasswordConfirmRequest,
 } from './types';
 
 // [수정] 회원가입: publicClient 사용이 필수입니다.
@@ -57,4 +59,16 @@ export const withdrawAccount = async (data: WithdrawRequest): Promise<{ message:
 export const changePassword = async (data: ChangePasswordRequest): Promise<void> => {
   // 성공 시 204 No Content 이므로, 반환값이 없습니다 (Promise<void>).
   await authClient.patch('/api/v1/members/password', data);
+};
+
+// [1단계] 비밀번호 재설정 이메일 발송 요청
+export const requestPasswordReset = async (data: PasswordResetRequest): Promise<{ message: string }> => {
+  const response = await publicClient.post('/api/v1/auth/password-reset', data);
+  return response.data;
+};
+
+// [2단계] 새 비밀번호 설정 (토큰 검증 포함)
+export const confirmPasswordReset = async (data: PasswordConfirmRequest): Promise<{ message: string }> => {
+  const response = await publicClient.post('/api/v1/auth/password-reset/confirm', data);
+  return response.data;
 };
