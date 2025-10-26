@@ -55,7 +55,10 @@ export default function ProfilePage() {
         <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           회원정보 수정
         </Link>
-        {/* 회원 탈퇴 버튼 추가 */}
+        {/* 비밀번호 변경 버튼 추가 */}
+        <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+          비밀번호 변경
+        </Link>
         <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
           회원 탈퇴
         </Link>

@@ -56,3 +56,19 @@ export interface UpdateProfileRequest {
 export interface WithdrawRequest {
   password: string;
 }
+
+export interface ChangePasswordRequest {
+  oldPassword: string; // [수정] currentPassword -> oldPassword
+  newPassword: string;
+  newPasswordConfirm: string;
+}
+
+// 백엔드 에러 응답 타입 (다중 오류 메시지 처리를 위함)
+export interface BackendErrorResponse {
+  code: string;
+  message: string;
+  errors?: {
+    field: string;
+    message: string; // [수정] reason -> message
+  }[];
+}

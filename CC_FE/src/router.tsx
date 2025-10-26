@@ -8,6 +8,7 @@ import ProfileEditPage from '@/pages/ProfileEditPage';
 import WithdrawPage from '@/pages/WithdrawPage'; // WithdrawPage import 추가
 import ProtectedRoute from './router/ProtectedRoute';
 import NotFoundPage from '@/pages/NotFoundPage';
+import ChangePasswordPage from '@/pages/ChangePasswordPage'; // import 추가
 
 const router = createBrowserRouter([
   {
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
           { path: 'mypage', element: <ProfilePage /> },
           { path: 'mypage/edit', element: <ProfileEditPage /> },
           { path: 'mypage/withdraw', element: <WithdrawPage /> }, // 회원 탈퇴 페이지 라우트 추가
+          { path: 'mypage/password', element: <ChangePasswordPage /> }, // 비밀번호 변경 페이지 라우트 추가
         ],
       },
 
