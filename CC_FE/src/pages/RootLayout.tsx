@@ -1,5 +1,4 @@
-// src/pages/RootLayout.tsx
-import { Outlet, Link, useNavigate } from 'react-router-dom'; // useNavigate 추가
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function RootLayout() {
@@ -8,45 +7,46 @@ export default function RootLayout() {
 
   const handleLogout = async () => {
     await logout();
-    // TODO: "로그아웃 되었습니다" 같은 Toast 메시지를 띄우면 사용자 경험이 향상됩니다.
-    alert('안전하게 로그아웃 되었습니다.'); // 임시 알림
-    navigate('/'); // 메인 페이지로 이동
+    alert('안전하게 로그아웃 되었습니다.');
+    navigate('/');
   };
 
   return (
-    <div>
-      <header style={{ padding: 12, borderBottom: '1px solid #eee' }}>
-        <nav style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <Link to="/">홈</Link>
+    <div className="flex flex-col min-h-screen">
+      <header className="bg-white shadow-sm sticky top-0 z-10">
+        <nav className="container mx-auto px-4 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-lg font-bold text-gray-800 hover:text-blue-600">
+              홈
+            </Link>
           </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="flex items-center gap-4">
             {user ? (
               <>
-                <span>{user.nickname}님, 환영합니다!</span>
-                <button
-                  onClick={handleLogout}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    color: 'blue',
-                    textDecoration: 'underline',
-                  }}
-                >
+                <Link to="/mypage" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                  마이페이지
+                </Link>
+                <span className="text-sm">
+                  <span className="font-semibold">{user.nickname}</span>님
+                </span>
+                <button onClick={handleLogout} className="text-sm font-medium text-gray-600 hover:text-blue-600">
                   로그아웃
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login">로그인</Link>
-                <Link to="/signup">회원가입</Link>
+                <Link to="/login" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                  로그인
+                </Link>
+                <Link to="/signup" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                  회원가입
+                </Link>
               </>
             )}
           </div>
         </nav>
       </header>
-      <main className="p-4">
+      <main className="flex-grow bg-gray-50">
         <Outlet />
       </main>
     </div>
