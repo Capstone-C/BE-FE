@@ -12,6 +12,13 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <HomePage /> },
       { path: 'login', element: <LoginPage /> },
+      {
+        path: 'signup', // ⬅️ 여기에 추가
+        lazy: async () => {
+          const { default: Component } = await import('@/pages/SignupPage');
+          return { Component };
+        },
+      },
       { path: '*', element: <NotFoundPage /> },
     ],
   },
@@ -20,3 +27,7 @@ const router = createBrowserRouter([
 export default function AppRouter() {
   return <RouterProvider router={router} />; // ← fallbackElement 제거
 }
+
+
+
+
