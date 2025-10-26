@@ -1,0 +1,19 @@
+# Dependency directories
+node_modules
+
+# Vite build output
+dist
+
+# Vite cache
+.vite
+
+# Local env files
+.env
+.env*.local
+
+# IDE config
+.vscode
+
+# OS generated files
+.DS_Store
+Thumbs.db
