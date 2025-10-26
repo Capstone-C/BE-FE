@@ -22,3 +22,12 @@ export interface LoginResponse {
     role: 'USER' | 'ADMIN'; // 백엔드 응답에 따라 Enum 확장 가능
   };
 }
+
+export interface MemberProfileResponse {
+  id: number;
+  email: string;
+  nickname: string;
+  role: 'USER' | 'ADMIN';
+  joinedAt: string; // ISO 8601 형식의 문자열 (예: "2024-01-01T12:00:00")
+  lastLoginAt: string;
+}

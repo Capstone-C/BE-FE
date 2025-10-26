@@ -1,9 +1,6 @@
-import axios from 'axios';
-import { getToken } from '@/utils/token';
+import axios, { AxiosError } from 'axios'; // AxiosError를 axios에서 가져옵니다.
+import { getToken, removeToken } from '@/utils/token'; // removeToken을 token 유틸리티에서 가져옵니다.
 
-// baseURL을 명시하지 않거나 '/'로 설정합니다.
-// 이렇게 해야 모든 요청이 현재 페이지의 origin(예: http://localhost:5173)을 기준으로 전송되며,
-// Vite의 프록시 설정이 정상적으로 동작할 수 있습니다.
 const publicClient = axios.create({
   baseURL: '/',
 });
@@ -18,11 +15,19 @@ authClient.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // 요청 URL이 '/api'로 시작하는지 확인하는 것이 좋습니다.
-    // 만약 public asset 등을 요청할 경우를 대비할 수 있습니다.
     return config;
   },
-  (error) => {
+  (error) => Promise.reject(error),
+);
+
+authClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    if (error.response?.status === 401) {
+      removeToken();
+      alert('세션이 만료되었습니다. 다시 로그인해주세요.');
+      window.location.href = '/login';
+    }
     return Promise.reject(error);
   },
 );
