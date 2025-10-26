@@ -1,9 +1,17 @@
 // src/pages/RootLayout.tsx
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom'; // useNavigate 추가
 import { useAuth } from '@/hooks/useAuth';
 
 export default function RootLayout() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await logout();
+    // TODO: "로그아웃 되었습니다" 같은 Toast 메시지를 띄우면 사용자 경험이 향상됩니다.
+    alert('안전하게 로그아웃 되었습니다.'); // 임시 알림
+    navigate('/'); // 메인 페이지로 이동
+  };
 
   return (
     <div>
@@ -16,7 +24,16 @@ export default function RootLayout() {
             {user ? (
               <>
                 <span>{user.nickname}님, 환영합니다!</span>
-                <button onClick={logout} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'blue',
+                    textDecoration: 'underline',
+                  }}
+                >
                   로그아웃
                 </button>
               </>

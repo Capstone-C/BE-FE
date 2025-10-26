@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { AuthContext, AuthContextType } from '@/contexts/AuthContext'; // AuthContext와 타입을 import
+import { AuthContext, AuthContextType } from '@/contexts/AuthContext.definition';
 
 export function useAuth() {
   const context = useContext<AuthContextType | undefined>(AuthContext);
