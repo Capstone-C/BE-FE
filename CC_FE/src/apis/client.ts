@@ -1,36 +1,30 @@
 import axios from 'axios';
+import { getToken } from '@/utils/token';
 
-// const baseURL = import.meta.env.VITE_API_BASE_URL;
-const baseURL = '/';
-
-// 1. 인증이 필요 없는 '공개' API용 클라이언트
-export const publicClient = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+// baseURL을 명시하지 않거나 '/'로 설정합니다.
+// 이렇게 해야 모든 요청이 현재 페이지의 origin(예: http://localhost:5173)을 기준으로 전송되며,
+// Vite의 프록시 설정이 정상적으로 동작할 수 있습니다.
+const publicClient = axios.create({
+  baseURL: '/',
 });
 
-// 2. 인증 토큰이 필요한 API용 클라이언트
-export const authClient = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+const authClient = axios.create({
+  baseURL: '/',
 });
 
-// authClient에만 인터셉터를 설정하여 토큰을 추가하는 로직 (미래를 위한 준비)
 authClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken'); // 예시: 토큰을 로컬 스토리지에서 가져옴
+    const token = getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    // 요청 URL이 '/api'로 시작하는지 확인하는 것이 좋습니다.
+    // 만약 public asset 등을 요청할 경우를 대비할 수 있습니다.
     return config;
   },
   (error) => {
     return Promise.reject(error);
   },
 );
-export default class client {
-}
+
+export { publicClient, authClient };
