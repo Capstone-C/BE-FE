@@ -45,7 +45,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const value: AuthContextType = { user, login, logout, isInitialized };
+  const updateUser = useCallback((newUserData: User) => {
+    setUser(newUserData);
+  }, []);
+
+  const value: AuthContextType = { user, updateUser, login, logout, isInitialized };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
