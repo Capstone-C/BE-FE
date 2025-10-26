@@ -52,3 +52,7 @@ export interface UpdateProfileRequest {
   nickname?: string;
   profileImage?: File | null;
 }
+
+export interface WithdrawRequest {
+  password: string;
+}

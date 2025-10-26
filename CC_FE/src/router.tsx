@@ -4,7 +4,8 @@ import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import SignupPage from '@/pages/SignupPage';
 import ProfilePage from '@/pages/ProfilePage';
-import ProfileEditPage from '@/pages/ProfileEditPage'; // ProfileEditPage import
+import ProfileEditPage from '@/pages/ProfileEditPage';
+import WithdrawPage from '@/pages/WithdrawPage'; // WithdrawPage import 추가
 import ProtectedRoute from './router/ProtectedRoute';
 import NotFoundPage from '@/pages/NotFoundPage';
 
@@ -22,7 +23,8 @@ const router = createBrowserRouter([
         element: <ProtectedRoute />,
         children: [
           { path: 'mypage', element: <ProfilePage /> },
-          { path: 'mypage/edit', element: <ProfileEditPage /> }, // 수정 페이지 라우트 추가
+          { path: 'mypage/edit', element: <ProfileEditPage /> },
+          { path: 'mypage/withdraw', element: <WithdrawPage /> }, // 회원 탈퇴 페이지 라우트 추가
         ],
       },
 
