@@ -72,3 +72,13 @@ export interface BackendErrorResponse {
     message: string; // [수정] reason -> message
   }[];
 }
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordConfirmRequest {
+  token: string;
+  newPassword: string;
+  newPasswordConfirm: string;
+}
