@@ -1,45 +1,40 @@
-# =================================================================
-# 1단계: 빌드 환경 (Builder)
-# Node.js 22.21.0 버전을 기반으로 프로젝트를 빌드합니다.
-# =================================================================
-FROM node:22.21.0-alpine AS builder
+# --- 1단계: 빌드 환경 (Builder) ---
+# Node.js 22.21.0 버전을 기반으로 빌드 환경을 구성합니다.
+FROM node:22.21.0-alpine As builder
 
-# 작업 디렉토리 설정
+# 작업 디렉토리를 /app으로 설정합니다.
 WORKDIR /app
 
-# pnpm 설치 (alpine 버전에는 pnpm이 기본 포함되어 있지 않음)
+# 의존성 파일들을 먼저 복사합니다. (Docker 캐싱 최적화)
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
+
+# pnpm을 전역으로 설치합니다.
 RUN npm install -g pnpm
 
-# 의존성 설치를 위해 package.json과 lock 파일만 먼저 복사
-COPY package.json pnpm-lock.yaml ./
+# 의존성을 설치합니다.
+RUN pnpm install
 
-# 의존성 설치 (프로덕션용)
-RUN pnpm install --frozen-lockfile
-
-# 프로젝트 전체 소스코드 복사
+# 소스 코드를 복사합니다.
 COPY . .
 
-# React 앱 빌드
+# 프로덕션용으로 앱을 빌드합니다.
 RUN pnpm build
 
 
-# =================================================================
-# 2단계: 실행 환경 (Runner)
-# 빌드된 정적 파일들을 서빙할 가벼운 웹서버(Nginx)를 사용합니다.
-# =================================================================
-FROM nginx:1.27.0-alpine
+# --- 2단계: 프로덕션 환경 (Runner) ---
+# 가벼운 웹 서버인 Nginx를 기반으로 최종 이미지를 만듭니다.
+FROM nginx:1.27-alpine
 
-# Nginx 기본 설정을 삭제
-RUN rm /etc/nginx/conf.d/default.conf
-
-# 우리가 만든 Nginx 설정을 복사
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# 빌드 단계(builder)에서 생성된 결과물(dist 폴더)을 Nginx가 서빙할 위치로 복사
+# 빌드 단계에서 생성된 결과물(dist 폴더)을 Nginx가 웹 콘텐츠를 서빙하는 기본 폴더로 복사합니다.
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# 컨테이너 외부로 80번 포트를 노출
+# SPA(Single Page Application)를 위한 Nginx 설정을 복사합니다.
+# 이 설정은 어떤 경로로 접속하든 index.html을 먼저 보여주게 하여 React Router가 작동하도록 합니다.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# 80번 포트를 외부에 노출합니다.
 EXPOSE 80
 
-# Nginx 실행
+# Nginx를 실행합니다.
 CMD ["nginx", "-g", "daemon off;"]
