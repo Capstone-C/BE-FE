@@ -1,6 +1,8 @@
-import axios, { AxiosError } from 'axios'; // AxiosError를 axios에서 가져옵니다.
-import { getToken, removeToken } from '@/utils/token'; // removeToken을 token 유틸리티에서 가져옵니다.
+// src/apis/client.ts (올바른 최종본)
+import axios, { AxiosError } from 'axios';
+import { getToken, removeToken } from '@/utils/token';
 
+// publicClient는 아무런 인터셉터가 없어야 합니다.
 const publicClient = axios.create({
   baseURL: '/',
 });
@@ -9,6 +11,7 @@ const authClient = axios.create({
   baseURL: '/',
 });
 
+// 요청 인터셉터는 authClient에만 적용되어야 합니다.
 authClient.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -20,6 +23,7 @@ authClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+// 응답 인터셉터도 authClient에만 적용되어야 합니다.
 authClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {

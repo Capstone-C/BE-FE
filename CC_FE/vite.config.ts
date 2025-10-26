@@ -1,7 +1,7 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import { fileURLToPath, URL } from 'node:url'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { fileURLToPath, URL } from 'node:url';
+import tailwindcss from '@tailwindcss/vite';
 
 // npm i -D babel-plugin-react-compiler (또는 pnpm add -D ...)
 export default defineConfig({
@@ -11,6 +11,10 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8080', // 백엔드 서버 주소
         changeOrigin: true, // cross-origin 요청을 허용합니다.
+      },
+      '/static': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
       },
     },
   },
@@ -26,4 +30,4 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-})
+});

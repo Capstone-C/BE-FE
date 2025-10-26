@@ -23,11 +23,32 @@ export interface LoginResponse {
   };
 }
 
+// 프로필 이미지 객체 타입
+export interface Profile {
+  id: number;
+  url: string;
+}
+
+// 회원 정보 수정 요청 타입
+export interface UpdateProfileRequest {
+  nickname?: string;
+  profileImage?: File | null;
+}
+
+// 확장된 회원 프로필 조회 응답 타입 (기존 정의를 이것으로 교체)
 export interface MemberProfileResponse {
   id: number;
   email: string;
   nickname: string;
   role: 'USER' | 'ADMIN';
-  joinedAt: string; // ISO 8601 형식의 문자열 (예: "2024-01-01T12:00:00")
+  profile: string | null; // profile 객체 추가 (null일 수 있음)
+  exportScore: number;
+  representativeBadgeId: number | null;
+  joinedAt: string;
   lastLoginAt: string;
+}
+
+export interface UpdateProfileRequest {
+  nickname?: string;
+  profileImage?: File | null;
 }
