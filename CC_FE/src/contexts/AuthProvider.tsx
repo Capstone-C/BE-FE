@@ -1,19 +1,10 @@
-// src/contexts/AuthContext.tsx (최종 수정본)
-import { createContext, useState, ReactNode, useEffect } from 'react';
+import { useState, ReactNode, useEffect, useCallback } from 'react';
 import { LoginResponse } from '@/apis/types';
 import { getToken, setToken, removeToken } from '@/utils/token';
-import { getMe } from '@/apis/auth';
+import { getMe, logout as logoutApi } from '@/apis/auth';
+import { AuthContext, AuthContextType } from './AuthContext.definition';
 
 type User = LoginResponse['member'];
-
-export interface AuthContextType {
-  user: User | null;
-  login: (userData: User, token: string) => void;
-  logout: () => void;
-  isInitialized: boolean;
-}
-
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -33,7 +24,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setIsInitialized(true);
     };
-    initializeAuth();
+
+    // 'void' 연산자를 사용하여 floating promise 경고를 해결합니다.
+    void initializeAuth();
   }, []);
 
   const login = (userData: User, token: string) => {
@@ -41,12 +34,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(token);
   };
 
-  const logout = () => {
-    setUser(null);
-    removeToken();
-  };
+  const logout = useCallback(async () => {
+    try {
+      await logoutApi();
+    } catch (error) {
+      console.error('로그아웃 API 호출에 실패했습니다:', error);
+    } finally {
+      setUser(null);
+      removeToken();
+    }
+  }, []);
 
-  const value = { user, login, logout, isInitialized };
+  const value: AuthContextType = { user, login, logout, isInitialized };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
