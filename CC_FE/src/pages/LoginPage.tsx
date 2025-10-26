@@ -30,18 +30,15 @@ export default function LoginPage() {
       navigate('/');
     },
     onError: (error: AxiosError<{ code?: string; message: string }>) => {
-      // 실패 시: 요구사항 명세서에 따른 분기 처리
       const responseData = error.response?.data;
-
-      // 비밀번호 필드 초기화
-      setFormData(prev => ({ ...prev, password: '' }));
+      setFormData((prev) => ({ ...prev, password: '' }));
 
       if (error.response?.status === 401 && responseData?.code === 'AUTH_INVALID_CREDENTIALS') {
         setErrorMessage('이메일 또는 비밀번호가 일치하지 않습니다.');
       } else if (error.response?.status === 403 && responseData?.code === 'AUTH_WITHDRAWN_MEMBER') {
-        setErrorMessage('탈퇴한 회원이거나 이용이 정지된 계정입니다.');
+        // ✨ 탈퇴한 회원에 대한 처리 분기 추가
+        setErrorMessage('탈퇴 처리되었거나 이용이 정지된 계정입니다.');
       } else {
-        // Case 5: 그 외 서버 오류
         setErrorMessage('일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
       }
       console.error('로그인 실패:', error);
@@ -71,7 +68,9 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 이메일 입력 필드 */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">이메일</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              이메일
+            </label>
             <input
               id="email"
               name="email"
@@ -86,7 +85,9 @@ export default function LoginPage() {
 
           {/* 비밀번호 입력 필드 */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">비밀번호</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              비밀번호
+            </label>
             <input
               id="password"
               name="password"
@@ -100,9 +101,7 @@ export default function LoginPage() {
           </div>
 
           {/* 서버 에러 메시지 표시 */}
-          {errorMessage && (
-            <p className="text-sm text-red-600 text-center">{errorMessage}</p>
-          )}
+          {errorMessage && <p className="text-sm text-red-600 text-center">{errorMessage}</p>}
 
           {/* 로그인 버튼 */}
           <div>
@@ -116,7 +115,10 @@ export default function LoginPage() {
           </div>
         </form>
         <div className="mt-4 text-center">
-          계정이 없으신가요? <Link to="/signup" className="text-blue-600 hover:underline">회원가입</Link>
+          계정이 없으신가요?{' '}
+          <Link to="/signup" className="text-blue-600 hover:underline">
+            회원가입
+          </Link>
         </div>
       </div>
     </div>

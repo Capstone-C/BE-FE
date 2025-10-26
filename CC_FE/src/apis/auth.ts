@@ -1,5 +1,12 @@
 import { publicClient, authClient } from './client';
-import type { SignupRequest, LoginRequest, LoginResponse, UpdateProfileRequest, MemberProfileResponse } from './types';
+import type {
+  SignupRequest,
+  LoginRequest,
+  LoginResponse,
+  UpdateProfileRequest,
+  MemberProfileResponse,
+  WithdrawRequest,
+} from './types';
 
 // [수정] 회원가입: publicClient 사용이 필수입니다.
 export const signup = async (userData: SignupRequest) => {
@@ -36,5 +43,11 @@ export const updateProfile = async (updateData: UpdateProfileRequest): Promise<M
     formData.append('profileImage', updateData.profileImage);
   }
   const response = await authClient.patch<MemberProfileResponse>('/api/v1/members/me', formData);
+  return response.data;
+};
+
+export const withdrawAccount = async (data: WithdrawRequest): Promise<{ message: string }> => {
+  // DELETE 메소드는 보통 body를 보내지 않지만, axios는 data 옵션을 통해 보낼 수 있습니다.
+  const response = await authClient.delete<{ message: string }>('/api/v1/members/me', { data });
   return response.data;
 };
