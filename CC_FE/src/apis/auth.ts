@@ -6,6 +6,7 @@ import type {
   UpdateProfileRequest,
   MemberProfileResponse,
   WithdrawRequest,
+  ChangePasswordRequest,
 } from './types';
 
 // [수정] 회원가입: publicClient 사용이 필수입니다.
@@ -50,4 +51,10 @@ export const withdrawAccount = async (data: WithdrawRequest): Promise<{ message:
   // DELETE 메소드는 보통 body를 보내지 않지만, axios는 data 옵션을 통해 보낼 수 있습니다.
   const response = await authClient.delete<{ message: string }>('/api/v1/members/me', { data });
   return response.data;
+};
+
+// 비밀번호 변경: authClient 사용, PATCH 메소드
+export const changePassword = async (data: ChangePasswordRequest): Promise<void> => {
+  // 성공 시 204 No Content 이므로, 반환값이 없습니다 (Promise<void>).
+  await authClient.patch('/api/v1/members/password', data);
 };
