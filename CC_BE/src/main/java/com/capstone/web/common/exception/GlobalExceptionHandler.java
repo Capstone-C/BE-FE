@@ -22,6 +22,8 @@ import com.capstone.web.member.exception.PasswordResetException;
 import com.capstone.web.member.exception.PasswordResetErrorCode;
 import com.capstone.web.member.exception.MemberBlockException;
 import com.capstone.web.member.exception.MemberBlockErrorCode;
+import com.capstone.web.member.exception.InvalidWithdrawPasswordException;
+import com.capstone.web.member.exception.MemberWithdrawErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -153,6 +155,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UnauthorizedDiaryAccessException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorizedDiaryAccess(UnauthorizedDiaryAccessException ex) {
         return buildDiaryErrorResponse(DiaryErrorCode.UNAUTHORIZED_DIARY_ACCESS);
+    }
+
+    @ExceptionHandler(InvalidWithdrawPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidWithdrawPassword(InvalidWithdrawPasswordException ex) {
+        MemberWithdrawErrorCode errorCode = ex.getErrorCode();
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
+        ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.status()).body(response);
     }
 
     private ErrorResponse.FieldError toFieldError(FieldError error) {
