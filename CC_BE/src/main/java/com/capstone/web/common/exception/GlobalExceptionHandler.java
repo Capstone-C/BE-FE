@@ -18,6 +18,8 @@ import com.capstone.web.member.exception.PasswordResetException;
 import com.capstone.web.member.exception.PasswordResetErrorCode;
 import com.capstone.web.member.exception.MemberBlockException;
 import com.capstone.web.member.exception.MemberBlockErrorCode;
+import com.capstone.web.member.exception.InvalidWithdrawPasswordException;
+import com.capstone.web.member.exception.MemberWithdrawErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -134,6 +136,14 @@ public class GlobalExceptionHandler {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("memberBlock", code.name());
         ErrorResponse response = ErrorResponse.of(status, "MEMBER_BLOCK_" + code.name(), code.name(), List.of(fieldError));
         return ResponseEntity.status(status).body(response);
+    }
+
+    @ExceptionHandler(InvalidWithdrawPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidWithdrawPassword(InvalidWithdrawPasswordException ex) {
+        MemberWithdrawErrorCode errorCode = ex.getErrorCode();
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
+        ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.status()).body(response);
     }
 
     private ErrorResponse.FieldError toFieldError(FieldError error) {
