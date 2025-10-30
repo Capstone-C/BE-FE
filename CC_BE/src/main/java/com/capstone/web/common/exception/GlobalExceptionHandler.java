@@ -28,6 +28,9 @@ import com.capstone.web.refrigerator.exception.DuplicateItemException;
 import com.capstone.web.refrigerator.exception.ItemNotFoundException;
 import com.capstone.web.refrigerator.exception.RefrigeratorErrorCode;
 import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
+import com.capstone.web.ocr.exception.InvalidImageFileException;
+import com.capstone.web.ocr.exception.OcrErrorCode;
+import com.capstone.web.ocr.exception.OcrProcessingException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -209,6 +212,22 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ErrorResponse> buildRefrigeratorErrorResponse(RefrigeratorErrorCode errorCode) {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("refrigeratorItem", errorCode.getCode());
         ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST, errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(OcrProcessingException.class)
+    public ResponseEntity<ErrorResponse> handleOcrProcessing(OcrProcessingException ex) {
+        return buildOcrErrorResponse(OcrErrorCode.OCR_PROCESSING_FAILED, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidImageFileException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidImageFile(InvalidImageFileException ex) {
+        return buildOcrErrorResponse(OcrErrorCode.INVALID_IMAGE_FILE, ex.getMessage());
+    }
+
+    private ResponseEntity<ErrorResponse> buildOcrErrorResponse(OcrErrorCode errorCode, String message) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("ocr", errorCode.name());
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST, errorCode.name(), message, List.of(fieldError));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }
