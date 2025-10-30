@@ -1,18 +1,21 @@
-
 package com.capstone.web.member.controller;
 
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.dto.MemberProfileResponse;
+import com.capstone.web.member.dto.MemberWithdrawRequest;
 import com.capstone.web.member.repository.MemberRepository;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import com.capstone.web.member.service.MemberUpdateService;
+import com.capstone.web.member.exception.InvalidWithdrawPasswordException;
 
 @RestController
 @RequestMapping("/api/v1/members")
@@ -21,6 +24,7 @@ public class MemberQueryController {
 
     private final MemberRepository memberRepository;
     private final MemberUpdateService memberUpdateService;
+    private final PasswordEncoder passwordEncoder;
 
     @Operation(summary = "내 프로필 조회", description = "로그인한 회원의 상세 정보를 반환합니다.", security = @SecurityRequirement(name = "JWT"))
     @GetMapping("/me")
@@ -59,11 +63,17 @@ public class MemberQueryController {
         return ResponseEntity.ok(updated);
     }
 
-    @Operation(summary = "회원 탈퇴", description = "로그인한 회원이 soft delete 처리됩니다.\n- 실제 레코드는 삭제되지 않고 deletedAt 이 세팅됩니다.\n- 탈퇴 후 동일 토큰으로 접근 시 별도 정책에 따라 제한 가능.\n- 재가입 시 이메일/닉네임 중복 정책 고려 필요.", security = @SecurityRequirement(name = "JWT"))
+    @Operation(summary = "회원 탈퇴", description = "로그인한 회원이 soft delete 처리됩니다.\n- 비밀번호 확인 필수\n- 실제 레코드는 삭제되지 않고 deletedAt 이 세팅됩니다.\n- 탈퇴 후 동일 토큰으로 접근 시 별도 정책에 따라 제한 가능.\n- 재가입 시 이메일/닉네임 중복 정책 고려 필요.", security = @SecurityRequirement(name = "JWT"))
     @DeleteMapping("/me")
-    public ResponseEntity<Void> withdrawMe(Authentication authentication) {
+    public ResponseEntity<Void> withdrawMe(Authentication authentication, @Valid @RequestBody MemberWithdrawRequest request) {
         MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
         Member member = memberRepository.findById(principal.id()).orElseThrow();
+        
+        // 비밀번호 검증
+        if (!passwordEncoder.matches(request.password(), member.getPassword())) {
+            throw new InvalidWithdrawPasswordException();
+        }
+        
         if (!member.isDeleted()) {
             member.softDelete();
             memberRepository.save(member);
