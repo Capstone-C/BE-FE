@@ -59,7 +59,17 @@ public class DiaryController {
 
     @Operation(
         summary = "식단 기록 생성",
-        description = "새로운 식단 기록을 생성합니다.",
+        description = """
+            새로운 식단 기록을 생성합니다.
+            
+            **DIARY-03**: 사용자가 직접 입력하여 식단 기록 생성
+            **DIARY-06**: 레시피에서 가져와서 식단 기록 생성
+            - 레시피의 제목 → content
+            - 레시피의 이미지 → imageUrl
+            - 레시피의 ID → recipeId
+            
+            같은 날짜, 같은 식사 타입에 중복 기록은 불가능합니다.
+            """,
         security = @SecurityRequirement(name = "JWT")
     )
     @PostMapping

@@ -21,6 +21,8 @@ public class DiaryDto {
 
     /**
      * 식단 기록 생성 요청 DTO
+     * DIARY-03: 직접 입력하여 식단 기록
+     * DIARY-06: 레시피에서 가져와서 식단 기록 (recipeId, content에 레시피 제목, imageUrl에 레시피 이미지)
      */
     @Getter
     @Builder
@@ -40,6 +42,11 @@ public class DiaryDto {
 
         private String imageUrl;
 
+        /**
+         * 레시피 ID (선택)
+         * DIARY-06: 레시피에서 다이어리로 추가할 때 사용
+         * 어떤 레시피로부터 기록되었는지 추적
+         */
         private Long recipeId;
     }
 
