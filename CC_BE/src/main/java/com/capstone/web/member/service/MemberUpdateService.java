@@ -51,14 +51,12 @@ public class MemberUpdateService {
         if (!NICKNAME_PATTERN.matcher(nickname).matches()) {
             throw new InvalidNicknameException();
         }
-        if (memberRepository.existsByNickname(nickname)) {
-            // 자기 자신 제외
-            memberRepository.findById(selfId).ifPresent(m -> {
-                if (!m.getNickname().equals(nickname)) {
-                    throw new DuplicateNicknameException();
-                }
-            });
-        }
+        // 닉네임 중복 검증 (자기 자신 제외)
+        memberRepository.findByNickname(nickname).ifPresent(existingMember -> {
+            if (!existingMember.getId().equals(selfId)) {
+                throw new DuplicateNicknameException();
+            }
+        });
     }
 
     private void validateImage(MultipartFile file) {
