@@ -42,6 +42,8 @@ services:
       MYSQL_PASSWORD: devpass
     ports:
       - "8080:8080"
+    volumes: # volumes 섹션을 추가합니다.
+      - ./uploads:/app/uploads # 호스트의 ./uploads 폴더를 컨테이너의 /app/uploads 폴더에 마운트
 
   frontend:
     build:
