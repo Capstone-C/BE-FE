@@ -1,6 +1,6 @@
 # --- 1단계: 빌드 환경 (Builder) ---
 # Node.js 22.21.0 버전을 기반으로 빌드 환경을 구성합니다.
-FROM node:22.21.0-alpine As builder
+FROM node:22.21.0-alpine AS builder
 
 # 작업 디렉토리를 /app으로 설정합니다.
 WORKDIR /app

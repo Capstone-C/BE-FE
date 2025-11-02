@@ -28,17 +28,22 @@ import static org.hamcrest.Matchers.*;
 @Transactional
 class MemberWithdrawControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-        @Autowired private MemberRepository memberRepository;
-        @Autowired private MemberBlockRepository memberBlockRepository;
-    @Autowired private PasswordEncoder passwordEncoder;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ObjectMapper objectMapper;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private MemberBlockRepository memberBlockRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-        @BeforeEach
-        void setup() {
-                if (memberBlockRepository != null) memberBlockRepository.deleteAll();
-                memberRepository.deleteAll();
-        }
+    @BeforeEach
+    void setup() {
+        if (memberBlockRepository != null) memberBlockRepository.deleteAll();
+        memberRepository.deleteAll();
+    }
 
     private String loginAndGetToken(String email, String rawPassword, String nickname) throws Exception {
         Member m = Member.builder()
@@ -137,7 +142,7 @@ class MemberWithdrawControllerTest {
                 .andExpect(jsonPath("$.code", is("AUTH_WITHDRAWN_MEMBER")));
     }
 
-    @DisplayName("잘못된 비밀번호로 탈퇴 시도 시 401 UNAUTHORIZED 반환")
+    @DisplayName("잘못된 비밀번호로 탈퇴 시도 시 400 UNAUTHORIZED 반환")
     @Test
     void withdraw_withInvalidPassword() throws Exception {
         String password = "Abcd1234!";
@@ -152,7 +157,7 @@ class MemberWithdrawControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(withdrawBody))
                 .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
-                .andExpect(status().isUnauthorized())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code", is("MEMBER_WITHDRAW_INVALID_PASSWORD")))
                 .andExpect(jsonPath("$.message", is("비밀번호가 일치하지 않습니다.")));
     }

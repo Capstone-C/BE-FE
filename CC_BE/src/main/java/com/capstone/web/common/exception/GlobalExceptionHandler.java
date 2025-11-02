@@ -4,6 +4,10 @@ import com.capstone.web.auth.exception.AuthErrorCode;
 import com.capstone.web.auth.exception.InvalidCredentialsException;
 import com.capstone.web.auth.exception.WithdrawnMemberException;
 import com.capstone.web.common.response.ErrorResponse;
+import com.capstone.web.diary.exception.DiaryErrorCode;
+import com.capstone.web.diary.exception.DiaryNotFoundException;
+import com.capstone.web.diary.exception.DuplicateDiaryEntryException;
+import com.capstone.web.diary.exception.UnauthorizedDiaryAccessException;
 import com.capstone.web.member.exception.DuplicateEmailException;
 import com.capstone.web.member.exception.DuplicateNicknameException;
 import com.capstone.web.member.exception.InvalidNicknameException;
@@ -138,6 +142,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
+    @ExceptionHandler(DiaryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleDiaryNotFound(DiaryNotFoundException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.DIARY_NOT_FOUND);
+    }
+
+    @ExceptionHandler(DuplicateDiaryEntryException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateDiaryEntry(DuplicateDiaryEntryException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.DUPLICATE_DIARY_ENTRY);
+    }
+
+    @ExceptionHandler(UnauthorizedDiaryAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedDiaryAccess(UnauthorizedDiaryAccessException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.UNAUTHORIZED_DIARY_ACCESS);
+    }
+
     @ExceptionHandler(InvalidWithdrawPasswordException.class)
     public ResponseEntity<ErrorResponse> handleInvalidWithdrawPassword(InvalidWithdrawPasswordException ex) {
         MemberWithdrawErrorCode errorCode = ex.getErrorCode();
@@ -160,5 +179,11 @@ public class GlobalExceptionHandler {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
         ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
         return ResponseEntity.status(errorCode.status()).body(response);
+    }
+
+    private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
+        ErrorResponse response = ErrorResponse.of(errorCode.getHttpStatus(), errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
 }
