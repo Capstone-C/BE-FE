@@ -247,10 +247,4 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.of(HttpStatus.FORBIDDEN, "COMMENT_PERMISSION_DENIED", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
-
-    private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
-        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
-        ErrorResponse response = ErrorResponse.of(errorCode.getHttpStatus(), errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
-        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
-    }
 }

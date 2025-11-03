@@ -161,24 +161,4 @@ class MemberWithdrawControllerTest {
                 .andExpect(jsonPath("$.code", is("MEMBER_WITHDRAW_INVALID_PASSWORD")))
                 .andExpect(jsonPath("$.message", is("비밀번호가 일치하지 않습니다.")));
     }
-
-    @DisplayName("잘못된 비밀번호로 탈퇴 시도 시 401 UNAUTHORIZED 반환")
-    @Test
-    void withdraw_withInvalidPassword() throws Exception {
-        String password = "Abcd1234!";
-        String token = loginAndGetToken("wd4@example.com", password, "탈퇴4");
-
-        // 잘못된 비밀번호로 탈퇴 시도
-        MemberWithdrawRequest wrongPasswordRequest = new MemberWithdrawRequest("WrongPassword123!");
-        String withdrawBody = objectMapper.writeValueAsString(wrongPasswordRequest);
-
-        mockMvc.perform(delete("/api/v1/members/me")
-                        .header("Authorization", "Bearer " + token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(withdrawBody))
-                .andDo(org.springframework.test.web.servlet.result.MockMvcResultHandlers.print())
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code", is("MEMBER_WITHDRAW_INVALID_PASSWORD")))
-                .andExpect(jsonPath("$.message", is("비밀번호가 일치하지 않습니다.")));
-    }
 }
