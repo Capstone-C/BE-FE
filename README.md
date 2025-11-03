@@ -16,7 +16,18 @@
 
 ---
 ## 3. 기술 스택 (Technology Stack)
-### Frontend (미정)
+
+### Frontend
+| 항목 | 선택 | 비고 |
+|------|------|------|
+| Language | TypeScript | |
+| Framework | React 19 | Vite 7, React Compiler |
+| State Management | TanStack Query v5 | 서버 상태 관리 |
+| Routing | React Router DOM v7 | Data Router |
+| Styling | Tailwind CSS v4 | 유틸리티 우선 CSS |
+| Build Tool | Vite | |
+| Package Manager | pnpm | |
+
 
 ### Backend
 | 항목 | 선택 | 비고 |
@@ -73,6 +84,82 @@ JSON -> http://localhost:8080/v3/api-docs
 	3.	Import as Gradle Project 선택
 
 → 이렇게 하면 기존 프로젝트 안에 백엔드 모듈이 추가됨.
+
+### Frontend 개발 환경 구성 가이드
+
+#### 1) 사전 준비물 (Prerequisites)
+- **Git**
+- **Docker Desktop**: [공식 홈페이지](https://www.docker.com/products/docker-desktop/)에서 설치
+- **nvm-windows**: [GitHub Releases](https://github.com/coreybutler/nvm-windows/releases)에서 `nvm-setup.zip` 다운로드 및 설치
+- **pnpm**: `npm install -g pnpm` 명령어로 설치
+- **VS Code** (권장): 아래 확장 프로그램 설치를 권장합니다.
+  - `ESLint`
+  - `Prettier - Code formatter`
+  - `Tailwind CSS IntelliSense`
+
+#### 2) 프로젝트 클론 및 초기 설정
+```bash
+# 1. 프로젝트를 클론합니다.
+git clone [레포지토리 주소]
+
+# 2. 프로젝트 루트 폴더로 이동합니다.
+cd BE-FE
+
+# 3. .nvmrc 파일에 명시된 Node.js 버전을 자동으로 설치 및 사용합니다.
+nvm install
+nvm use
+
+# 4. pnpm 사용을 강제하는 corepack을 활성화합니다. (PC에서 최초 1회만 실행)
+corepack enable
+
+# 5. 프론트엔드 의존성 패키지를 설치합니다.
+cd CC_FE
+pnpm install
+```
+
+#### 3) 환경 변수 설정
+프론트엔드 폴더(`CC_FE`)에서 `.env.example` 파일을 복사하여 `.env` 파일을 생성하고, 아래와 같이 환경 변수를 설정합니다.
+```bash
+# CC_FE/.env.example 파일을 복사하여 CC_FE/.env 파일 생성
+# 아래 내용을 .env 파일에 입력
+
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+### 개발/실행 방법
+
+#### A) 로컬 개발 모드 (FE는 로컬, BE/DB는 Docker)
+> 프론트엔드 코드를 수정하며 바로바로 화면 변화를 확인하고 싶을 때 사용하는 가장 일반적인 방식입니다.
+
+```bash
+# 1. (프로젝트 루트에서) 백엔드와 DB만 Docker로 실행합니다.
+docker compose up -d backend mysql
+
+# 2. (별도의 터미널에서) 프론트엔드 개발 서버를 실행합니다.
+cd CC_FE
+pnpm dev
+```
+- **프론트엔드 접속**: `http://localhost:5173`
+- **백엔드 API (Swagger)**: `http://localhost:8080/v3/api-docs`
+
+#### B) 통합 실행 모드 (FE/BE/DB 전체 Docker)
+> 전체 시스템이 통합적으로 잘 동작하는지 확인하거나, 실제 배포 환경과 유사하게 테스트하고 싶을 때 사용합니다.
+
+```bash
+# 1. (프로젝트 루트에서) 모든 서비스를 Docker로 빌드하고 실행합니다.
+docker compose up --build
+```
+- **프론트엔드 접속**: `http://localhost:3000`
+- **백엔드 API (Swagger)**: `http://localhost:8080/v3/api-docs`
+
+#### C) 서비스 중지 및 초기화
+```bash
+# (프로젝트 루트에서) 모든 컨테이너를 중지하고 제거합니다.
+docker compose down
+
+# 컨테이너와 함께 데이터 볼륨(DB 데이터 등)까지 모두 삭제합니다.
+docker compose down -v
+```
 
 ---
 ## 4. 협업 (Collaboration)

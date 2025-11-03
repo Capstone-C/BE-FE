@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,12 +14,14 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class ProfileImageStorage {
 
-    private final Path baseDir;
+    private final Path profileImageDir;
 
-    public ProfileImageStorage(@Value("${app.profile-image-dir:uploads/profile}") String dir) throws IOException {
-        this.baseDir = Path.of(dir);
-        if (!Files.exists(baseDir)) {
-            Files.createDirectories(baseDir);
+    // 생성자를 수정하여 profile 이미지만을 위한 특정 경로를 설정합니다.
+    public ProfileImageStorage(@Value("${app.upload-dir}") String uploadDir) throws IOException {
+        // 'uploads/' + 'profile/' = 'uploads/profile/'
+        this.profileImageDir = Path.of(uploadDir, "profile");
+        if (!Files.exists(profileImageDir)) {
+            Files.createDirectories(profileImageDir);
         }
     }
 
@@ -30,8 +33,13 @@ public class ProfileImageStorage {
         }
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         String filename = memberId + "_" + timestamp + ext;
-        Path target = baseDir.resolve(filename);
+
+        // 저장 경로를 profileImageDir 기준으로 변경합니다.
+        Path target = profileImageDir.resolve(filename);
+
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
-        return "/static/profile/" + filename; // TODO: 실서비스 경로 매핑 필요
+
+        // 반환되는 URL 경로는 기존과 동일하게 유지합니다.
+        return "/static/profile/" + filename;
     }
 }

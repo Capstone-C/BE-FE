@@ -8,9 +8,11 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.lang.NonNull;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -36,9 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
-        throws ServletException, IOException {
-    String path = request.getRequestURI();
-    String method = request.getMethod();
+            throws ServletException, IOException {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
         // 공개 엔드포인트: 로그인, 로그아웃, Swagger 문서 -> 인증 시도 생략
         if (isPublic(path, method)) {
             filterChain.doFilter(request, response);
@@ -87,7 +89,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 // 비밀번호 재설정 (요청 & 확인) 공개 엔드포인트
                 || path.startsWith("/api/v1/auth/password-reset")
                 || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui");
+                || path.startsWith("/swagger-ui")
+                // JwtAuthenticationFilter가 정적 리소스 요청을 인증 검사 대상에서 제외하도록 /static 경로 추가
+                || path.startsWith("/static");
     }
 
     private void unauthorized(HttpServletResponse response, String code, String message) throws IOException {
@@ -96,8 +100,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         response.getWriter().write("{\"code\":\"" + code + "\",\"message\":\"" + message + "\"}");
     }
 
-    /** 인증된 회원 정보를 보관하는 최소 Principal */
+    /**
+     * 인증된 회원 정보를 보관하는 최소 Principal
+     */
     public record MemberPrincipal(Long id, String email, String nickname, String role) {
-        public MemberPrincipal(Member m) { this(m.getId(), m.getEmail(), m.getNickname(), m.getRole().name()); }
+        public MemberPrincipal(Member m) {
+            this(m.getId(), m.getEmail(), m.getNickname(), m.getRole().name());
+        }
     }
 }

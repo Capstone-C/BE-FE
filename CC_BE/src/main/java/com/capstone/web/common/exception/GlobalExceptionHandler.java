@@ -6,6 +6,10 @@ import com.capstone.web.auth.exception.WithdrawnMemberException;
 import com.capstone.web.comment.exception.CommentNotFoundException;
 import com.capstone.web.comment.exception.CommentPermissionException;
 import com.capstone.web.common.response.ErrorResponse;
+import com.capstone.web.diary.exception.DiaryErrorCode;
+import com.capstone.web.diary.exception.DiaryNotFoundException;
+import com.capstone.web.diary.exception.DuplicateDiaryEntryException;
+import com.capstone.web.diary.exception.UnauthorizedDiaryAccessException;
 import com.capstone.web.member.exception.DuplicateEmailException;
 import com.capstone.web.member.exception.DuplicateNicknameException;
 import com.capstone.web.member.exception.InvalidNicknameException;
@@ -20,6 +24,8 @@ import com.capstone.web.member.exception.PasswordResetException;
 import com.capstone.web.member.exception.PasswordResetErrorCode;
 import com.capstone.web.member.exception.MemberBlockException;
 import com.capstone.web.member.exception.MemberBlockErrorCode;
+import com.capstone.web.member.exception.InvalidWithdrawPasswordException;
+import com.capstone.web.member.exception.MemberWithdrawErrorCode;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -138,6 +144,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(response);
     }
 
+    @ExceptionHandler(DiaryNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleDiaryNotFound(DiaryNotFoundException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.DIARY_NOT_FOUND);
+    }
+
+    @ExceptionHandler(DuplicateDiaryEntryException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateDiaryEntry(DuplicateDiaryEntryException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.DUPLICATE_DIARY_ENTRY);
+    }
+
+    @ExceptionHandler(UnauthorizedDiaryAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedDiaryAccess(UnauthorizedDiaryAccessException ex) {
+        return buildDiaryErrorResponse(DiaryErrorCode.UNAUTHORIZED_DIARY_ACCESS);
+    }
+
+    @ExceptionHandler(InvalidWithdrawPasswordException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidWithdrawPassword(InvalidWithdrawPasswordException ex) {
+        MemberWithdrawErrorCode errorCode = ex.getErrorCode();
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.field(), errorCode.message());
+        ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.status()).body(response);
+    }
+
     private ErrorResponse.FieldError toFieldError(FieldError error) {
         return new ErrorResponse.FieldError(error.getField(), error.getDefaultMessage());
     }
@@ -167,5 +196,10 @@ public class GlobalExceptionHandler {
         log.warn("Comment Permission Denied: {}", ex.getMessage());
         ErrorResponse response = ErrorResponse.of(HttpStatus.FORBIDDEN, "COMMENT_PERMISSION_DENIED", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
+
+    private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
+        ErrorResponse response = ErrorResponse.of(errorCode.getHttpStatus(), errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
 }
