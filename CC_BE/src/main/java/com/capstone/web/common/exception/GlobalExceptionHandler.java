@@ -3,6 +3,8 @@ package com.capstone.web.common.exception;
 import com.capstone.web.auth.exception.AuthErrorCode;
 import com.capstone.web.auth.exception.InvalidCredentialsException;
 import com.capstone.web.auth.exception.WithdrawnMemberException;
+import com.capstone.web.comment.exception.CommentNotFoundException;
+import com.capstone.web.comment.exception.CommentPermissionException;
 import com.capstone.web.common.response.ErrorResponse;
 import com.capstone.web.diary.exception.DiaryErrorCode;
 import com.capstone.web.diary.exception.DiaryNotFoundException;
@@ -180,6 +182,20 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
         return ResponseEntity.status(errorCode.status()).body(response);
     }
+    // 👇 [추가] CommentNotFoundException 핸들러
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
+        log.warn("Comment Not Found: {}", ex.getMessage());
+        ErrorResponse response = ErrorResponse.of(HttpStatus.NOT_FOUND, "COMMENT_NOT_FOUND", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+    }
+
+    // 👇 [추가] CommentPermissionException 핸들러
+    @ExceptionHandler(CommentPermissionException.class)
+    public ResponseEntity<ErrorResponse> handleCommentPermissionException(CommentPermissionException ex) {
+        log.warn("Comment Permission Denied: {}", ex.getMessage());
+        ErrorResponse response = ErrorResponse.of(HttpStatus.FORBIDDEN, "COMMENT_PERMISSION_DENIED", ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
 
     private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
