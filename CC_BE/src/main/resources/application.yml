@@ -33,3 +33,6 @@ logging:
 jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
+
+app:
+  upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로

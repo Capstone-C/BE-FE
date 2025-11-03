@@ -1,0 +1,49 @@
+name: Integration Tests
+
+# 전체 스택 통합 테스트 (선택사항)
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  integration-test:
+    name: Full Stack Integration Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Docker Compose로 전체 스택 실행
+      - name: Build and start services
+        run: |
+          docker-compose build
+          docker-compose up -d
+      
+      # 서비스가 준비될 때까지 대기
+      - name: Wait for services
+        run: |
+          echo "Waiting for backend to be ready..."
+          timeout 60 bash -c 'until curl -f http://localhost:8080/actuator/health; do sleep 2; done'
+          echo "Backend is ready!"
+      
+      # 통합 테스트 실행 (예: API 테스트)
+      - name: Run integration tests
+        run: |
+          # 여기에 E2E 테스트나 API 테스트 스크립트 추가
+          curl -f http://localhost:8080/actuator/health
+          curl -f http://localhost:3000
+      
+      # 로그 출력 (실패 시)
+      - name: Output logs on failure
+        if: failure()
+        run: |
+          docker-compose logs backend
+          docker-compose logs frontend
+      
+      # 정리
+      - name: Cleanup
+        if: always()
+        run: docker-compose down -v
