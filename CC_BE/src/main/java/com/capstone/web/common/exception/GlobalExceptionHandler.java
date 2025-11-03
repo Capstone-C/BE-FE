@@ -182,7 +182,6 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
         return ResponseEntity.status(errorCode.status()).body(response);
     }
-    // 👇 [추가] CommentNotFoundException 핸들러
     @ExceptionHandler(CommentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
         log.warn("Comment Not Found: {}", ex.getMessage());
@@ -190,7 +189,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // 👇 [추가] CommentPermissionException 핸들러
     @ExceptionHandler(CommentPermissionException.class)
     public ResponseEntity<ErrorResponse> handleCommentPermissionException(CommentPermissionException ex) {
         log.warn("Comment Permission Denied: {}", ex.getMessage());

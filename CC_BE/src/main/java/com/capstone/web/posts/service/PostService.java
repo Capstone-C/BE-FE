@@ -5,15 +5,16 @@ import com.capstone.web.category.exception.CategoryNotFoundException;
 import com.capstone.web.category.repository.CategoryRepository;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.exception.UserNotFoundException;
+import com.capstone.web.member.repository.MemberRepository;
 import com.capstone.web.posts.domain.Posts;
 import com.capstone.web.posts.dto.PostDto;
 import com.capstone.web.posts.exception.PostNotFoundException;
+import com.capstone.web.posts.exception.PostPermissionException; // (추가) 권한 예외 임포트
 import com.capstone.web.posts.repository.PostsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.capstone.web.member.repository.MemberRepository;
-
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,9 +29,10 @@ public class PostService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public Long createPost(PostDto.CreateRequest request) {
-        Member author = memberRepository.findById(request.getAuthorId())
-                .orElseThrow(() -> new UserNotFoundException("작성자를 찾을 수 없습니다. ID: " + request.getAuthorId()));
+    public Long createPost(Long memberId, PostDto.CreateRequest request) { // (수정) memberId 받기
+        // (수정) DTO가 아닌 파라미터로 받은 memberId 사용
+        Member author = memberRepository.findById(memberId)
+                .orElseThrow(() -> new UserNotFoundException("작성자를 찾을 수 없습니다. ID: " + memberId));
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리를 찾을 수 없습니다. ID: " + request.getCategoryId()));
@@ -49,21 +51,25 @@ public class PostService {
     }
 
     public PostDto.Response getPostById(Long id) {
-        Posts post = postsRepository.findById(id)
-                .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
+        Posts post = postsNextPage(id);
         return new PostDto.Response(post);
     }
 
+    // N+1 문제 해결을 위해 findAllWithAuthor() 사용 (PostsRepository에 @Query 필요)
     public List<PostDto.Response> getAllPosts() {
-        return postsRepository.findAll().stream()
+        return postsRepository.findAllWithAuthor().stream()
                 .map(PostDto.Response::new)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public void updatePost(Long id, PostDto.UpdateRequest request) {
-        Posts post = postsRepository.findById(id)
-                .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
+    public void updatePost(Long id, Long memberId, PostDto.UpdateRequest request) { // (수정) memberId 받기
+        Posts post = postsNextPage(id);
+
+        // (추가) 작성자 본인 확인 로직
+        if (!post.getAuthorId().getId().equals(memberId)) {
+            throw new PostPermissionException("게시글을 수정할 권한이 없습니다.");
+        }
 
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리를 찾을 수 없습니다. ID: " + request.getCategoryId()));
@@ -72,10 +78,20 @@ public class PostService {
     }
 
     @Transactional
-    public void deletePost(Long id) {
-        if (!postsRepository.existsById(id)) {
-            throw new PostNotFoundException("삭제할 게시글을 찾을 수 없습니다. ID: " + id);
+    public void deletePost(Long id, Long memberId) { // (수정) memberId 받기
+        Posts post = postsNextPage(id);
+
+        // (추가) 작성자 본인 확인 로직
+        if (!post.getAuthorId().getId().equals(memberId)) {
+            throw new PostPermissionException("게시글을 삭제할 권한이 없습니다.");
         }
-        postsRepository.deleteById(id);
+
+        postsRepository.delete(post);
+    }
+
+    // (추가) 중복되는 findById 로직을 위한 private 메서드
+    private Posts postsNextPage(Long id) {
+        return postsRepository.findById(id)
+                .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
     }
 }

@@ -80,29 +80,33 @@ class PostControllerTest {
     @Test
     void createPost_Success() throws Exception {
         // given
-        PostDto.CreateRequest request = new PostDto.CreateRequest(author.getId(), category.getId(), "새 게시글 제목", "새 게시글 내용", Posts.PostStatus.PUBLISHED, false);
+        // DTO에서 authorId 제거
+        PostDto.CreateRequest request = new PostDto.CreateRequest(category.getId(), "새 게시글 제목", "새 게시글 내용", Posts.PostStatus.PUBLISHED, false);
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
-        ResultActions result = mockMvc.perform(post("/api/posts")
-                .header("Authorization", "Bearer " + userToken) // 헤더에 토큰 추가
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(post("/api/v1/posts")
+                .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));
 
         // then
         result.andExpect(status().isCreated())
-                .andExpect(header().string("Location", startsWith("/api/posts/")));
+                .andExpect(header().string("Location", startsWith("/api/posts/"))); // Location 헤더는 v1을 포함하지 않을 수 있으므로 /api/posts/로 검증
     }
 
     @DisplayName("유효성 검증 실패 시 400 Bad Request를 반환한다")
     @Test
     void createPost_Fail_Validation() throws Exception {
         // given
-        PostDto.CreateRequest request = new PostDto.CreateRequest(author.getId(), category.getId(), "", "내용", Posts.PostStatus.PUBLISHED, false); // 제목 비움
+        // DTO에서 authorId 제거
+        PostDto.CreateRequest request = new PostDto.CreateRequest(category.getId(), "", "내용", Posts.PostStatus.PUBLISHED, false); // 제목 비움
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
-        ResultActions result = mockMvc.perform(post("/api/posts")
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(post("/api/v1/posts")
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));
@@ -118,7 +122,8 @@ class PostControllerTest {
         Posts savedPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("조회할 게시글").content("내용").status(Posts.PostStatus.PUBLISHED).build());
 
         // when
-        ResultActions result = mockMvc.perform(get("/api/posts/{id}", savedPost.getId())
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(get("/api/v1/posts/{id}", savedPost.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then
@@ -135,7 +140,8 @@ class PostControllerTest {
         Long nonExistentId = 999L;
 
         // when
-        ResultActions result = mockMvc.perform(get("/api/posts/{id}", nonExistentId)
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(get("/api/v1/posts/{id}", nonExistentId)
                 .header("Authorization", "Bearer " + userToken));
 
         // then
@@ -152,7 +158,8 @@ class PostControllerTest {
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
-        ResultActions result = mockMvc.perform(put("/api/posts/{id}", originalPost.getId())
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(put("/api/v1/posts/{id}", originalPost.getId())
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));
@@ -168,7 +175,8 @@ class PostControllerTest {
         Posts postToDelete = postsRepository.save(Posts.builder().authorId(author).category(category).title("삭제될 게시글").content("내용").build());
 
         // when
-        ResultActions result = mockMvc.perform(delete("/api/posts/{id}", postToDelete.getId())
+        // (수정) URL에 /v1 추가
+        ResultActions result = mockMvc.perform(delete("/api/v1/posts/{id}", postToDelete.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then
