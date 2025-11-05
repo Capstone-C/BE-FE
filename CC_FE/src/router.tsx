@@ -11,11 +11,11 @@ import NotFoundPage from '@/pages/NotFoundPage';
 import ChangePasswordPage from '@/pages/ChangePasswordPage';
 import FindPasswordPage from '@/pages/FindPasswordPage';
 import ResetPasswordPage from '@/pages/ResetPasswordPage';
-import { DiaryCalendarPage } from '@/pages/DiaryCalendarPage';
-import { DiaryDayPage } from '@/pages/DiaryDayPage';
-import { DiaryCreatePage } from '@/pages/DiaryCreatePage';
-import DiaryEditPage from '@/pages/DiaryEditPage';
-import RecipeAddToDiaryModal from '@/pages/RecipeAddToDiaryModal';
+
+import BoardsListPage from "@/features/boards/pages/BoardsListPage";
+import BoardNewPage from "@/features/boards/pages/BoardNewPage";
+import BoardDetailPage from "@/features/boards/pages/BoardDetailPage";
+import BoardEditPage from "@/features/boards/pages/BoardEditPage";
 
 const router = createBrowserRouter([
   {
@@ -25,8 +25,12 @@ const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
-      { path: 'find-password', element: <FindPasswordPage /> },
-      { path: 'reset-password', element: <ResetPasswordPage /> },
+      { path: 'find-password', element: <FindPasswordPage /> }, // 1단계 페이지 라우트 추가
+      { path: 'reset-password', element: <ResetPasswordPage /> }, // 2단계 페이지 라우트 추가
+
+      // 게시판 공개 경로
+      { path: 'boards', element: <BoardsListPage /> },
+      { path: 'boards/:postId', element: <BoardDetailPage /> },
 
       // 보호된 라우트 그룹
       {
@@ -37,13 +41,9 @@ const router = createBrowserRouter([
           { path: 'mypage/withdraw', element: <WithdrawPage /> },
           { path: 'mypage/password', element: <ChangePasswordPage /> },
 
-          // Diary routes
-          { path: 'diary', element: <DiaryCalendarPage /> },
-          { path: 'diary/:date', element: <DiaryDayPage /> },
-          { path: 'diary/:date/new', element: <DiaryCreatePage /> },
-          { path: 'diary/:date/edit/:id', element: <DiaryEditPage /> },
-          // From a recipe detail page: e.g., /recipes/:recipeId/add-to-diary?title=...&imageUrl=...
-          { path: 'recipes/:recipeId/add-to-diary', element: <RecipeAddToDiaryModal /> },
+          // 인증 필요한 게시판 경로
+          { path: 'boards/new', element: <BoardNewPage /> },
+          { path: 'boards/:postId/edit', element: <BoardEditPage /> },
         ],
       },
 
