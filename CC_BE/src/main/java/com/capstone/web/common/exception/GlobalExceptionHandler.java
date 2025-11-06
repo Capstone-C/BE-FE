@@ -26,6 +26,10 @@ import com.capstone.web.member.exception.MemberBlockException;
 import com.capstone.web.member.exception.MemberBlockErrorCode;
 import com.capstone.web.member.exception.InvalidWithdrawPasswordException;
 import com.capstone.web.member.exception.MemberWithdrawErrorCode;
+import com.capstone.web.refrigerator.exception.DuplicateItemException;
+import com.capstone.web.refrigerator.exception.ItemNotFoundException;
+import com.capstone.web.refrigerator.exception.RefrigeratorErrorCode;
+import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -182,6 +186,34 @@ public class GlobalExceptionHandler {
         ErrorResponse response = ErrorResponse.of(errorCode.status(), errorCode.code(), errorCode.message(), List.of(fieldError));
         return ResponseEntity.status(errorCode.status()).body(response);
     }
+
+    private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
+        ErrorResponse response = ErrorResponse.of(errorCode.getHttpStatus(), errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
+    }
+
+    @ExceptionHandler(ItemNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleItemNotFound(ItemNotFoundException ex) {
+        return buildRefrigeratorErrorResponse(RefrigeratorErrorCode.ITEM_NOT_FOUND);
+    }
+
+    @ExceptionHandler(DuplicateItemException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateItem(DuplicateItemException ex) {
+        return buildRefrigeratorErrorResponse(RefrigeratorErrorCode.DUPLICATE_ITEM);
+    }
+
+    @ExceptionHandler(UnauthorizedItemAccessException.class)
+    public ResponseEntity<ErrorResponse> handleUnauthorizedItemAccess(UnauthorizedItemAccessException ex) {
+        return buildRefrigeratorErrorResponse(RefrigeratorErrorCode.UNAUTHORIZED_ITEM_ACCESS);
+    }
+
+    private ResponseEntity<ErrorResponse> buildRefrigeratorErrorResponse(RefrigeratorErrorCode errorCode) {
+        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("refrigeratorItem", errorCode.getCode());
+        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST, errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
     // 👇 [추가] CommentNotFoundException 핸들러
     @ExceptionHandler(CommentNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleCommentNotFoundException(CommentNotFoundException ex) {
@@ -196,11 +228,5 @@ public class GlobalExceptionHandler {
         log.warn("Comment Permission Denied: {}", ex.getMessage());
         ErrorResponse response = ErrorResponse.of(HttpStatus.FORBIDDEN, "COMMENT_PERMISSION_DENIED", ex.getMessage());
         return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
-    }
-
-    private ResponseEntity<ErrorResponse> buildDiaryErrorResponse(DiaryErrorCode errorCode) {
-        ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError(errorCode.getFieldName(), errorCode.getMessage());
-        ErrorResponse response = ErrorResponse.of(errorCode.getHttpStatus(), errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
-        return ResponseEntity.status(errorCode.getHttpStatus()).body(response);
     }
 }
