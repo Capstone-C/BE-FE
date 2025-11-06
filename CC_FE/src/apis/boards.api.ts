@@ -50,10 +50,9 @@ export async function getPost(id: number) {
 
 export async function createPost(dto: UpsertPostDto) {
   const payload = toPayload(dto);
-  const { data } = await authClient.post<Post>('/api/v1/posts', payload, {
+  await authClient.post('/api/v1/posts', payload, {
     headers: { 'Content-Type': 'application/json' }, // 415 방지
   });
-  return data;
 }
 
 export async function updatePost(id: number, dto: UpsertPostDto) {
