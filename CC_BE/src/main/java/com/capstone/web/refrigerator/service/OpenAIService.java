@@ -90,16 +90,32 @@ public class OpenAIService {
 
             // API 호출
             log.debug("OpenAI API 호출: {}", config.getApiUrl());
-            ResponseEntity<String> response = restTemplate.exchange(
-                    config.getApiUrl(),
-                    HttpMethod.POST,
-                    entity,
-                    String.class
-            );
+            ResponseEntity<String> response;
+            
+            try {
+                response = restTemplate.exchange(
+                        config.getApiUrl(),
+                        HttpMethod.POST,
+                        entity,
+                        String.class
+                );
+            } catch (org.springframework.web.client.HttpClientErrorException e) {
+                log.error("OpenAI API 호출 실패 ({}): {}", e.getStatusCode(), e.getResponseBodyAsString());
+                
+                // 계정 비활성화 또는 결제 문제
+                if (e.getStatusCode().value() == 429 || e.getStatusCode().value() == 401) {
+                    throw new RuntimeException("OpenAI API 인증 또는 결제 문제가 발생했습니다. " +
+                            "API 키와 계정 상태를 확인하세요: https://platform.openai.com/account/billing");
+                }
+                throw new RuntimeException("OpenAI API 호출 실패: " + e.getMessage());
+            }
 
             // 응답 파싱
             return parseGptResponse(response.getBody());
 
+        } catch (RuntimeException e) {
+            // 이미 처리된 RuntimeException은 그대로 전달
+            throw e;
         } catch (Exception e) {
             log.error("GPT-5 Nano 파싱 실패: {}", e.getMessage(), e);
             throw new RuntimeException("영수증 파싱에 실패했습니다: " + e.getMessage());
