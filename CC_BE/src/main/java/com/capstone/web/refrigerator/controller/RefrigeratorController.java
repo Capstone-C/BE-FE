@@ -1,6 +1,8 @@
 package com.capstone.web.refrigerator.controller;
 
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
+import com.capstone.web.refrigerator.dto.DeductionDto;
+import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
 import com.capstone.web.refrigerator.service.RefrigeratorService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -12,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 
@@ -157,6 +160,141 @@ public class RefrigeratorController {
         Long memberId = extractMemberId(authentication);
         refrigeratorService.deleteItem(memberId, id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+        summary = "영수증 스캔으로 식재료 추가 (REF-03)",
+        description = """
+            영수증 이미지를 OCR로 스캔하여 식재료를 자동 추출하고 냉장고에 추가합니다.
+            
+            **처리 과정**:
+            1. 이미지 업로드 및 OCR 처리
+            2. AI/Tesseract OCR로 텍스트 추출
+            3. 식재료 목록 파싱 (정규표현식)
+            4. 사용자 확인용 데이터 반환
+            
+            **다음 단계**: 
+            - 반환된 목록을 확인/수정 후
+            - `/items/bulk` API로 최종 등록
+            
+            **지원 형식**: JPG, PNG, JPEG (최대 10MB)
+            """,
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @PostMapping(value = "/scan/receipt", consumes = "multipart/form-data")
+    public ResponseEntity<RefrigeratorDto.ScanReceiptResponse> scanReceipt(
+        @RequestParam("image") MultipartFile image,
+        Authentication authentication
+    ) {
+        Long memberId = extractMemberId(authentication);
+        RefrigeratorDto.ScanReceiptResponse response = refrigeratorService.scanReceipt(memberId, image);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "REF-07: 보유 재료 기반 레시피 추천",
+        description = """
+            냉장고에 보유한 재료를 기반으로 만들 수 있는 레시피를 추천합니다.
+            
+            **추천 알고리즘**:
+            1. 사용자의 냉장고 재료 조회
+            2. 모든 레시피의 필요 재료와 비교
+            3. 매칭률 계산 = (보유 재료 / 전체 필요 재료) × 100
+            4. 매칭률 높은 순으로 정렬하여 반환
+            
+            **매칭 방식**:
+            - 완전 일치 또는 부분 일치 (예: "양파" ↔ "양파즙")
+            - 대소문자 무시
+            
+            **응답 정보**:
+            - 레시피 기본 정보 (이름, 조리시간, 난이도 등)
+            - 매칭률 (0-100%)
+            - 보유 중인 재료 목록
+            - 부족한 재료 목록 (필수 여부 포함)
+            
+            **파라미터**:
+            - limit: 추천 개수 (기본값: 10, 최대: 50)
+            """,
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @GetMapping("/recommendations")
+    public ResponseEntity<RecommendationDto.RecommendationResponse> getRecommendations(
+        @RequestParam(required = false, defaultValue = "10") Integer limit,
+        Authentication authentication
+    ) {
+        Long memberId = extractMemberId(authentication);
+        
+        // limit 범위 검증
+        if (limit <= 0 || limit > 50) {
+            limit = 10;
+        }
+        
+        RecommendationDto.RecommendationResponse response = 
+            refrigeratorService.getRecommendations(memberId, limit);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "REF-08: 레시피 재료 차감 미리보기",
+        description = """
+            레시피를 만들 때 필요한 재료를 냉장고에서 차감하기 전에 미리 확인합니다.
+            
+            **확인 항목**:
+            - 각 재료별 보유 여부 (OK/INSUFFICIENT/NOT_FOUND)
+            - 현재 수량과 필요량 비교
+            - 필수 재료 부족 여부
+            
+            **상태**:
+            - OK: 충분히 보유 중
+            - INSUFFICIENT: 수량 부족
+            - NOT_FOUND: 냉장고에 없음
+            
+            **canProceed**: 모든 필수 재료가 충분할 때만 true
+            """,
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @GetMapping("/deduct-preview")
+    public ResponseEntity<DeductionDto.DeductPreviewResponse> previewDeduction(
+        @RequestParam Long recipeId,
+        Authentication authentication
+    ) {
+        Long memberId = extractMemberId(authentication);
+        DeductionDto.DeductPreviewResponse response = 
+            refrigeratorService.previewDeduction(memberId, recipeId);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "REF-08: 레시피 재료 차감 실행",
+        description = """
+            레시피를 만들 때 사용한 재료를 냉장고에서 차감합니다.
+            
+            **처리 과정**:
+            1. 미리보기로 재료 확인
+            2. canProceed가 false이고 ignoreWarnings=false이면 예외 발생
+            3. 각 재료 수량 -1 (최소 0)
+            4. 차감 결과 반환
+            
+            **주의사항**:
+            - 수량만 감소, 재료 삭제는 하지 않음
+            - ignoreWarnings=true 시 경고 무시하고 강제 실행
+            - 트랜잭션으로 관리 (일부 실패 시 전체 롤백 아님)
+            
+            **요청 파라미터**:
+            - recipeId: 레시피 ID
+            - ignoreWarnings: 경고 무시 여부 (기본: false)
+            """,
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @PostMapping("/deduct")
+    public ResponseEntity<DeductionDto.DeductResponse> deductIngredients(
+        @Valid @RequestBody DeductionDto.DeductRequest request,
+        Authentication authentication
+    ) {
+        Long memberId = extractMemberId(authentication);
+        DeductionDto.DeductResponse response = 
+            refrigeratorService.deductIngredients(memberId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
