@@ -48,6 +48,18 @@ ocr:
     # 환경변수로 재정의 가능 (TESSDATA_PREFIX)
     datapath: ${TESSDATA_PREFIX:/opt/homebrew/share/tessdata}
     language: kor+eng
+  
+  # CLOVA OCR 설정 (REF-04)
+  clova:
+    api-url: ${CLOVA_OCR_API_URL:https://example.apigw.ntruss.com/custom/v1/YOUR_DOMAIN/general}
+    secret-key: ${CLOVA_OCR_SECRET_KEY:}
+
+# OpenAI GPT 설정 (REF-04)
+openai:
+  api-url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-5-nano}
+  max-tokens: ${OPENAI_MAX_TOKENS:1000}
 
 app:
   upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로

@@ -1,7 +1,9 @@
 package com.capstone.web.config;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -20,5 +22,13 @@ public class WebConfig implements WebMvcConfigurer {
                 // 'file:' 접두사는 클래스패스가 아닌 파일 시스템 경로임을 명시합니다.
                 // 마지막에 '/'를 붙여 디렉토리임을 나타냅니다.
                 .addResourceLocations("file:" + uploadDir);
+    }
+
+    /**
+     * RestTemplate Bean (REF-04: CLOVA OCR, OpenAI API 호출용)
+     */
+    @Bean
+    public RestTemplate restTemplate() {
+        return new RestTemplate();
     }
 }

@@ -6,6 +6,7 @@ import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
 import com.capstone.web.refrigerator.service.RefrigeratorService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -188,6 +189,50 @@ public class RefrigeratorController {
     ) {
         Long memberId = extractMemberId(authentication);
         RefrigeratorDto.ScanReceiptResponse response = refrigeratorService.scanReceipt(memberId, image);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+        summary = "REF-04: 구매 이력 OCR 스캔 (CLOVA + GPT-5 Nano)",
+        description = """
+            영수증 이미지를 스캔하여 구매 이력을 자동으로 인식합니다.
+            
+            **처리 흐름**:
+            1. CLOVA OCR로 영수증 텍스트 추출
+            2. 전처리: 광고/바코드 등 불필요한 정보 제거
+            3. GPT-5 Nano로 JSON 파싱 (매장명, 날짜, 항목, 금액)
+            4. 구조화된 구매 이력 반환
+            
+            **응답 정보**:
+            - store: 매장명 (예: "CU 강남점")
+            - purchaseDate: 구매 날짜 (YYYY-MM-DD)
+            - items: 구매 항목 배열
+              - name: 상품명
+              - price: 가격
+              - quantity: 수량 (기본값 1)
+            - totalAmount: 총 금액
+            - rawOcrText: CLOVA OCR 원문 (디버깅용)
+            
+            **지원 포맷**:
+            - 이미지: JPG, PNG
+            - 최대 파일 크기: 10MB
+            
+            **비용 효율성**:
+            - 평균 ~500 토큰/영수증
+            - ~2,000 영수증/1M 토큰
+            - 총 비용: $0.45/1M 토큰
+            """,
+        security = @SecurityRequirement(name = "JWT")
+    )
+    @PostMapping(value = "/scan/purchase-history", consumes = "multipart/form-data")
+    public ResponseEntity<RefrigeratorDto.ScanPurchaseHistoryResponse> scanPurchaseHistory(
+        @Parameter(description = "영수증 이미지 파일", required = true)
+        @RequestParam("image") MultipartFile image,
+        Authentication authentication
+    ) {
+        Long memberId = extractMemberId(authentication);
+        RefrigeratorDto.ScanPurchaseHistoryResponse response = 
+                refrigeratorService.scanPurchaseHistory(memberId, image);
         return ResponseEntity.ok(response);
     }
 
