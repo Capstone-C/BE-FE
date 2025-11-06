@@ -30,32 +30,33 @@ public class OpenAIService {
     private final ObjectMapper objectMapper;
 
     private static final String SYSTEM_PROMPT = """
-            당신은 영수증 텍스트를 JSON으로 파싱하는 전문가입니다.
+            You are a receipt parser. Extract purchase information from Korean receipts.
             
-            다음 규칙에 따라 영수증 정보를 추출하세요:
-            1. store: 매장명 (예: "CU 강남점", "이마트")
-            2. date: 구매 날짜 (YYYY-MM-DD 형식, 예: "2025-01-15")
-            3. items: 구매 항목 배열
-               - name: 상품명
-               - price: 가격 (숫자만, 쉼표 제거)
-               - quantity: 수량 (기본값 1)
-            4. total: 총 금액 (숫자만, 쉼표 제거)
+            STRICT RULES:
+            1. Extract store name (매장명) - Look for 농협, CU, 이마트, GS25, etc.
+            2. Extract purchase date in YYYY-MM-DD format
+            3. Extract ONLY food items with prices:
+               - Look for lines with: [상품명] [단가] [수량] [금액]
+               - Common patterns: "P상품명", "상품(코드)", "001 P상품명"
+               - Skip: 바코드, 전화, 주소, 사업자번호, 포인트, 카드정보
+            4. Extract total amount (판매총액, 받을금액, 합계)
             
-            주의사항:
-            - 광고, 쿠폰, 바코드, "감사합니다" 같은 불필요한 정보는 무시
-            - 가격이 없는 항목은 제외
-            - 날짜 형식은 반드시 YYYY-MM-DD
-            - 모든 금액은 정수형 숫자만
+            EXAMPLES OF VALID ITEMS:
+            - "P굿모닝우유 900ML" price: 1350
+            - "P양파" price: 3300
+            - "P하선정 바로먹기좋은장" price: 1380
             
-            응답은 반드시 다음 JSON 형식으로:
+            REQUIRED JSON FORMAT (no additional text):
             {
-              "store": "매장명",
-              "date": "2025-01-15",
+              "store": "store name",
+              "date": "YYYY-MM-DD",
               "items": [
-                {"name": "상품명", "price": 3000, "quantity": 1}
+                {"name": "item name", "price": 1350, "quantity": 1}
               ],
-              "total": 3000
+              "total": 8560
             }
+            
+            If you cannot find items, return empty array for items but still extract store, date, and total.
             """;
 
     /**
@@ -75,12 +76,20 @@ public class OpenAIService {
 
             Map<String, Object> requestBody = new HashMap<>();
             requestBody.put("model", config.getModel());
-            requestBody.put("max_tokens", config.getMaxTokens());
+            requestBody.put("max_completion_tokens", config.getMaxTokens());  // GPT -5 Nano(GPT-4o)는 max_completion_tokens 사용
 
             // 시스템 프롬프트 + 사용자 입력 (OCR 텍스트)
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(Map.of("role", "system", "content", SYSTEM_PROMPT));
-            messages.add(Map.of("role", "user", "content", ocrText));
+            
+            // 사용자 메시지: OCR 텍스트 + 추출 지시
+            String userMessage = String.format(
+                "Extract purchase information from this receipt:\n\n%s\n\n" +
+                "Remember: Extract items with pattern like 'P상품명', '001 P상품명' and their prices. " +
+                "Return valid JSON only.",
+                ocrText
+            );
+            messages.add(Map.of("role", "user", "content", userMessage));
             requestBody.put("messages", messages);
 
             // JSON 출력 강제
