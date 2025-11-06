@@ -18,13 +18,13 @@ const parseApiError = (error: AxiosError<BackendErrorResponse>): ErrorMessages =
   const newErrors: ErrorMessages = {};
 
   if (responseData?.errors) {
-    responseData.errors.forEach(err => {
+    responseData.errors.forEach((err) => {
       if (err.field === 'oldPassword') {
-        newErrors.oldPassword = err.message; // 이제 타입 에러가 발생하지 않습니다.
+        newErrors.oldPassword = err.message;
       }
       if (err.field === 'newPassword' || err.field === 'newPasswordConfirm') {
         if (!newErrors.newPassword) newErrors.newPassword = [];
-        newErrors.newPassword.push(err.message); // [수정] reason을 제거하고 message만 사용합니다.
+        newErrors.newPassword.push(err.message);
       }
     });
   } else if (responseData) {
@@ -66,7 +66,7 @@ export default function ChangePasswordPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -79,10 +79,12 @@ export default function ChangePasswordPage() {
     mutate(formData);
   };
 
-  const inputClasses = "w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500";
-  const primaryButtonClasses = "px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400";
-  const secondaryButtonClasses = "px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300";
-  const errorTextClasses = "text-sm text-red-600 mt-1";
+  const inputClasses =
+    'w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500';
+  const primaryButtonClasses =
+    'px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400';
+  const secondaryButtonClasses = 'px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300';
+  const errorTextClasses = 'text-sm text-red-600 mt-1';
 
   return (
     <div className="max-w-md mx-auto p-8 mt-10">
@@ -90,27 +92,61 @@ export default function ChangePasswordPage() {
       <div className="bg-white shadow-md rounded-lg p-8">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="oldPassword" className="block text-sm font-medium text-gray-700">현재 비밀번호</label>
-            <input id="oldPassword" name="oldPassword" type="password" required onChange={handleChange} className={inputClasses} />
+            <label htmlFor="oldPassword" className="block text-sm font-medium text-gray-700">
+              현재 비밀번호
+            </label>
+            <input
+              id="oldPassword"
+              name="oldPassword"
+              type="password"
+              required
+              onChange={handleChange}
+              className={inputClasses}
+            />
             {errors.oldPassword && <p className={errorTextClasses}>{errors.oldPassword}</p>}
           </div>
 
           <div>
-            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">새 비밀번호</label>
-            <input id="newPassword" name="newPassword" type="password" required onChange={handleChange} className={inputClasses} />
-            {errors.newPassword && errors.newPassword.map((msg, i) => <p key={i} className={errorTextClasses}>{msg}</p>)}
+            <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">
+              새 비밀번호
+            </label>
+            <input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              required
+              onChange={handleChange}
+              className={inputClasses}
+            />
+            {errors.newPassword &&
+              errors.newPassword.map((msg, i) => (
+                <p key={i} className={errorTextClasses}>
+                  {msg}
+                </p>
+              ))}
           </div>
 
           <div>
-            <label htmlFor="newPasswordConfirm" className="block text-sm font-medium text-gray-700">새 비밀번호 확인</label>
-            <input id="newPasswordConfirm" name="newPasswordConfirm" type="password" required onChange={handleChange} className={inputClasses} />
+            <label htmlFor="newPasswordConfirm" className="block text-sm font-medium text-gray-700">
+              새 비밀번호 확인
+            </label>
+            <input
+              id="newPasswordConfirm"
+              name="newPasswordConfirm"
+              type="password"
+              required
+              onChange={handleChange}
+              className={inputClasses}
+            />
             {errors.newPasswordConfirm && <p className={errorTextClasses}>{errors.newPasswordConfirm}</p>}
           </div>
 
           {errors.general && <p className={`${errorTextClasses} text-center`}>{errors.general}</p>}
 
           <div className="flex justify-end space-x-4 pt-4">
-            <button type="button" onClick={() => navigate('/mypage')} className={secondaryButtonClasses}>취소</button>
+            <button type="button" onClick={() => navigate('/mypage')} className={secondaryButtonClasses}>
+              취소
+            </button>
             <button type="submit" disabled={isPending} className={primaryButtonClasses}>
               {isPending ? '변경 중...' : '변경 완료'}
             </button>

@@ -13,7 +13,7 @@ export default defineConfig({
         changeOrigin: true, // cross-origin 요청을 허용합니다.
       },
       '/static': {
-        target: 'httnpp://localhost:8080',
+        target: 'http://localhost:8080', // fix: typo 'httnpp' -> 'http'
         changeOrigin: true,
       },
     },

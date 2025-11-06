@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary';
+import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -10,7 +10,7 @@ const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'SNACK', label: '간식' },
 ];
 
-function DiaryCreatePage() {
+export default function DiaryCreatePage() {
   const { date } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -32,12 +32,11 @@ function DiaryCreatePage() {
     mutationFn: createDiary,
     onSuccess: async () => {
       alert('식단이 기록되었습니다.');
-      // invalidate day list and monthly calendar
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['diary-day', form.date] }),
-        qc.invalidateQueries({ queryKey: ['monthly-diary'] }), // key has year/month; broad invalidation
+        qc.invalidateQueries({ queryKey: ['monthly-diary'] }),
       ]);
-      navigate(`/diary/${form.date}`); // return to day modal
+      navigate(`/diary/${form.date}`);
     },
   });
 
@@ -45,7 +44,15 @@ function DiaryCreatePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: name === 'recipeId' && value !== '' ? Number(value) : value }) as any);
+    setForm((prev) => {
+      const next = { ...prev };
+      if (name === 'recipeId') next.recipeId = value === '' ? undefined : Number(value);
+      else if (name === 'date') next.date = value;
+      else if (name === 'mealType') next.mealType = value as MealType;
+      else if (name === 'content') next.content = value;
+      else if (name === 'imageUrl') next.imageUrl = value;
+      return next;
+    });
   };
 
   const validate = useMemo(() => {
@@ -69,8 +76,9 @@ function DiaryCreatePage() {
         imageUrl: form.imageUrl ? form.imageUrl : undefined,
         recipeId: form.recipeId ?? undefined,
       });
-    } catch (err: any) {
-      if (err?.response?.status === 409) {
+    } catch (err: unknown) {
+      const anyErr = err as { response?: { status?: number } };
+      if (anyErr?.response?.status === 409) {
         alert('이미 해당 시간에 식단이 기록되어 있습니다.');
       } else {
         alert('식단 기록 중 오류가 발생했습니다.');
@@ -80,10 +88,7 @@ function DiaryCreatePage() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-
-      {/* Modal */}
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden">
         <div className="flex items-center justify-between border-b px-5 py-3">
           <h2 className="text-xl font-semibold">식단 추가</h2>
@@ -179,6 +184,3 @@ function DiaryCreatePage() {
     </div>
   );
 }
-
-export default DiaryCreatePage;
-export { DiaryCreatePage };

@@ -5,18 +5,12 @@ import { requestPasswordReset } from '@/apis/auth';
 
 export default function FindPasswordPage() {
   const [email, setEmail] = useState('');
-  const [isSubmitted, setIsSubmitted] = useState(false); // 메일 발송 요청 완료 여부
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const { mutate, isPending } = useMutation({
     mutationFn: requestPasswordReset,
-    onSuccess: () => {
-      // 보안 정책에 따라 성공/실패 여부와 관계없이 항상 성공 화면을 보여줍니다.
-      setIsSubmitted(true);
-    },
-    onError: () => {
-      // User Enumeration 공격 방지를 위해 에러가 발생해도 성공한 것처럼 처리합니다.
-      setIsSubmitted(true);
-    },
+    onSuccess: () => setIsSubmitted(true),
+    onError: () => setIsSubmitted(true),
   });
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {

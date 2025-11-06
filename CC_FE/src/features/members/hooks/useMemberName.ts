@@ -1,20 +1,33 @@
 // src/features/members/hooks/useMemberName.ts
 import { useQuery } from '@tanstack/react-query';
-import { authClient } from '@/apis/client';
+import { publicClient } from '@/apis/client';
 
-type AnyMember = any;
+type MemberLike = Record<string, unknown> & {
+  profile?: Record<string, unknown>;
+  user?: Record<string, unknown>;
+  email?: unknown;
+};
 
-function pickDisplayName(m?: AnyMember) {
+function pickDisplayName(m?: MemberLike) {
   if (!m) return undefined;
-  const c =
-    m.displayName ?? m.memberName ?? m.nickname ?? m.name ?? m.username ??
-    m.profile?.displayName ?? m.profile?.name ?? m.profile?.nickname ??
-    m.user?.name ?? m.user?.nickname ??
-    (m.email ? String(m.email).split('@')[0] : undefined);
-  return (typeof c === 'string' && c.trim()) ? c.trim() : undefined;
+  const get = (o: unknown, k: string) => (o && typeof o === 'object' ? (o as Record<string, unknown>)[k] : undefined);
+  const raw =
+    (get(m, 'displayName') as unknown) ??
+    (get(m, 'memberName') as unknown) ??
+    (get(m, 'nickname') as unknown) ??
+    (get(m, 'name') as unknown) ??
+    (get(m, 'username') as unknown) ??
+    (m.profile
+      ? ((get(m.profile, 'displayName') as unknown) ??
+        (get(m.profile, 'name') as unknown) ??
+        (get(m.profile, 'nickname') as unknown))
+      : undefined) ??
+    (m.user ? ((get(m.user, 'name') as unknown) ?? (get(m.user, 'nickname') as unknown)) : undefined) ??
+    (typeof m.email === 'string' ? m.email.split('@')[0] : undefined);
+  return typeof raw === 'string' && raw.trim() ? raw.trim() : undefined;
 }
 
-async function fetchMemberFromCandidates(id: number): Promise<AnyMember | undefined> {
+async function fetchMemberFromCandidates(id: number): Promise<MemberLike | undefined> {
   const candidates = [
     `/api/v1/members/${id}`,
     `/api/v1/member/${id}`,
@@ -23,11 +36,11 @@ async function fetchMemberFromCandidates(id: number): Promise<AnyMember | undefi
   ];
   for (const url of candidates) {
     try {
-      const res = await authClient.get(url);
-      const data = res.data?.data ?? res.data?.result ?? res.data;
+      const res = await publicClient.get(url);
+      const data = (res.data?.data ?? res.data?.result ?? res.data) as MemberLike | undefined;
       if (data) return data;
-    } catch (_e) {
-      // 다음 후보 시도
+    } catch {
+      // ignore and try next
     }
   }
   return undefined;
@@ -51,9 +64,7 @@ export function useMemberName(memberId?: number, inlineName?: string | null) {
   });
 
   const fetchedName = pickDisplayName(data);
-  const name =
-    (inlineOK ? inlineName!.trim() : fetchedName) ??
-    (hasId ? `작성자 #${memberId}` : undefined); // ✅ 보기 좋은 마지막 폴백
+  const name = (inlineOK ? inlineName!.trim() : fetchedName) ?? (hasId ? `작성자 #${memberId}` : undefined); // ✅ 보기 좋은 마지막 폴백
 
   return { name };
 }

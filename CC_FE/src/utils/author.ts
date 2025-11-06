@@ -1,24 +1,29 @@
 // src/utils/author.ts
-export function extractAuthorRef(obj: any) {
+function get(obj: unknown, key: string): unknown {
+  if (!obj || typeof obj !== 'object') return undefined;
+  return (obj as Record<string, unknown>)[key];
+}
+
+export function extractAuthorRef(obj: unknown) {
   const inlineName =
-    obj?.authorNickname ??          // 댓글
-    obj?.authorName ??
-    obj?.writerName ??
-    obj?.memberName ??
-    obj?.nickname ??
-    obj?.username ??
-    obj?.author?.nickname ??        // 중첩: author { nickname, name }
-    obj?.author?.name ??
-    obj?.member?.nickname ??
-    obj?.member?.name ??
+    (get(obj, 'authorNickname') as string | undefined) ??
+    (get(obj, 'authorName') as string | undefined) ??
+    (get(obj, 'writerName') as string | undefined) ??
+    (get(obj, 'memberName') as string | undefined) ??
+    (get(obj, 'nickname') as string | undefined) ??
+    (get(obj, 'username') as string | undefined) ??
+    (get(get(obj, 'author'), 'nickname') as string | undefined) ??
+    (get(get(obj, 'author'), 'name') as string | undefined) ??
+    (get(get(obj, 'member'), 'nickname') as string | undefined) ??
+    (get(get(obj, 'member'), 'name') as string | undefined) ??
     null;
 
   const rawId =
-    obj?.authorId ??                // 게시글/댓글에서 자주 보임
-    obj?.memberId ??
-    obj?.userId ??
-    obj?.author?.id ??              // 중첩 케이스
-    obj?.member?.id ??
+    (get(obj, 'authorId') as unknown) ??
+    (get(obj, 'memberId') as unknown) ??
+    (get(obj, 'userId') as unknown) ??
+    (get(get(obj, 'author'), 'id') as unknown) ??
+    (get(get(obj, 'member'), 'id') as unknown) ??
     null;
 
   let memberId: number | undefined;

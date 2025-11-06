@@ -1,5 +1,5 @@
-// src/apis/diary.ts
-import { authClient } from './client';
+// src/apis/diary.api.ts
+import { authClient } from '@/apis/client';
 
 export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
 

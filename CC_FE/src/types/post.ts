@@ -1,12 +1,4 @@
 // src/types/post.ts
-export type Page<T> = {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-};
-
 export type Post = {
   id: number;
   title: string;
@@ -33,12 +25,4 @@ export type Post = {
   /** 선택적 파생 필드 */
   authorName?: string | null;
   categoryName?: string | null;
-};
-
-export type UpsertPostDto = {
-  title: string;
-  content: string;
-  categoryId: number;            // 필수
-  isRecipe: boolean;             // 필수
-  status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 };

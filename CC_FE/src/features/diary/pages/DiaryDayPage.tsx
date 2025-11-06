@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getDiaryByDate, type DiaryEntryResponse, type MealType, deleteDiary } from '@/apis/diary';
+import { getDiaryByDate, type DiaryEntryResponse, type MealType, deleteDiary } from '@/apis/diary.api';
 
 const MEAL_ORDER: MealType[] = ['BREAKFAST', 'LUNCH', 'DINNER', 'SNACK'];
 const MEAL_LABEL: Record<MealType, string> = {
@@ -14,7 +14,7 @@ const MEAL_LABEL: Record<MealType, string> = {
 function formatKoreanDate(ymd: string | undefined) {
   if (!ymd) return '';
   const [y, m, d] = ymd.split('-').map((s) => Number(s));
-  return `${y}년 ${m}월 ${d}일 식단`;
+  return `${y}년 ${m}월 ${d}일`;
 }
 
 function groupByMeal(entries: DiaryEntryResponse[]) {
@@ -28,7 +28,7 @@ function groupByMeal(entries: DiaryEntryResponse[]) {
   return groups;
 }
 
-function DiaryDayPage() {
+export default function DiaryDayPage() {
   const { date } = useParams(); // YYYY-MM-DD
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -55,7 +55,6 @@ function DiaryDayPage() {
   const onClose = () => navigate('/diary');
   const onAdd = () => navigate(`/diary/${date}/new`);
 
-  // Placeholder handlers for edit/delete
   const onEdit = (id: number) => navigate(`/diary/${date}/edit/${id}`);
   const onDelete = async (id: number) => {
     if (confirm(`정말로 이 기록(#${id})을 삭제하시겠습니까?`)) {
@@ -159,5 +158,3 @@ function DiaryDayPage() {
     </div>
   );
 }
-
-export { DiaryDayPage };

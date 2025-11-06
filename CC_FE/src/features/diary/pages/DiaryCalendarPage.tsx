@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getMonthlyDiary, type MonthlyDiaryResponse } from '@/apis/diary';
+import { getMonthlyDiary, type MonthlyDiaryResponse } from '@/apis/diary.api';
 
 function getDaysInMonth(year: number, month: number) {
   const firstDay = new Date(year, month - 1, 1);
@@ -21,7 +21,7 @@ function formatYmdLocal(d: Date) {
   return `${y}-${m}-${day}`;
 }
 
-function DiaryCalendarPage() {
+export default function DiaryCalendarPage() {
   const today = useMemo(() => new Date(), []);
   const [cursor, setCursor] = useState(() => ({ year: today.getFullYear(), month: today.getMonth() + 1 }));
   const navigate = useNavigate();
@@ -161,6 +161,3 @@ function DiaryCalendarPage() {
     </div>
   );
 }
-
-export default DiaryCalendarPage;
-export { DiaryCalendarPage };

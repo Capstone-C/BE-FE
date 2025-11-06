@@ -1,13 +1,13 @@
 // src/apis/boards.api.ts
-import { authClient } from '@/apis/client';
-import type { Page } from '@/types/page';
+import { authClient, publicClient } from '@/apis/client';
+import type { Page } from '@/types/pagination';
 import type { Post } from '@/types/post';
 
 // 서버 요구 스키마에 맞춰 정규화할 DTO
 export type UpsertPostDto = {
   title: string;
   content: string;
-  categoryId: number | string;       // select 값이 string일 수 있음
+  categoryId: number | string; // select 값이 string일 수 있음
   isRecipe: boolean | number | 'Y' | 'N';
   status?: 'DRAFT' | 'PUBLISHED' | string; // 스웨거 예시: 'DRAFT'
 };
@@ -15,18 +15,16 @@ export type UpsertPostDto = {
 // 서버에 보낼 실제 payload를 안전하게 변환
 function toPayload(dto: UpsertPostDto) {
   // categoryId 숫자 강제
-  const categoryId =
-    typeof dto.categoryId === 'string' ? Number(dto.categoryId) : dto.categoryId;
+  const categoryId = typeof dto.categoryId === 'string' ? Number(dto.categoryId) : dto.categoryId;
 
   // isRecipe → boolean 강제(서버 스웨거가 boolean이므로)
+  const isRecipeValue = dto.isRecipe;
   const isRecipe =
-    typeof dto.isRecipe === 'boolean'
-      ? dto.isRecipe
-      : typeof dto.isRecipe === 'number'
-        ? dto.isRecipe !== 0
-        : typeof dto.isRecipe === 'string'
-          ? dto.isRecipe.toUpperCase() === 'Y'
-          : false;
+    typeof isRecipeValue === 'boolean'
+      ? isRecipeValue
+      : typeof isRecipeValue === 'number'
+        ? isRecipeValue !== 0
+        : String(isRecipeValue).toUpperCase() === 'Y';
 
   // status 기본값 보강
   const status = (dto.status ?? 'DRAFT') as string;
@@ -41,12 +39,12 @@ function toPayload(dto: UpsertPostDto) {
 }
 
 export async function listPosts(params: { page?: number; size?: number; keyword?: string; sort?: string }) {
-  const { data } = await authClient.get<Page<Post>>('/api/v1/posts', { params });
+  const { data } = await publicClient.get<Page<Post>>('/api/v1/posts', { params });
   return data;
 }
 
 export async function getPost(id: number) {
-  const { data } = await authClient.get<Post>(`/api/v1/posts/${id}`);
+  const { data } = await publicClient.get<Post>(`/api/v1/posts/${id}`);
   return data;
 }
 

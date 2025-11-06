@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createPost, updatePost, deletePost } from '@/apis/boards.api';
-import type { UpsertPostDto } from '@/types/post';
+import type { UpsertPostDto } from '@/apis/boards.api';
 
 export function useCreatePost() {
   const qc = useQueryClient();

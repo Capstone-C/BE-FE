@@ -1,8 +1,8 @@
-import { authClient } from '@/apis/client';
+import { authClient, publicClient } from '@/apis/client';
 import type { Comment, CreateCommentDto, UpdateCommentDto } from '@/types/comment';
 
 export async function getComments(postId: number) {
-  const { data } = await authClient.get<Comment[]>(`/api/v1/posts/${postId}/comments`);
+  const { data } = await publicClient.get<Comment[]>(`/api/v1/posts/${postId}/comments`);
   return data;
 }
 

@@ -20,7 +20,6 @@ export default function ProfilePage() {
     return <div className="p-8 text-center text-red-600">프로필 정보를 불러오는 중 오류가 발생했습니다.</div>;
   }
 
-  // userProfile.profile은 이제 'string | null' 타입이므로 오류가 없습니다.
   const profileImageUrl = userProfile.profile || 'https://via.placeholder.com/150';
 
   return (
@@ -50,7 +49,6 @@ export default function ProfilePage() {
         <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
           회원정보 수정
         </Link>
-        {/* 비밀번호 변경 버튼 추가 */}
         <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
           비밀번호 변경
         </Link>

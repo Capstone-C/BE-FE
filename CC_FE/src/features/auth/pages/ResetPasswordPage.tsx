@@ -14,7 +14,6 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // 페이지 로드 시 토큰이 없으면 즉시 첫 단계로 보냅니다.
     if (!token) {
       alert('유효하지 않은 접근입니다. 비밀번호 찾기를 다시 시작해주세요.');
       navigate('/find-password');
@@ -30,7 +29,6 @@ export default function ResetPasswordPage() {
     onError: (err: AxiosError<BackendErrorResponse>) => {
       const message = err.response?.data?.message || '알 수 없는 오류가 발생했습니다.';
       setError(message);
-      // 토큰 만료/무효와 같은 심각한 오류 시 첫 단계로 돌려보내는 것을 고려할 수 있습니다.
       if (message.includes('만료') || message.includes('유효하지')) {
         setTimeout(() => navigate('/find-password'), 3000);
       }

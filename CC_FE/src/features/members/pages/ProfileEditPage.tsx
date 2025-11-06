@@ -116,7 +116,6 @@ export default function ProfileEditPage() {
           <label className="block text-sm font-medium text-gray-700">프로필 이미지</label>
           <div className="mt-2 flex items-center space-x-4">
             <img
-              // initialData.profile은 이제 'string | null' 타입이므로 오류가 없습니다.
               src={previewUrl || initialData?.profile || 'https://via.placeholder.com/100'}
               alt="프로필 미리보기"
               className="w-24 h-24 rounded-full object-cover bg-gray-200"

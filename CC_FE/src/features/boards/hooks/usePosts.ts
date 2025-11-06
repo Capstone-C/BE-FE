@@ -1,7 +1,8 @@
 // src/features/boards/hooks/usePosts.ts
 import { useQuery } from '@tanstack/react-query';
 import { listPosts, getPost } from '@/apis/boards.api';
-import type { Page, Post } from '@/types/post';
+import type { Page } from '@/types/pagination';
+import type { Post } from '@/types/post';
 
 type ListQuery = { page?: number; size?: number; keyword?: string; sort?: string };
 

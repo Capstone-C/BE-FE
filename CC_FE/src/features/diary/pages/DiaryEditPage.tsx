@@ -1,4 +1,3 @@
-// src/pages/DiaryEditPage.tsx
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -8,7 +7,7 @@ import {
   type MealType,
   updateDiary,
   type UpdateDiaryRequest,
-} from '@/apis/diary';
+} from '@/apis/diary.api';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -22,7 +21,6 @@ export default function DiaryEditPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  // 간단히 현재 날짜의 항목들을 받아서 해당 id를 찾는다 (실무에서는 단건 조회 API 권장)
   const { data } = useQuery<DiaryEntryResponse[]>({
     queryKey: ['diary-day', date],
     queryFn: () => getDiaryByDate(date!),
@@ -133,7 +131,7 @@ export default function DiaryEditPage() {
 
         <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto">
           <div>
-            <label className="block text-sm font-medium mb-1">식사 타입</label>
+            <label className="block text.sm font-medium mb-1">식사 타입</label>
             <select
               name="mealType"
               value={form.mealType}
