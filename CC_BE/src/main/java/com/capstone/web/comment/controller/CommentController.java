@@ -21,7 +21,7 @@ public class CommentController {
     private final CommentService commentService;
 
     // --- 기존의 게시글별 댓글 API (전체 경로 명시) ---
-    @PostMapping("/api/posts/{postId}/comments")
+    @PostMapping("/api/v1/posts/{postId}/comments")
     public ResponseEntity<Void> createComment(
             @PathVariable Long postId,
             @AuthenticationPrincipal MemberPrincipal userPrincipal,
@@ -32,13 +32,13 @@ public class CommentController {
         return ResponseEntity.created(location).build();
     }
 
-    @GetMapping("/api/posts/{postId}/comments")
+    @GetMapping("/api/v1/posts/{postId}/comments")
     public ResponseEntity<List<CommentDto.Response>> getCommentsByPost(@PathVariable Long postId) {
         List<CommentDto.Response> comments = commentService.getCommentsByPost(postId);
         return ResponseEntity.ok(comments);
     }
 
-    @PutMapping("/api/posts/{postId}/comments/{commentId}")
+    @PutMapping("/api/v1/posts/{postId}/comments/{commentId}")
     public ResponseEntity<Void> updateComment(
             @PathVariable Long postId,
             @PathVariable Long commentId,
@@ -49,7 +49,7 @@ public class CommentController {
         return ResponseEntity.ok().build();
     }
 
-    @DeleteMapping("/api/posts/{postId}/comments/{commentId}")
+    @DeleteMapping("/api/v1/posts/{postId}/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long postId,
             @PathVariable Long commentId,
@@ -60,7 +60,7 @@ public class CommentController {
     }
 
     // --- 👇 [추가] 작성자별 댓글 조회 API ---
-    @GetMapping("/api/comments")
+    @GetMapping("/api/v1/comments")
     public ResponseEntity<List<CommentQueryDto>> getCommentsByAuthor(
             @RequestParam("authorId") Long authorId
     ) {

@@ -9,10 +9,19 @@ import java.util.List;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    // 특정 게시글의 모든 댓글을 부모 댓글 우선, 그리고 생성 시간 순으로 정렬하여 조회
-    @Query("SELECT c FROM Comment c WHERE c.post.id = :postId ORDER BY c.parent.id ASC NULLS FIRST, c.createdAt ASC")
+    // [수정] author와 parent 정보도 함께 JOIN FETCH로 가져옵니다.
+    @Query("SELECT c FROM Comment c " +
+            "JOIN FETCH c.author " +
+            "LEFT JOIN FETCH c.parent " + // 부모가 없는 댓글도 있어야 하므로 LEFT JOIN
+            "WHERE c.post.id = :postId " +
+            "ORDER BY c.parent.id ASC NULLS FIRST, c.createdAt ASC")
     List<Comment> findAllByPostId(@Param("postId") Long postId);
 
-    @Query("SELECT c FROM Comment c JOIN FETCH c.post WHERE c.author.id = :authorId ORDER BY c.createdAt DESC")
+    // [수정] post 정보와 함께 author 정보도 JOIN FETCH로 가져옵니다.
+    @Query("SELECT c FROM Comment c " +
+            "JOIN FETCH c.post " +
+            "JOIN FETCH c.author " +
+            "WHERE c.author.id = :authorId " +
+            "ORDER BY c.createdAt DESC")
     List<Comment> findAllByAuthorId(@Param("authorId") Long authorId);
 }
