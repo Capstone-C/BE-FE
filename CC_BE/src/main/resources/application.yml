@@ -49,3 +49,13 @@ openai:
 
 app:
   upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
