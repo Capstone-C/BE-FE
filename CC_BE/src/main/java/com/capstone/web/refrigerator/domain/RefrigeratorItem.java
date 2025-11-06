@@ -84,6 +84,13 @@ public class RefrigeratorItem {
     }
 
     /**
+     * REF-08: 수량 업데이트
+     */
+    public void updateQuantity(Integer newQuantity) {
+        this.quantity = newQuantity;
+    }
+
+    /**
      * 소비기한까지 남은 일수 계산 (D-day)
      */
     public Long getDaysUntilExpiration() {

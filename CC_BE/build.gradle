@@ -52,12 +52,52 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
 
-    // --- OCR (Tesseract) ---
-    implementation 'net.sourceforge.tess4j:tess4j:5.9.0'
+    // --- OCR (Tesseract + OpenCV) ---
+    implementation 'net.sourceforge.tess4j:tess4j:5.9.0'                     // OCR 엔진
+    implementation 'org.openpnp:opencv:4.9.0-0'                              // 이미지 전처리 (노이즈 제거, 이진화 등)
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+    
+    // JNA 네이티브 라이브러리 경로 설정 (Tesseract용)
+    systemProperty 'jna.library.path', '/opt/homebrew/lib'
+    
+    // OpenCV 네이티브 라이브러리 경로 설정
+    doFirst {
+        def opencvNativeDir = file("${buildDir}/opencv-native")
+        opencvNativeDir.mkdirs()
+        
+        // OpenCV JAR에서 네이티브 라이브러리 추출
+        configurations.testRuntimeClasspath.files.each { file ->
+            if (file.name.contains('opencv')) {
+                copy {
+                    from zipTree(file)
+                    into opencvNativeDir
+                    include 'nu/pattern/opencv/**/*.dylib'  // macOS
+                    include 'nu/pattern/opencv/**/*.so'     // Linux
+                    include 'nu/pattern/opencv/**/*.dll'    // Windows
+                }
+            }
+        }
+        
+        // java.library.path 설정
+        def nativeLibPath = fileTree(opencvNativeDir) {
+            include '**/*.dylib', '**/*.so', '**/*.dll'
+        }.files.collect { it.parentFile.absolutePath }.unique().join(File.pathSeparator)
+        
+        systemProperty 'java.library.path', nativeLibPath
+    }
+    
+    // Tesseract 설정 (로컬 설치 경로)
+    environment 'TESSDATA_PREFIX', '/opt/homebrew/share/tessdata'  // Homebrew 기본 경로
+    
+    // 테스트 로그 상세 출력
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+		showStandardStreams = false  // Set to true for debugging OCR output
+	}
 }
 
 // 생성되는 Boot JAR 이름 고정

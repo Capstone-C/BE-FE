@@ -40,6 +40,8 @@ services:
       MYSQL_DATABASE: ccdb
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
+      # Tesseract OCR 설정
+      TESSDATA_PREFIX: /usr/share/tesseract-ocr/5/tessdata
     ports:
       - "8080:8080"
     volumes: # volumes 섹션을 추가합니다.

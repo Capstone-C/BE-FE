@@ -158,4 +158,29 @@ public class RefrigeratorDto {
             this.failCount = failedItems.size();
         }
     }
+
+    /**
+     * 영수증 스캔 응답 DTO (REF-03)
+     * OCR 처리 결과를 사용자 확인용으로 반환
+     */
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ScanReceiptResponse {
+        private String extractedText; // OCR 추출 원문
+        private List<ScannedItem> scannedItems; // 파싱된 식재료 목록
+        private int totalItemsFound; // 추출된 총 항목 수
+
+        @Getter
+        @Builder
+        @NoArgsConstructor
+        @AllArgsConstructor
+        public static class ScannedItem {
+            private String name;
+            private Integer quantity;
+            private String unit;
+            private Integer price; // 참고용 (저장 안 함)
+        }
+    }
 }

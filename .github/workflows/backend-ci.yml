@@ -57,12 +57,20 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
       
-      # 3. Gradle 실행 권한 부여
+      # 3. Tesseract OCR 설치 (OCR 테스트용)
+      - name: Install Tesseract OCR
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tesseract-ocr tesseract-ocr-kor
+          tesseract --version
+          echo "TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata" >> $GITHUB_ENV
+      
+      # 4. Gradle 실행 권한 부여
       - name: Grant execute permission for gradlew
         working-directory: ./CC_BE
         run: chmod +x gradlew
       
-      # 4. 테스트용 application.yml 생성 (필요한 경우)
+      # 5. 테스트용 application.yml 생성 (필요한 경우)
       - name: Create test application.yml
         working-directory: ./CC_BE
         run: |
@@ -80,16 +88,22 @@ jobs:
               properties:
                 hibernate:
                   format_sql: true
+          
+          # OCR Tesseract 설정
+          ocr:
+            tesseract:
+              datapath: /usr/share/tesseract-ocr/5/tessdata
+              language: kor+eng
           EOF
       
-      # 5. Gradle 빌드 (테스트 포함)
+      # 6. Gradle 빌드 (테스트 포함)
       - name: Build with Gradle
         working-directory: ./CC_BE
         run: ./gradlew clean build --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: test
       
-      # 6. 테스트 결과 업로드 (실패 시에도 실행)
+      # 7. 테스트 결과 업로드 (실패 시에도 실행)
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -98,7 +112,7 @@ jobs:
           path: CC_BE/build/reports/tests/test/
           retention-days: 7
       
-      # 7. 테스트 커버리지 리포트 (JaCoCo 사용 시)
+      # 8. 테스트 커버리지 리포트 (JaCoCo 사용 시)
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         if: success()

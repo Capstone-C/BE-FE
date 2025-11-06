@@ -17,18 +17,32 @@ import java.util.regex.Pattern;
 @Service
 public class ReceiptParserService {
 
-    // 숫자 + 원 패턴 (가격)
-    private static final Pattern PRICE_PATTERN = Pattern.compile("(\\d{1,3}(?:[,.]\\d{3})*)[원₩]?");
+    // 가격 패턴: 1,000원, 1000원, 1.000원, ₩1000, 3 000원 등
+    // 숫자, 쉼표, 마침표, 공백의 조합을 모두 캡처
+    // ₩ 기호나 '원' 문자가 있어야 가격으로 인식
+    private static final Pattern PRICE_PATTERN = Pattern.compile(
+        "(?:₩\\s*([0-9][0-9,. ]*[0-9]|[0-9])|([0-9][0-9,. ]*[0-9]|[0-9])\\s*원)"
+    );
     
-    // 수량 패턴 (숫자 + 개/봉/팩/kg/g/ml/리터/l 등)
-    // 긴 단위부터 매치해야 함 (리터 > 리, 그람 > g)
-    private static final Pattern QUANTITY_PATTERN = Pattern.compile("(\\d+)\\s*(리터|그람|kg|ml|개|봉|팩|g|l)");
+    // 수량 패턴: 숫자 + 단위 (긴 단위부터 매칭, 선택적 공백 포함)
+    // 예: 2개, 1.5kg, 500ml, 2 리터 등
+    private static final Pattern QUANTITY_PATTERN = Pattern.compile(
+        "([0-9]+(?:\\.[0-9]+)?)\\s*" +  // 정수 또는 소수 (예: 1, 1.5, 0.5)
+        "(킬로그램|킬로|리터|그람|밀리리터|" +  // 긴 한글 단위
+        "kg|ml|g|l|" +  // 영문 단위
+        "개|봉|팩|병|캔|통|묶음|줄|장|마리)"  // 한글 단위
+    );
     
-    // 무시할 키워드 (영수증의 불필요한 정보)
+    // 무시할 키워드 패턴 (영수증의 메타데이터)
     private static final String[] IGNORE_KEYWORDS = {
-        "합계", "총액", "카드", "현금", "받은금액", "거스름돈", "부가세", "과세",
+        // 결제 관련
+        "합계", "총액", "소계", "카드", "현금", "받은금액", "거스름돈", "부가세", "과세",
+        "할인", "쿠폰", "적립", "포인트", "결제", "승인", "거래",
+        // 매장 정보
         "매장", "점", "영수증", "감사합니다", "tel", "전화", "주소", "사업자",
-        "대표", "번호", "일시", "날짜", "시간", "승인", "거래"
+        "대표", "번호", "일시", "날짜", "시간", "상호", "사업자등록번호",
+        // 기타
+        "welcome", "thank", "you", "receipt", "total", "subtotal", "tax", "card"
     };
 
     /**
@@ -102,14 +116,20 @@ public class ReceiptParserService {
         // 가격 제거 (식재료명 추출을 위해)
         String nameWithoutPrice = PRICE_PATTERN.matcher(line).replaceAll("").trim();
         
-        // 수량 추출
+        // 수량 및 단위 추출
         Integer quantity = null;
         String unit = null;
         Matcher quantityMatcher = QUANTITY_PATTERN.matcher(line);
         if (quantityMatcher.find()) {
             try {
-                quantity = Integer.parseInt(quantityMatcher.group(1));
-                unit = quantityMatcher.group(2);
+                String quantityStr = quantityMatcher.group(1);
+                // 소수점이 있는 경우 반올림하여 정수로 변환
+                if (quantityStr.contains(".")) {
+                    quantity = (int) Math.round(Double.parseDouble(quantityStr));
+                } else {
+                    quantity = Integer.parseInt(quantityStr);
+                }
+                unit = normalizeUnit(quantityMatcher.group(2));
             } catch (NumberFormatException e) {
                 log.debug("Failed to parse quantity: {}", quantityMatcher.group(1));
             }
@@ -120,7 +140,10 @@ public class ReceiptParserService {
         Matcher priceMatcher = PRICE_PATTERN.matcher(line);
         if (priceMatcher.find()) {
             try {
-                String priceStr = priceMatcher.group(1).replaceAll("[,.]", "");
+                // 두 그룹 중 매칭된 그룹 선택 (₩ 기호가 있으면 group(1), 원이 있으면 group(2))
+                String priceStr = priceMatcher.group(1) != null ? 
+                    priceMatcher.group(1) : priceMatcher.group(2);
+                priceStr = priceStr.replaceAll("[,. ]", "");
                 price = Integer.parseInt(priceStr);
             } catch (NumberFormatException e) {
                 log.debug("Failed to parse price: {}", priceMatcher.group(1));
@@ -141,6 +164,21 @@ public class ReceiptParserService {
                 .unit(unit)
                 .price(price)
                 .build();
+    }
+
+    /**
+     * 단위 정규화 (일관성을 위해)
+     */
+    private String normalizeUnit(String unit) {
+        if (unit == null) return null;
+        
+        return switch (unit.toLowerCase()) {
+            case "킬로그램", "킬로" -> "kg";
+            case "그람" -> "g";
+            case "리터" -> "l";
+            case "밀리리터" -> "ml";
+            default -> unit;
+        };
     }
 
     /**

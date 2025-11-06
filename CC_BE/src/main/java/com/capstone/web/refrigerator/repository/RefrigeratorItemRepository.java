@@ -45,4 +45,9 @@ public interface RefrigeratorItemRepository extends JpaRepository<RefrigeratorIt
      * 특정 회원의 모든 식재료 조회 (등록일순 정렬)
      */
     List<RefrigeratorItem> findByMemberOrderByCreatedAtDesc(Member member);
+
+    /**
+     * REF-07: 회원 ID로 모든 식재료 조회
+     */
+    List<RefrigeratorItem> findByMemberId(Long memberId);
 }
