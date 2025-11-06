@@ -1,6 +1,6 @@
 package com.capstone.web.member.controller;
 
-
+import com.capstone.web.common.util.AuthenticationUtils;
 import com.capstone.web.member.dto.MemberRegisterRequest;
 import com.capstone.web.member.dto.MemberRegisterResponse;
 import com.capstone.web.member.dto.MemberPasswordChangeRequest;
@@ -66,7 +66,7 @@ public class MemberController {
     @PatchMapping("/password")
     public ResponseEntity<Void> changePassword(Authentication authentication,
                                               @Valid @RequestBody MemberPasswordChangeRequest request) {
-        Long memberId = ((com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal) authentication.getPrincipal()).id();
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         memberService.changePassword(memberId, request);
         return ResponseEntity.noContent().build();
     }

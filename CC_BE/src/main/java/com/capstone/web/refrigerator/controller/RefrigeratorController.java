@@ -1,6 +1,6 @@
 package com.capstone.web.refrigerator.controller;
 
-import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
+import com.capstone.web.common.util.AuthenticationUtils;
 import com.capstone.web.refrigerator.dto.DeductionDto;
 import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
@@ -56,7 +56,7 @@ public class RefrigeratorController {
         @RequestParam(required = false, defaultValue = "expirationDate") String sortBy,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.ItemListResponse response = refrigeratorService.getMyItems(memberId, sortBy);
         return ResponseEntity.ok(response);
     }
@@ -79,7 +79,7 @@ public class RefrigeratorController {
         @Valid @RequestBody RefrigeratorDto.CreateRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.Response response = refrigeratorService.addItem(memberId, request);
         
         URI location = ServletUriComponentsBuilder
@@ -111,7 +111,7 @@ public class RefrigeratorController {
         @Valid @RequestBody RefrigeratorDto.BulkCreateRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.BulkCreateResponse response = refrigeratorService.addItemsBulk(memberId, request);
         return ResponseEntity.ok(response);
     }
@@ -134,7 +134,7 @@ public class RefrigeratorController {
         @Valid @RequestBody RefrigeratorDto.UpdateRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.Response response = refrigeratorService.updateItem(memberId, id, request);
         return ResponseEntity.ok(response);
     }
@@ -158,14 +158,16 @@ public class RefrigeratorController {
         @PathVariable Long id,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         refrigeratorService.deleteItem(memberId, id);
         return ResponseEntity.noContent().build();
     }
 
     @Operation(
-        summary = "REF-04: 구매 이력 OCR 스캔 (CLOVA + GPT-5 Nano)",
+        summary = "REF-04: 구매 이력 OCR 스캔 (실험적 기능)",
         description = """
+            ⚠️ **주의: 현재 파싱 정확도가 불완전합니다. 실험적 기능으로 제공됩니다.**
+            
             영수증 이미지를 스캔하여 구매 이력을 자동으로 인식합니다.
             
             **처리 흐름**:
@@ -173,6 +175,11 @@ public class RefrigeratorController {
             2. 전처리: 광고/바코드 등 불필요한 정보 제거
             3. GPT-5 Nano로 JSON 파싱 (매장명, 날짜, 항목, 금액)
             4. 구조화된 구매 이력 반환
+            
+            **현재 알려진 문제**:
+            - 한국어 영수증 파싱 정확도 불안정
+            - 일부 매장의 영수증 포맷 미지원
+            - items 배열이 비어있을 수 있음
             
             **응답 정보**:
             - store: 매장명 (예: "CU 강남점")
@@ -188,10 +195,7 @@ public class RefrigeratorController {
             - 이미지: JPG, PNG
             - 최대 파일 크기: 10MB
             
-            **비용 효율성**:
-            - 평균 ~500 토큰/영수증
-            - ~2,000 영수증/1M 토큰
-            - 총 비용: $0.45/1M 토큰
+            **참고**: 향후 프롬프트 개선 및 fine-tuning으로 정확도 향상 예정
             """,
         security = @SecurityRequirement(name = "JWT")
     )
@@ -201,7 +205,7 @@ public class RefrigeratorController {
         @RequestParam("image") MultipartFile image,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.ScanPurchaseHistoryResponse response = 
                 refrigeratorService.scanPurchaseHistory(memberId, image);
         return ResponseEntity.ok(response);
@@ -238,7 +242,7 @@ public class RefrigeratorController {
         @RequestParam(required = false, defaultValue = "10") Integer limit,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         
         // limit 범위 검증
         if (limit <= 0 || limit > 50) {
@@ -274,7 +278,7 @@ public class RefrigeratorController {
         @RequestParam Long recipeId,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         DeductionDto.DeductPreviewResponse response = 
             refrigeratorService.previewDeduction(memberId, recipeId);
         return ResponseEntity.ok(response);
@@ -307,17 +311,9 @@ public class RefrigeratorController {
         @Valid @RequestBody DeductionDto.DeductRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         DeductionDto.DeductResponse response = 
             refrigeratorService.deductIngredients(memberId, request);
         return ResponseEntity.ok(response);
-    }
-
-    /**
-     * Authentication에서 회원 ID 추출
-     */
-    private Long extractMemberId(Authentication authentication) {
-        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
-        return principal.id();
     }
 }

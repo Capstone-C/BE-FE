@@ -1,6 +1,6 @@
 package com.capstone.web.member.controller;
 
-import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
+import com.capstone.web.common.util.AuthenticationUtils;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.dto.MemberProfileResponse;
 import com.capstone.web.member.dto.MemberWithdrawRequest;
@@ -48,8 +48,8 @@ public class MemberQueryController {
     )
     @GetMapping("/me")
     public ResponseEntity<MemberProfileResponse> me(Authentication authentication) {
-        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
-        Member member = memberRepository.findById(principal.id()).orElseThrow();
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
+        Member member = memberRepository.findById(memberId).orElseThrow();
         // 탈퇴 회원 접근 차단
         if (member.isDeleted()) {
             throw new com.capstone.web.auth.exception.WithdrawnMemberException();
@@ -88,8 +88,8 @@ public class MemberQueryController {
     public ResponseEntity<MemberProfileResponse> updateMe(Authentication authentication,
                                                          @RequestPart(value = "nickname", required = false) String nickname,
                                                          @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
-        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
-        Member member = memberRepository.findById(principal.id()).orElseThrow();
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
+        Member member = memberRepository.findById(memberId).orElseThrow();
         if (member.isDeleted()) {
             throw new com.capstone.web.auth.exception.WithdrawnMemberException();
         }
@@ -116,8 +116,8 @@ public class MemberQueryController {
     )
     @DeleteMapping("/me")
     public ResponseEntity<Void> withdrawMe(Authentication authentication, @Valid @RequestBody MemberWithdrawRequest request) {
-        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
-        Member member = memberRepository.findById(principal.id()).orElseThrow();
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
+        Member member = memberRepository.findById(memberId).orElseThrow();
         
         // 비밀번호 검증
         if (!passwordEncoder.matches(request.password(), member.getPassword())) {
