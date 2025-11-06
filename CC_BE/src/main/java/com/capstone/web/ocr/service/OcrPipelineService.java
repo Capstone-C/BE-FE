@@ -8,7 +8,7 @@ import com.capstone.web.refrigerator.dto.RefrigeratorDto.CreateRequest;
 import com.capstone.web.refrigerator.service.RefrigeratorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
+// Tesseract 제거됨 - import net.sourceforge.tess4j.TesseractException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,29 +20,42 @@ import java.util.stream.Collectors;
 /**
  * OCR 파이프라인 서비스
  * 이미지 → OCR → 파싱 → 냉장고 등록의 전체 플로우를 처리합니다.
+ * 
+ * NOTE: Tesseract 제거로 인해 이 서비스는 더 이상 사용되지 않습니다.
+ *       REF-04 scanPurchaseHistory API를 사용하세요.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class OcrPipelineService {
 
-    private final TesseractOcrService tesseractOcrService;
+    // Tesseract 제거됨 - private final TesseractOcrService tesseractOcrService;
     private final ReceiptParserService receiptParserService;
     private final RefrigeratorService refrigeratorService;
 
     /**
      * 영수증 이미지를 스캔하여 식재료를 자동으로 냉장고에 등록
      * 
+     * @deprecated Tesseract가 제거되어 이 메서드는 더 이상 사용되지 않습니다.
+     *             대신 RefrigeratorController의 POST /scan/purchase-history (REF-04) 사용
+     * 
      * @param memberId 회원 ID
      * @param imageFile 영수증 이미지 파일
      * @return 스캔 결과 (추출된 텍스트, 파싱된 식재료, 등록 결과)
      * @throws IOException 파일 읽기 오류
-     * @throws TesseractException OCR 처리 오류
+     * @throws RuntimeException Tesseract 제거됨
      */
+    @Deprecated
     @Transactional
     public ScanResponse scanAndAddToRefrigerator(Long memberId, MultipartFile imageFile) 
-            throws IOException, TesseractException {
+            throws IOException {
         
+        log.error("scanAndAddToRefrigerator is deprecated - Tesseract removed. Use REF-04 API instead.");
+        throw new UnsupportedOperationException(
+            "This method is deprecated. Use POST /scan/purchase-history (REF-04) instead."
+        );
+        
+        /* Tesseract 제거됨 - 원래 코드:
         log.info("Starting OCR pipeline for member: {}, file: {}", 
                  memberId, imageFile.getOriginalFilename());
         
@@ -70,6 +83,7 @@ public class OcrPipelineService {
                  response.getAddedCount(), response.getFailedCount());
         
         return response;
+        */
     }
 
     /**

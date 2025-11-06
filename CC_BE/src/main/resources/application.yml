@@ -34,22 +34,8 @@ jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
-# OCR 설정
+# CLOVA OCR 설정 (REF-04)
 ocr:
-  # OCR 엔진 타입 선택
-  # - tesseract: 로컬 Tesseract OCR (기본값)
-  # - ai: AI API 기반 OCR (향후 구현)
-  type: ${OCR_TYPE:tesseract}
-  
-  # Tesseract 설정 (type=tesseract 일 때)
-  tesseract:
-    # macOS Homebrew 경로: /opt/homebrew/share/tessdata
-    # Docker 경로: /usr/share/tesseract-ocr/5/tessdata
-    # 환경변수로 재정의 가능 (TESSDATA_PREFIX)
-    datapath: ${TESSDATA_PREFIX:/opt/homebrew/share/tessdata}
-    language: kor+eng
-  
-  # CLOVA OCR 설정 (REF-04)
   clova:
     api-url: ${CLOVA_OCR_API_URL:https://example.apigw.ntruss.com/custom/v1/YOUR_DOMAIN/general}
     secret-key: ${CLOVA_OCR_SECRET_KEY:}

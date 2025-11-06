@@ -1,4 +1,4 @@
-package com.capstone.web.recipe.repository;
+    package com.capstone.web.recipe.repository;
 
 import static org.assertj.core.api.Assertions.*;
 

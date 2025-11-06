@@ -14,7 +14,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
+// Tesseract 제거됨 - import net.sourceforge.tess4j.TesseractException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,14 +27,17 @@ import java.util.List;
 
 /**
  * OCR API 컨트롤러
- * 영수증 이미지를 스캔하여 식재료를 자동으로 등록합니다.
+ * 
+ * @deprecated Tesseract 제거로 인해 이 컨트롤러는 더 이상 사용되지 않습니다.
+ *             대신 RefrigeratorController의 POST /scan/purchase-history (REF-04) 사용
  */
 @Slf4j
-@Tag(name = "OCR", description = "영수증 스캔 및 OCR API")
+@Tag(name = "OCR", description = "영수증 스캔 및 OCR API (Deprecated - Use REF-04)")
 @RestController
 @RequestMapping("/api/v1/ocr")
 @RequiredArgsConstructor
 @SecurityRequirement(name = "JWT")
+@Deprecated
 public class OcrController {
 
     private final OcrPipelineService ocrPipelineService;
@@ -104,9 +107,10 @@ public class OcrController {
             log.error("Failed to read image file: {}", imageFile.getOriginalFilename(), e);
             throw new InvalidImageFileException("이미지 파일을 읽을 수 없습니다: " + e.getMessage(), e);
             
-        } catch (TesseractException e) {
-            log.error("OCR processing failed for file: {}", imageFile.getOriginalFilename(), e);
-            throw new OcrProcessingException("OCR 처리 중 오류가 발생했습니다: " + e.getMessage(), e);
+        } catch (UnsupportedOperationException e) {
+            // Tesseract 제거됨 - OcrPipelineService가 UnsupportedOperationException 던짐
+            log.error("Deprecated OCR endpoint called - Tesseract removed", e);
+            throw new OcrProcessingException("이 API는 더 이상 지원되지 않습니다. POST /api/v1/refrigerator/scan/purchase-history (REF-04)를 사용하세요.", e);
         }
     }
 

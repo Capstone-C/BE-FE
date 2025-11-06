@@ -2,9 +2,6 @@ package com.capstone.web.refrigerator.service;
 
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
-import com.capstone.web.ocr.dto.OcrDto;
-import com.capstone.web.ocr.service.ReceiptParserService;
-import com.capstone.web.ocr.service.TesseractOcrService;
 import com.capstone.web.recipe.domain.Recipe;
 import com.capstone.web.recipe.domain.RecipeIngredient;
 import com.capstone.web.recipe.repository.RecipeRepository;
@@ -18,12 +15,10 @@ import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sourceforge.tess4j.TesseractException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,8 +38,6 @@ public class RefrigeratorService {
 
     private final RefrigeratorItemRepository refrigeratorItemRepository;
     private final MemberRepository memberRepository;
-    private final TesseractOcrService tesseractOcrService;
-    private final ReceiptParserService receiptParserService;
     private final RecipeRepository recipeRepository;
     
     // REF-04 의존성
@@ -176,46 +169,6 @@ public class RefrigeratorService {
         
         refrigeratorItemRepository.delete(item);
         log.info("식재료 삭제: memberId={}, itemId={}", memberId, itemId);
-    }
-
-    /**
-     * REF-03: 영수증 스캔으로 식재료 추가
-     * OCR 처리 후 사용자 확인용 데이터 반환
-     */
-    public RefrigeratorDto.ScanReceiptResponse scanReceipt(Long memberId, MultipartFile image) {
-        try {
-            // 1단계: OCR로 텍스트 추출
-            String extractedText = tesseractOcrService.extractText(image);
-            log.info("영수증 텍스트 추출 완료: memberId={}, 텍스트 길이={}", memberId, extractedText.length());
-            
-            // 2단계: 텍스트에서 식재료 정보 파싱
-            List<OcrDto.ParsedItem> parsedItems = receiptParserService.parseReceipt(extractedText);
-            log.info("영수증 파싱 완료: memberId={}, 추출된 항목 수={}", memberId, parsedItems.size());
-            
-            // 3단계: OcrDto.ParsedItem → RefrigeratorDto.ScannedItem 변환
-            List<RefrigeratorDto.ScanReceiptResponse.ScannedItem> scannedItems = 
-                parsedItems.stream()
-                    .map(item -> RefrigeratorDto.ScanReceiptResponse.ScannedItem.builder()
-                        .name(item.getName())
-                        .quantity(item.getQuantity())
-                        .unit(item.getUnit())
-                        .price(item.getPrice())
-                        .build())
-                    .collect(Collectors.toList());
-            
-            return RefrigeratorDto.ScanReceiptResponse.builder()
-                    .extractedText(extractedText)
-                    .scannedItems(scannedItems)
-                    .totalItemsFound(scannedItems.size())
-                    .build();
-                    
-        } catch (IOException e) {
-            log.error("영수증 이미지 읽기 실패: memberId={}", memberId, e);
-            throw new IllegalArgumentException("이미지 파일을 읽을 수 없습니다", e);
-        } catch (TesseractException e) {
-            log.error("OCR 처리 실패: memberId={}", memberId, e);
-            throw new IllegalArgumentException("영수증 텍스트 추출에 실패했습니다", e);
-        }
     }
 
     /**

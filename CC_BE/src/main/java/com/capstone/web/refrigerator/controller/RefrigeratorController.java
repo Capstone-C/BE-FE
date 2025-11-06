@@ -164,35 +164,6 @@ public class RefrigeratorController {
     }
 
     @Operation(
-        summary = "영수증 스캔으로 식재료 추가 (REF-03)",
-        description = """
-            영수증 이미지를 OCR로 스캔하여 식재료를 자동 추출하고 냉장고에 추가합니다.
-            
-            **처리 과정**:
-            1. 이미지 업로드 및 OCR 처리
-            2. AI/Tesseract OCR로 텍스트 추출
-            3. 식재료 목록 파싱 (정규표현식)
-            4. 사용자 확인용 데이터 반환
-            
-            **다음 단계**: 
-            - 반환된 목록을 확인/수정 후
-            - `/items/bulk` API로 최종 등록
-            
-            **지원 형식**: JPG, PNG, JPEG (최대 10MB)
-            """,
-        security = @SecurityRequirement(name = "JWT")
-    )
-    @PostMapping(value = "/scan/receipt", consumes = "multipart/form-data")
-    public ResponseEntity<RefrigeratorDto.ScanReceiptResponse> scanReceipt(
-        @RequestParam("image") MultipartFile image,
-        Authentication authentication
-    ) {
-        Long memberId = extractMemberId(authentication);
-        RefrigeratorDto.ScanReceiptResponse response = refrigeratorService.scanReceipt(memberId, image);
-        return ResponseEntity.ok(response);
-    }
-
-    @Operation(
         summary = "REF-04: 구매 이력 OCR 스캔 (CLOVA + GPT-5 Nano)",
         description = """
             영수증 이미지를 스캔하여 구매 이력을 자동으로 인식합니다.
