@@ -15,6 +15,7 @@ import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
 import ProfilePage from '@/features/members/pages/ProfilePage';
 import ProfileEditPage from '@/features/members/pages/ProfileEditPage';
 import WithdrawPage from '@/features/members/pages/WithdrawPage';
+import MyPostsPage from '@/features/members/pages/MyPostsPage';
 
 // Boards
 import BoardsListPage from '@/features/boards/pages/BoardsListPage';
@@ -27,6 +28,9 @@ import DiaryCalendarPage from '@/features/diary/pages/DiaryCalendarPage';
 import DiaryCreatePage from '@/features/diary/pages/DiaryCreatePage';
 import DiaryDayPage from '@/features/diary/pages/DiaryDayPage';
 import DiaryEditPage from '@/features/diary/pages/DiaryEditPage';
+
+// Community
+import CommunityPage from '@/features/community/pages/CommunityPage';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +48,7 @@ const router = createBrowserRouter([
       // Public boards
       { path: 'boards', element: <BoardsListPage /> },
       { path: 'boards/:postId', element: <BoardDetailPage /> },
+      { path: 'community', element: <CommunityPage /> },
 
       // Diary
       { path: 'diary', element: <DiaryCalendarPage /> },
@@ -59,6 +64,7 @@ const router = createBrowserRouter([
           { path: 'mypage/edit', element: <ProfileEditPage /> },
           { path: 'mypage/withdraw', element: <WithdrawPage /> },
           { path: 'mypage/password', element: <ChangePasswordPage /> },
+          { path: 'mypage/posts', element: <MyPostsPage /> },
 
           // Auth-required boards
           { path: 'boards/new', element: <BoardNewPage /> },

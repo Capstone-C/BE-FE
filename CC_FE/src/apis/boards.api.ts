@@ -67,3 +67,25 @@ export async function updatePost(id: number, dto: UpsertPostDto) {
 export async function deletePost(id: number) {
   await authClient.delete(`/api/v1/posts/${id}`);
 }
+
+export type BoardSummary = {
+  id: number;
+  name: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  totalPosts: number;
+  todayPosts: number;
+  latestTitle?: string | null;
+};
+
+export async function listBoards() {
+  const { data } = await publicClient.get<BoardSummary[]>('/api/boards');
+  return data;
+}
+
+export type ToggleLikeResult = { liked: boolean; likeCount: number };
+
+export async function toggleLike(postId: number) {
+  const { data } = await authClient.post<ToggleLikeResult>(`/api/v1/posts/${postId}/like`, {});
+  return data;
+}

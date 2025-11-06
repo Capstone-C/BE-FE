@@ -52,7 +52,7 @@ public class Posts {
 
     @Column(name = "comment_count", nullable = false)
     @ColumnDefault("0")
-    private int commentCount = 0;
+    private final int commentCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -92,6 +92,18 @@ public class Posts {
         this.status = status;
         this.category = category;
         this.isRecipe = isRecipe;
+    }
+
+    public void increaseViewCount() {
+        this.viewCount = this.viewCount + 1;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount = this.likeCount + 1;
+    }
+
+    public void decreaseLikeCount() {
+        this.likeCount = Math.max(0, this.likeCount - 1);
     }
 
     public enum PostStatus {

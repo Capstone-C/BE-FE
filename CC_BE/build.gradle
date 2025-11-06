@@ -33,6 +33,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'    // 모니터링/헬스체크
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'  // Swagger UI
 
+    // HTML Sanitizer
+    implementation 'org.jsoup:jsoup:1.18.1'
+
     // --- 개발 편의/도구 ---
     compileOnly 'org.projectlombok:lombok'                                   // 코드 자동 생성
     annotationProcessor 'org.projectlombok:lombok'
