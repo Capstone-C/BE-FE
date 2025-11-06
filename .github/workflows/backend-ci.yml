@@ -33,7 +33,7 @@ jobs:
         env:
           MYSQL_DATABASE: ccdb_test
           MYSQL_USER: ccuser
-          MYSQL_PASSWORD: testpass
+          MYSQL_PASSWORD: devpass
           MYSQL_ROOT_PASSWORD: rootpass
           TZ: Asia/Seoul
         ports:
@@ -80,7 +80,7 @@ jobs:
             datasource:
               url: jdbc:mysql://localhost:3306/ccdb_test
               username: ccuser
-              password: testpass
+              password: devpass
               driver-class-name: com.mysql.cj.jdbc.Driver
             jpa:
               hibernate:

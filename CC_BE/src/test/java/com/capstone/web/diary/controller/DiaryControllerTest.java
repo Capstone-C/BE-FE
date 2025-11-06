@@ -131,7 +131,8 @@ class DiaryControllerTest {
     @Test
     void getDiaryByDate_ApiSuccess_NoData() throws Exception {
         // when
-        ResultActions result = mockMvc.perform(get("/api/v1/diary/2025-01-15")
+        ResultActions result = mockMvc.perform(get("/api/v1/diary/daily")
+                .param("date", "2025-01-15")
                 .header("Authorization", "Bearer " + userToken));
 
         // then
@@ -160,7 +161,8 @@ class DiaryControllerTest {
                 .build());
 
         // when
-        ResultActions result = mockMvc.perform(get("/api/v1/diary/2025-01-15")
+        ResultActions result = mockMvc.perform(get("/api/v1/diary/daily")
+                .param("date", "2025-01-15")
                 .header("Authorization", "Bearer " + userToken));
 
         // then
