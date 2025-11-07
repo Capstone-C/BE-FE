@@ -26,7 +26,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * JWT를 파싱하여 인증 정보를 SecurityContext에 저장하는 필터.
- * 블랙리스트 토큰/유효하지 않은 토큰은 401을 반환.
+ * 토큰이 없는 요청은 통과시켜 공개 엔드포인트에서 401이 발생하지 않도록 한다.
+ * 블랙리스트/유효하지 않은 토큰이 제공된 경우에만 401 반환.
  */
 @Component
 @RequiredArgsConstructor
@@ -39,19 +40,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        String path = request.getRequestURI();
-        String method = request.getMethod();
-        // 공개 엔드포인트: 로그인, 로그아웃, Swagger 문서 -> 인증 시도 생략
-        if (isPublic(path, method)) {
+        String header = request.getHeader("Authorization");
+
+        // 토큰이 없으면 공개 요청으로 간주하고 다음 필터로 넘김
+        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String header = request.getHeader("Authorization");
-        if (!StringUtils.hasText(header) || !header.startsWith("Bearer ")) {
-            unauthorized(response, "AUTH_MISSING_TOKEN", "인증 토큰이 필요합니다.");
-            return;
-        }
         String token = header.substring(7);
         if (tokenBlacklist.isBlacklisted(token)) {
             unauthorized(response, "AUTH_TOKEN_BLACKLISTED", "로그아웃된 토큰입니다.");
@@ -78,20 +74,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             request.setAttribute("WITHDRAWN_MEMBER", true);
         }
         filterChain.doFilter(request, response);
-    }
-
-    private boolean isPublic(String path, String method) {
-        // 회원가입: POST /api/v1/members 허용
-        boolean isSignup = "/api/v1/members".equals(path) && "POST".equalsIgnoreCase(method);
-        return isSignup
-                || path.startsWith("/api/v1/auth/login")
-                || path.startsWith("/api/v1/auth/logout")
-                // 비밀번호 재설정 (요청 & 확인) 공개 엔드포인트
-                || path.startsWith("/api/v1/auth/password-reset")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui")
-                // JwtAuthenticationFilter가 정적 리소스 요청을 인증 검사 대상에서 제외하도록 /static 경로 추가
-                || path.startsWith("/static");
     }
 
     private void unauthorized(HttpServletResponse response, String code, String message) throws IOException {

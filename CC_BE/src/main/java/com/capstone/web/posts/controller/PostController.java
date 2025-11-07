@@ -2,15 +2,16 @@ package com.capstone.web.posts.controller;
 
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
 import com.capstone.web.posts.dto.PostDto;
+import com.capstone.web.posts.dto.PostListRequest;
 import com.capstone.web.posts.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -30,15 +31,34 @@ public class PostController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostDto.Response> getPost(@PathVariable Long id) {
-        PostDto.Response post = postService.getPostById(id);
+    public ResponseEntity<PostDto.Response> getPost(
+            @PathVariable Long id,
+            @AuthenticationPrincipal MemberPrincipal userPrincipal
+    ) {
+        Long viewer = userPrincipal != null ? userPrincipal.id() : null;
+        PostDto.Response post = postService.getPostById(id, viewer);
         return ResponseEntity.ok(post);
     }
 
     @GetMapping
-    public ResponseEntity<List<PostDto.Response>> getAllPosts() {
-        List<PostDto.Response> posts = postService.getAllPosts();
-        return ResponseEntity.ok(posts);
+    public ResponseEntity<Page<PostDto.Response>> list(
+            @RequestParam(required = false) Long boardId,
+            @RequestParam(required = false) Long authorId,
+            @RequestParam(required = false, defaultValue = "1") Integer page,
+            @RequestParam(required = false, defaultValue = "20") Integer size,
+            @RequestParam(required = false) String searchType,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false, defaultValue = "createdAt") String sortBy
+    ) {
+        PostListRequest req = new PostListRequest();
+        req.setBoardId(boardId);
+        req.setAuthorId(authorId);
+        req.setPage(page);
+        req.setSize(size);
+        req.setSearchType(searchType);
+        req.setKeyword(keyword);
+        req.setSortBy(sortBy);
+        return ResponseEntity.ok(postService.list(req));
     }
 
     @PutMapping("/{id}")
@@ -60,5 +80,14 @@ public class PostController {
         // (수정) 토큰에서 추출한 사용자 ID(userPrincipal.id())를 서비스로 전달
         postService.deletePost(id, userPrincipal.id());
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<Object> toggleLike(
+            @PathVariable Long id,
+            @AuthenticationPrincipal MemberPrincipal userPrincipal
+    ) {
+        var result = postService.toggleLike(id, userPrincipal.id());
+        return ResponseEntity.ok(result);
     }
 }
