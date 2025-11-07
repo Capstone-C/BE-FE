@@ -24,7 +24,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.capstone.web.member.repository.MemberRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -95,13 +94,6 @@ public class PostService {
                 .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
     }
 
-    // N+1 문제 해결을 위해 findAllWithAuthor() 사용 (PostsRepository에 @Query 필요)
-    public List<PostDto.Response> getAllPosts() {
-        return postsRepository.findAllWithAuthor().stream()
-                .map(PostDto.Response::new)
-                .collect(Collectors.toList());
-    }
-
     @Transactional
     public void updatePost(Long id, Long memberId, PostDto.UpdateRequest request) { // (수정) memberId 받기
         Posts post = postsNextPage(id);
@@ -131,7 +123,8 @@ public class PostService {
     public Page<PostDto.Response> list(PostListRequest req) {
         Pageable pageable = PageRequest.of(req.pageIndex(), req.getSize(), req.sort());
 
-        Specification<Posts> spec = Specification.where(null);
+        // Start with a neutral spec without using deprecated Specification.where(null)
+        Specification<Posts> spec = Specification.anyOf();
         if (req.getBoardId() != null) {
             spec = spec.and((root, q, cb) -> cb.equal(root.get("category").get("id"), req.getBoardId()));
         }
@@ -181,20 +174,5 @@ public class PostService {
     }
 
     public record ToggleLikeResult(boolean liked, int likeCount) {
-    public void deletePost(Long id, Long memberId) { // (수정) memberId 받기
-        Posts post = postsNextPage(id);
-
-        // (추가) 작성자 본인 확인 로직
-        if (!post.getAuthorId().getId().equals(memberId)) {
-            throw new PostPermissionException("게시글을 삭제할 권한이 없습니다.");
-        }
-
-        postsRepository.delete(post);
-    }
-
-    // (추가) 중복되는 findById 로직을 위한 private 메서드
-    private Posts postsNextPage(Long id) {
-        return postsRepository.findById(id)
-                .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
     }
 }
