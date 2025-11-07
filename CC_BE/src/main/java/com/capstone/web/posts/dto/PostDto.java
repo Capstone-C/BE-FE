@@ -15,8 +15,6 @@ public class PostDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class CreateRequest {
-        @NotNull(message = "작성자 ID는 필수입니다.")
-        private Long authorId;
         @NotNull(message = "카테고리 ID는 필수입니다.")
         private Long categoryId;
         @NotBlank(message = "제목은 비워둘 수 없습니다.")

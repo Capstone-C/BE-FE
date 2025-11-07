@@ -70,14 +70,14 @@ class CategoryControllerTest {
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
-        ResultActions result = mockMvc.perform(post("/api/categories")
+        ResultActions result = mockMvc.perform(post("/api/v1/categories")
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));
 
         // then
         result.andExpect(status().isCreated())
-                .andExpect(header().string("Location", startsWith("/api/categories/")));
+                .andExpect(header().string("Location", startsWith("/api/v1/categories")));
     }
 
     @DisplayName("ID로 카테고리 조회 API 호출에 성공한다")
@@ -87,7 +87,8 @@ class CategoryControllerTest {
         Category saved = categoryRepository.save(Category.builder().name("조회용").type(Category.CategoryType.QA).build());
 
         // when
-        ResultActions result = mockMvc.perform(get("/api/categories/{id}", saved.getId())
+        // [수정] "categories{id}"가 올바른 경로입니다. ("categories1" (X))
+        ResultActions result = mockMvc.perform(get("/api/v1/categories/{id}", saved.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then
@@ -103,7 +104,8 @@ class CategoryControllerTest {
         Category saved = categoryRepository.save(Category.builder().name("삭제용").type(Category.CategoryType.FREE).build());
 
         // when
-        ResultActions result = mockMvc.perform(delete("/api/categories/{id}", saved.getId())
+        // [수정] "categories{id}"가 올바른 경로입니다. ("categories2" (X))
+        ResultActions result = mockMvc.perform(delete("/api/v1/categories/{id}", saved.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then

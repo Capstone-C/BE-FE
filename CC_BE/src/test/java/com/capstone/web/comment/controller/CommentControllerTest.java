@@ -86,7 +86,7 @@ class CommentControllerTest {
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
-        ResultActions result = mockMvc.perform(post("/api/posts/{postId}/comments", post.getId())
+        ResultActions result = mockMvc.perform(post("/api/v1/posts/{postId}/comments", post.getId())
                 .header("Authorization", "Bearer " + userToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(requestBody));
@@ -103,7 +103,7 @@ class CommentControllerTest {
         commentRepository.save(Comment.builder().post(post).author(author).content("자식").parent(parent).build());
 
         // when
-        ResultActions result = mockMvc.perform(get("/api/posts/{postId}/comments", post.getId())
+        ResultActions result = mockMvc.perform(get("/api/v1/posts/{postId}/comments", post.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then
@@ -121,7 +121,7 @@ class CommentControllerTest {
         Comment comment = commentRepository.save(Comment.builder().post(post).author(author).content("삭제될 댓글").build());
 
         // when
-        ResultActions result = mockMvc.perform(delete("/api/posts/{postId}/comments/{commentId}", post.getId(), comment.getId())
+        ResultActions result = mockMvc.perform(delete("/api/v1/posts/{postId}/comments/{commentId}", post.getId(), comment.getId())
                 .header("Authorization", "Bearer " + userToken));
 
         // then

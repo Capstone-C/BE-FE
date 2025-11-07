@@ -222,7 +222,6 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
-    // 👇 [추가] CommentPermissionException 핸들러
     @ExceptionHandler(CommentPermissionException.class)
     public ResponseEntity<ErrorResponse> handleCommentPermissionException(CommentPermissionException ex) {
         log.warn("Comment Permission Denied: {}", ex.getMessage());
