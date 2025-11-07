@@ -51,6 +51,7 @@ public class PostDto {
     public static class Response {
         private final Long id;
         private final Long authorId;
+        private final String authorName; // 추가: 작성자 닉네임
         private final Long categoryId;
         private final String categoryName;
         private final String title;
@@ -69,6 +70,7 @@ public class PostDto {
         public Response(Posts post) {
             this.id = post.getId();
             this.authorId = post.getAuthorId().getId();
+            this.authorName = post.getAuthorId().getNickname();
             this.categoryId = post.getCategory().getId();
             this.categoryName = post.getCategory().getName();
             this.title = post.getTitle();
@@ -88,6 +90,7 @@ public class PostDto {
         public Response(Posts post, Boolean likedByMe) {
             this.id = post.getId();
             this.authorId = post.getAuthorId().getId();
+            this.authorName = post.getAuthorId().getNickname();
             this.categoryId = post.getCategory().getId();
             this.categoryName = post.getCategory().getName();
             this.title = post.getTitle();

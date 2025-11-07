@@ -1,7 +1,7 @@
 // src/features/boards/pages/BoardNewPage.tsx
 import axios from 'axios';
-import { useState, type ChangeEvent, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, type ChangeEvent, useEffect, useMemo } from 'react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { createPost } from '@/apis/boards.api';
 import { listCategories, type Category, type CategoryType } from '@/apis/categories.api';
 
@@ -14,6 +14,17 @@ export default function BoardNewPage() {
   const [loading, setLoading] = useState(false);
 
   const nav = useNavigate();
+  const [sp] = useSearchParams();
+  const location = useLocation() as { state?: { fromCategoryId?: number } };
+
+  // 쿼리 또는 state에서 categoryId를 읽어와 해당 보드에서 진입했는지 판단
+  const fixedCategoryId = useMemo(() => {
+    const fromState = location.state?.fromCategoryId;
+    const fromQuery = sp.get('categoryId');
+    // 우선순위: state > query
+    const cid = Number.isFinite(fromState) ? fromState : fromQuery ? Number(fromQuery) : undefined;
+    return cid;
+  }, [location.state, sp]);
 
   useEffect(() => {
     // 초기 카테고리 불러오기
@@ -23,13 +34,19 @@ export default function BoardNewPage() {
         // 최상위 카테고리만 노출
         const topLevel = data.filter((c) => c.parentId == null);
         setCategories(topLevel);
-        const first = topLevel[0];
-        if (first && typeof first.id === 'number') setCategoryId(first.id);
+
+        // 고정 카테고리가 있으면 그걸로, 없으면 첫 번째
+        if (fixedCategoryId && topLevel.some((c) => c.id === fixedCategoryId)) {
+          setCategoryId(fixedCategoryId);
+        } else {
+          const first = topLevel[0];
+          if (first && typeof first.id === 'number') setCategoryId(first.id);
+        }
       } catch (e) {
         console.error('카테고리를 불러오지 못했습니다.', e);
       }
     })();
-  }, []);
+  }, [fixedCategoryId]);
 
   const typeLabelMap: Record<CategoryType, string> = {
     VEGAN: '비건',
@@ -54,9 +71,11 @@ export default function BoardNewPage() {
     setLoading(true);
     try {
       await createPost({ title, content, categoryId, isRecipe });
-      nav('/boards');
+      // 고정 카테고리에서 왔다면 해당 게시판 목록으로, 아니면 전체 글로 이동
+      const board = fixedCategoryId ?? undefined;
+      const to = board ? `/boards?categoryId=${board}` : '/boards';
+      nav(to);
     } catch (err: unknown) {
-      // any 금지: unknown으로 받고 안전하게 분기
       let msg: string = '작성에 실패했습니다.';
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
@@ -75,6 +94,8 @@ export default function BoardNewPage() {
     }
   };
 
+  const isCategoryLocked = Number.isFinite(fixedCategoryId);
+
   return (
     <div className="p-6 space-y-4">
       <h1 className="text-2xl font-bold">새 글 작성</h1>
@@ -86,7 +107,13 @@ export default function BoardNewPage() {
       {/* 카테고리 선택 */}
       <label className="block">
         <span className="mr-2">카테고리</span>
-        <select className="border p-2" value={categoryId} onChange={(e) => setCategoryId(Number(e.target.value))}>
+        <select
+          className="border p-2"
+          value={categoryId}
+          onChange={(e) => setCategoryId(Number(e.target.value))}
+          disabled={isCategoryLocked}
+          title={isCategoryLocked ? '게시판에서 진입하여 카테고리가 고정되었습니다' : undefined}
+        >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
               {renderCategoryLabel(c)}

@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function ProtectedRoute() {
   const { user, isInitialized } = useAuth();
+  const location = useLocation();
 
   // AuthContext의 초기화가 완료될 때까지 기다립니다.
   // 초기화 중 리다이렉트되는 것을 방지하여 UX를 개선합니다.
@@ -14,7 +15,8 @@ export default function ProtectedRoute() {
   if (!user) {
     // 사용자가 로그인하지 않았으면 로그인 페이지로 리다이렉트합니다.
     // 'replace' 옵션은 히스토리 스택에 현재 경로를 남기지 않습니다.
-    return <Navigate to="/login" replace />;
+    // state.from에 현재 location(쿼리/상태 포함)을 담아 로그인 후 복귀할 수 있도록 합니다.
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   // 로그인한 사용자는 요청한 페이지를 보여줍니다.

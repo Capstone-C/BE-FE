@@ -4,8 +4,7 @@ import { usePost } from '@/features/boards/hooks/usePosts';
 import { deletePost, toggleLike } from '@/apis/boards.api';
 import CommentList from '@/features/comments/components/CommentList';
 import { formatKST } from '@/utils/date';
-import { extractAuthorRef } from '@/utils/author';
-import { useMemberName } from '@/features/members/hooks/useMemberName';
+import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
 
@@ -18,7 +17,7 @@ export default function BoardDetailPage() {
   const { data, isLoading, isError } = usePost(id);
 
   const { inlineName, memberId } = extractAuthorRef(data);
-  const { name: authorName } = useMemberName(memberId, inlineName);
+  const authorName = getDisplayName(memberId, inlineName);
 
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
@@ -57,6 +56,11 @@ export default function BoardDetailPage() {
   const currentLiked = liked ?? (data as unknown as { likedByMe?: boolean }).likedByMe ?? false;
   const currentLikeCount = likeCount ?? data.likeCount ?? 0;
 
+  const editHref = sp.get('categoryId')
+    ? `/boards/${id}/edit?categoryId=${sp.get('categoryId')}`
+    : `/boards/${id}/edit`;
+  const editState = sp.get('categoryId') ? { fromCategoryId: Number(sp.get('categoryId')) } : undefined;
+
   return (
     <div className="p-6 space-y-4">
       <div className="text-sm text-blue-600">
@@ -87,7 +91,7 @@ export default function BoardDetailPage() {
         >
           {currentLiked ? '추천 취소' : '추천'} ({currentLikeCount})
         </button>
-        <Link to={`/boards/${id}/edit`} className="underline">
+        <Link to={editHref} state={editState} className="underline">
           수정
         </Link>
         <button onClick={onDelete}>삭제</button>

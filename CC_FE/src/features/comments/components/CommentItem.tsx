@@ -3,9 +3,8 @@ import { useState, memo } from 'react';
 import type { Comment } from '@/types/comment';
 import CommentForm from './CommentForm';
 import { useDeleteComment } from '../hooks/useCommentMutations';
-import { extractAuthorRef } from '@/utils/author';
+import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import { formatKST } from '@/utils/date';
-import { useMemberName } from '@/features/members/hooks/useMemberName';
 
 type Props = { c: Comment; postId: number };
 
@@ -14,14 +13,14 @@ function CommentItemImpl({ c, postId }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const del = useDeleteComment(postId, c.id);
 
-  // 서버가 내려준 이름(있으면 우선), 없으면 memberId로 조회
+  // 서버가 내려준 이름(있으면 우선), 없으면 memberId로 로컬 폴백
   const { inlineName, memberId } = extractAuthorRef(c);
-  const { name: authorName } = useMemberName(memberId, inlineName);
+  const authorName = getDisplayName(memberId, inlineName);
 
   return (
     <li className="border-b py-3">
       <div className="text-sm text-gray-600">
-        {authorName ?? '익명'} · {formatKST(c.createdAt)}
+        {authorName} · {formatKST(c.createdAt)}
       </div>
 
       {!editOpen ? (

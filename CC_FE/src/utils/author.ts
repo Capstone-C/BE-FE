@@ -36,3 +36,10 @@ export function extractAuthorRef(obj: unknown) {
 
   return { inlineName, memberId };
 }
+
+export function getDisplayName(memberId?: number, inlineName?: string | null) {
+  const inlineOK = typeof inlineName === 'string' && inlineName.trim().length > 0;
+  if (inlineOK) return inlineName!.trim();
+  if (Number.isFinite(memberId) && (memberId as number) > 0) return `작성자 #${memberId}`;
+  return '익명';
+}

@@ -1,7 +1,7 @@
 // src/features/boards/pages/BoardEditPage.tsx
 import axios from 'axios';
 import { useEffect, useState, type ChangeEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { usePost } from '@/features/boards/hooks/usePosts';
 import { updatePost } from '@/apis/boards.api';
 
@@ -14,6 +14,8 @@ export default function BoardEditPage() {
   const { postId } = useParams();
   const id = Number(postId);
   const nav = useNavigate();
+  const [sp] = useSearchParams();
+  const location = useLocation() as { state?: { fromCategoryId?: number } };
 
   const { data, isLoading } = usePost(id);
 
@@ -39,7 +41,11 @@ export default function BoardEditPage() {
     setSaving(true);
     try {
       await updatePost(id, { title, content, categoryId, isRecipe });
-      nav(`/boards/${id}`);
+      // 쿼리 우선, 없으면 state에서 카테고리 복구
+      const cat =
+        sp.get('categoryId') ??
+        (Number.isFinite(location.state?.fromCategoryId) ? String(location.state?.fromCategoryId) : undefined);
+      nav(cat ? `/boards/${id}?categoryId=${cat}` : `/boards/${id}`);
     } catch (err: unknown) {
       let msg = '수정에 실패했습니다.';
       if (axios.isAxiosError(err)) {
@@ -76,10 +82,16 @@ export default function BoardEditPage() {
       </label>
 
       <div className="flex gap-2">
-        <button className="border px-3 py-2 rounded-md disabled:opacity-50" disabled={!title || !content || saving} onClick={onSave}>
+        <button
+          className="border px-3 py-2 rounded-md disabled:opacity-50"
+          disabled={!title || !content || saving}
+          onClick={onSave}
+        >
           {saving ? '저장 중…' : '수정'}
         </button>
-        <button className="border px-3 py-2 rounded-md" onClick={() => nav(-1)}>취소</button>
+        <button className="border px-3 py-2 rounded-md" onClick={() => nav(-1)}>
+          취소
+        </button>
       </div>
     </div>
   );

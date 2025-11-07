@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { login } from '@/apis/auth';
@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation() as any;
   const [formData, setFormData] = useState<LoginRequest>({
     email: '',
     password: '',
@@ -21,7 +22,18 @@ export default function LoginPage() {
     onSuccess: (data) => {
       authLogin(data.member, data.accessToken);
       alert('로그인 되었습니다.');
-      navigate('/');
+      const from = location?.state?.from;
+      if (typeof from === 'string') {
+        navigate(from, { replace: true });
+      } else if (from && typeof from === 'object') {
+        const pathname = from.pathname ?? '/';
+        const search = from.search ?? '';
+        const hash = from.hash ?? '';
+        const state = from.state ?? undefined;
+        navigate(pathname + search + hash, { state, replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
     },
     onError: (error: AxiosError<{ code?: string; message: string }>) => {
       const responseData = error.response?.data;
