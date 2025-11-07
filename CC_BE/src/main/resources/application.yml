@@ -34,5 +34,28 @@ jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
+# CLOVA OCR 설정 (REF-04)
+ocr:
+  clova:
+    api-url: ${CLOVA_OCR_API_URL:https://example.apigw.ntruss.com/custom/v1/YOUR_DOMAIN/general}
+    secret-key: ${CLOVA_OCR_SECRET_KEY:}
+
+# OpenAI GPT 설정 (REF-04)
+openai:
+  api-url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
+  api-key: ${OPENAI_API_KEY:}
+  model: ${OPENAI_MODEL:gpt-5-nano}
+  max-tokens: ${OPENAI_MAX_TOKENS:1000}
+
 app:
   upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로
+
+# SpringDoc OpenAPI 설정
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha

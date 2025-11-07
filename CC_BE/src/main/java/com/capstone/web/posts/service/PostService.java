@@ -24,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.capstone.web.member.repository.MemberRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,6 +52,7 @@ public class PostService {
 
     @Transactional
     public Long createPost(Long memberId, PostDto.CreateRequest request) { // (수정) memberId 받기
+        // (수정) DTO가 아닌 파라미터로 받은 memberId 사용
         Member author = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("작성자를 찾을 수 없습니다. ID: " + memberId));
 
@@ -104,6 +106,7 @@ public class PostService {
     public void updatePost(Long id, Long memberId, PostDto.UpdateRequest request) { // (수정) memberId 받기
         Posts post = postsNextPage(id);
 
+        // (추가) 작성자 본인 확인 로직
         if (!post.getAuthorId().getId().equals(memberId)) {
             throw new PostPermissionException("게시글을 수정할 권한이 없습니다.");
         }
@@ -178,5 +181,20 @@ public class PostService {
     }
 
     public record ToggleLikeResult(boolean liked, int likeCount) {
+    public void deletePost(Long id, Long memberId) { // (수정) memberId 받기
+        Posts post = postsNextPage(id);
+
+        // (추가) 작성자 본인 확인 로직
+        if (!post.getAuthorId().getId().equals(memberId)) {
+            throw new PostPermissionException("게시글을 삭제할 권한이 없습니다.");
+        }
+
+        postsRepository.delete(post);
+    }
+
+    // (추가) 중복되는 findById 로직을 위한 private 메서드
+    private Posts postsNextPage(Long id) {
+        return postsRepository.findById(id)
+                .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
     }
 }

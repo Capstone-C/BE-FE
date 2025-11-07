@@ -30,7 +30,6 @@ public class PostController {
         return ResponseEntity.created(URI.create("/api/posts/" + postId)).build();
     }
 
-
     @GetMapping("/{id}")
     public ResponseEntity<PostDto.Response> getPost(
             @PathVariable Long id,
