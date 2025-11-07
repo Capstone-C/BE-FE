@@ -23,3 +23,11 @@ logging:
 jwt:
   secret: dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw
   expiration-millis: 3600000
+
+# OCR Tesseract 설정 (테스트용)
+# OCR 설정
+ocr:
+  type: tesseract  # 테스트에서는 Tesseract 사용
+  tesseract:
+    datapath: ${TESSDATA_PREFIX:/opt/homebrew/share/tessdata}
+    language: kor+eng

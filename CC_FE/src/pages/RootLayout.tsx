@@ -19,6 +19,11 @@ export default function RootLayout() {
             <Link to="/" className="text-lg font-bold text-gray-800 hover:text-blue-600">
               홈
             </Link>
+            {user && (
+              <Link to="/diary" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                다이어리
+              </Link>
+            )}
           </div>
           <div className="flex items-center gap-4">
             {user ? (

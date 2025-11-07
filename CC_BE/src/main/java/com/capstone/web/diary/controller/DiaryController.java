@@ -1,6 +1,6 @@
 package com.capstone.web.diary.controller;
 
-import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
+import com.capstone.web.common.util.AuthenticationUtils;
 import com.capstone.web.diary.dto.DiaryDto;
 import com.capstone.web.diary.service.DiaryService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,22 +37,22 @@ public class DiaryController {
         @RequestParam int month,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         DiaryDto.MonthlyCalendarResponse response = diaryService.getMonthlyCalendar(memberId, year, month);
         return ResponseEntity.ok(response);
     }
 
     @Operation(
-        summary = "날짜별 식단 조회",
-        description = "특정 날짜의 식단 기록을 조회합니다.",
+        summary = "일별 식단 기록 조회",
+        description = "특정 날짜의 상세 식단 기록을 조회합니다.",
         security = @SecurityRequirement(name = "JWT")
     )
-    @GetMapping("/{date}")
-    public ResponseEntity<List<DiaryDto.Response>> getDiaryByDate(
-        @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+    @GetMapping("/daily")
+    public ResponseEntity<List<DiaryDto.Response>> getDailyDiaries(
+        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         List<DiaryDto.Response> response = diaryService.getDiaryByDate(memberId, date);
         return ResponseEntity.ok(response);
     }
@@ -77,7 +77,7 @@ public class DiaryController {
         @Valid @RequestBody DiaryDto.CreateRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         DiaryDto.Response response = diaryService.createDiary(memberId, request);
         
         URI location = ServletUriComponentsBuilder
@@ -100,7 +100,7 @@ public class DiaryController {
         @Valid @RequestBody DiaryDto.UpdateRequest request,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         DiaryDto.Response response = diaryService.updateDiary(memberId, id, request);
         return ResponseEntity.ok(response);
     }
@@ -115,16 +115,8 @@ public class DiaryController {
         @PathVariable Long id,
         Authentication authentication
     ) {
-        Long memberId = extractMemberId(authentication);
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
         diaryService.deleteDiary(memberId, id);
         return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * Authentication에서 회원 ID 추출
-     */
-    private Long extractMemberId(Authentication authentication) {
-        MemberPrincipal principal = (MemberPrincipal) authentication.getPrincipal();
-        return principal.id();
     }
 }
