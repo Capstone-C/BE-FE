@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 @EnableWebSecurity
@@ -42,5 +44,25 @@ public class SecurityConfig {
                 .addFilterBefore(authenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(blacklistFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/api/**") // 1. CORS를 적용할 API 경로 패턴 (전체 API)
+                        // 2. [핵심] 허용할 CloudFront 도메인 (HTTPS 프로토콜 포함)
+                        .allowedOrigins("https://d3hpujisowtim.cloudfront.net") 
+                        // 3. 허용할 HTTP 메서드 (GET, POST, PUT, DELETE 등)
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
+                        // 4. 허용할 모든 헤더 (Authorization 헤더 포함)
+                        .allowedHeaders("*")
+                        // 5. 자격증명(쿠키, Auth 헤더) 허용
+                        .allowCredentials(true)
+                        // 6. Pre-flight 요청 캐시 시간 (1시간)
+                        .maxAge(3600); 
+            }
+        };
     }
 }
