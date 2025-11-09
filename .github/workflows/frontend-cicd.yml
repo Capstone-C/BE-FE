@@ -62,9 +62,11 @@ jobs:
           cache-dependency-path: '${{ env.WORKING_DIRECTORY }}/pnpm-lock.yaml'
       
       # [ ⭐️ 최종 수정! ⭐️ ]
-      # "frozen-lockfile" (엄격 모드) -> "no-frozen-lockfile" (관대 모드)
+      # 1. no-frozen-lockfile (호환성 무시)
+      # 2. ignore-workspace (모노레포 무시)
+      # 3. dev (devDependencies 설치) ⬅️ 'eslint' 오류 해결
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-workspace
+        run: pnpm install --no-frozen-lockfile --ignore-workspace --dev
       
       # (이하 단계는 동일)
       - name: Run linter
