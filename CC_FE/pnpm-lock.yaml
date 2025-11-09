@@ -16,7 +16,7 @@ importers:
         version: 5.90.7(react@19.2.0)
       axios:
         specifier: ^1.12.2
-        version: 1.13.2
+        version: 1.13.2(debug@4.4.3)
       dompurify:
         specifier: ^3.1.6
         version: 3.3.0
@@ -54,6 +54,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: ^1.0.0
         version: 1.0.0
+      debug:
+        specifier: ^4.4.3
+        version: 4.4.3
       eslint:
         specifier: ^9.36.0
         version: 9.39.1(jiti@2.6.1)
@@ -1821,9 +1824,9 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  axios@1.13.2:
+  axios@1.13.2(debug@4.4.3):
     dependencies:
-      follow-redirects: 1.15.11
+      follow-redirects: 1.15.11(debug@4.4.3)
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:
@@ -2069,7 +2072,9 @@ snapshots:
 
   flatted@3.3.3: {}
 
-  follow-redirects@1.15.11: {}
+  follow-redirects@1.15.11(debug@4.4.3):
+    optionalDependencies:
+      debug: 4.4.3
 
   form-data@4.0.4:
     dependencies:
