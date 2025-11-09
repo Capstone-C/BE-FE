@@ -2,16 +2,15 @@
 import axios, { AxiosError } from 'axios';
 import { getToken, removeToken } from '@/utils/token';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL;
+// const API_URL = import.meta.env.VITE_API_BASE_URL;
 
-// 2. publicClient의 baseURL을 ALB 주소로 설정합니다.
 const publicClient = axios.create({
-  baseURL: API_URL, // <-- '/' 에서 ALB 주소로 변경
+  baseURL: '/', 
 });
 
 // 3. authClient의 baseURL도 ALB 주소로 설정합니다.
 const authClient = axios.create({
-  baseURL: API_URL, // <-- '/' 에서 ALB 주소로 변경
+  baseURL: '/', 
 });
 
 // 요청 인터셉터는 authClient에만 적용되어야 합니다.

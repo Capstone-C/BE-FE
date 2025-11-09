@@ -28,6 +28,94 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
+resource "aws_eip" "prod_nat_eip" {
+  domain = "vpc"
+  
+  tags = {
+    Name = "prod-nat-eip"
+  }
+}
+
+# 1-2. NAT 게이트웨이 생성 (퍼블릭 서브넷 'prod_pub_a'에 배치)
+resource "aws_nat_gateway" "prod_nat_gw" {
+  allocation_id = aws_eip.prod_nat_eip.id
+  subnet_id     = aws_subnet.prod_pub_a.id
+
+  tags = {
+    Name = "prod-nat-gw"
+  }
+  
+  depends_on = [aws_internet_gateway.gw]
+}
+
+# 1-3. 프라이빗 라우팅 테이블 생성 (WAS 서브넷용)
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.prod.id
+
+  # "모든 외부로 나가는 트래픽(0.0.0.0/0)"을 NAT 게이트웨이로 보냄
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.prod_nat_gw.id
+  }
+
+  tags = {
+    Name = "prod-private-rt"
+  }
+}
+
+# 1-4. 이 프라이빗 라우팅 테이블을 WAS 서브넷에 연결
+resource "aws_route_table_association" "was_a" {
+  subnet_id      = aws_subnet.prod_was_a.id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+resource "aws_route_table_association" "was_c" {
+  subnet_id      = aws_subnet.prod_was_c.id
+  route_table_id = aws_route_table.private_rt.id
+}
+
+
+# -----------------------------------------------
+# [ ⭐️ 2. IAM 역할 추가됨 ⭐️ ]
+# (EC2가 ECR에서 이미지 Pull 할 수 있도록)
+# -----------------------------------------------
+
+# 2-1. EC2가 사용할 IAM 역할 생성
+resource "aws_iam_role" "prod_was_role" {
+  name = "prod-was-ec2-role"
+
+  # EC2 서비스가 이 역할을 맡을 수 있도록 허용
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [
+      {
+        Action = "sts:AssumeRole",
+        Effect = "Allow",
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+  
+  tags = {
+    Name = "prod-was-ec2-role"
+  }
+}
+
+# 2-2. AWS가 관리하는 "ECR 읽기 전용" 정책을 위 역할에 연결
+resource "aws_iam_role_policy_attachment" "ecr_read_only" {
+  role       = aws_iam_role.prod_was_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+}
+
+# 2-3. EC2 인스턴스 프로파일 생성 (역할을 EC2에 할당하기 위한 래퍼)
+resource "aws_iam_instance_profile" "prod_was_profile" {
+  name = "prod-was-instance-profile"
+  role = aws_iam_role.prod_was_role.name
+}
+
+
 #################
 ### routtable ###
 #################
@@ -181,6 +269,11 @@ resource "aws_launch_template" "prod_was_lt" {
   instance_type = "t2.micro"
   key_name      = "prod_key"
 
+  # ECR 권한을 위한 IAM 역할
+  iam_instance_profile {
+    arn = aws_iam_instance_profile.prod_was_profile.arn
+  }
+
   # EIP 자동 할당
   network_interfaces {
     associate_public_ip_address = false
@@ -197,46 +290,41 @@ resource "aws_launch_template" "prod_was_lt" {
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
-    # 1. 시스템 업데이트 및 Docker 설치
-    yum update -y
-    amazon-linux-extras install docker -y
-    service docker start
-    usermod -a -G docker ec2-user # ec2-user가 sudo 없이 docker 명령어 쓰도록
+    # 1. 시스템 업데이트 및 Docker 설치 
+    dnf update -y
+    dnf install docker -y          
+    systemctl start docker         
+    systemctl enable docker       
+    usermod -a -G docker ec2-user  
 
-    # 2. Docker Compose 설치 (사용자님이 요청하신 부분)
+    # 2. Docker Compose 설치 
     curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
     chmod +x /usr/local/bin/docker-compose
 
-    # 3. ECR 로그인 - 리전은 Terraform provider와 동일하게 ap-northeast-2로 가정
-    # ECR URI의 계정 ID 부분을 추출 (123456789012.dkr.ecr...)
+    # 3. ECR 로그인 
     ECR_ACCOUNT_ID=$(echo "${var.ecr_image_url}" | cut -d. -f1)
     aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $${ECR_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com
 
-    # 4. docker-compose.yml 파일 생성
-    # Terraform 변수(RDS 엔드포인트, DB 비밀번호 등)를 사용해 동적으로 파일을 생성
+    # 4. docker-compose.yml 파일 생성 
     cat <<EOT > /home/ec2-user/docker-compose.yml
     version: '3.7'
     services:
       app:
-        image: "${var.ecr_image_url}" # Terraform 변수로 ECR 이미지 주소 전달
+        image: "${var.ecr_image_url}" 
         ports:
-          # Target Group 포트(80)와 컨테이너 내부 포트(Java Spring: 8080)를 매핑
-          # Dockerfile에서 8080을 쓴다고 가정
           - "80:8080" 
         environment:
-          # Spring Boot가 RDS를 바라보도록 환경변수 주입
-          # Terraform이 생성한 RDS의 엔드포인트 주소를 직접 주입
           SPRING_DATASOURCE_URL: "jdbc:mysql://${aws_db_instance.prod_db.endpoint}/ccdb?useSSL=false&serverTimezone=UTC&LegacyDateTimeCode=false"
-          SPRING_DATASOURCE_USERNAME: "${aws_db_instance.prod_db.username}" # Terraform DB 리소스의 username
-          SPRING_DATASOURCE_PASSWORD: "${var.db_password}" # Terraform 변수로 비밀번호 전달
-          TESSDATA_PREFIX: "/usr/share/tesseract-ocr/5/tessdata" # Dockerfile의 ENV와 동일하게
+          SPRING_DATASOURCE_USERNAME: "${aws_db_instance.prod_db.username}"
+          SPRING_DATASOURCE_PASSWORD: "${var.db_password}"
+          TESSDATA_PREFIX: "/usr/share/tesseract-ocr/5/tessdata"
         restart: always
     EOT
     
-    # 생성된 파일의 소유자를 ec2-user로 변경
+    # 생성된 파일의 소유자를 ec2-user로 변경 
     chown ec2-user:ec2-user /home/ec2-user/docker-compose.yml
 
-    # 5. Docker Compose 실행
+    # 5. Docker Compose 실행 
     cd /home/ec2-user
     docker-compose up -d
     EOF
@@ -322,14 +410,6 @@ resource "aws_security_group" "prod_alb_sg" {
     protocol    = "tcp"
     prefix_list_ids = ["pl-22a6434b"]
     description = "Allow HTTP ONLY from CloudFront"
-  }
-
-  ingress {
-    from_port   = 443
-    to_port     = 443
-    protocol    = "tcp"
-    prefix_list_ids = ["pl-22a6434b"]
-    description = "Allow HTTPS ONLY from CloudFront"
   }
 
   # 아웃바운드 규칙: 모든 트래픽 허용
