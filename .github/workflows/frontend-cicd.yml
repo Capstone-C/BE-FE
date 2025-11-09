@@ -55,7 +55,7 @@ jobs:
       - name: Set up Node.js (v20)
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # (사용자님 설정 v20 유지)
+          node-version: '22' # (사용자님 설정 v20 유지)
           cache: 'pnpm'
           cache-dependency-path: '${{ env.WORKING_DIRECTORY }}/pnpm-lock.yaml'
       
