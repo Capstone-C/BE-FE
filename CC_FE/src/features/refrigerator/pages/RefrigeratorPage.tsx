@@ -7,7 +7,11 @@ import {
   deleteRefrigeratorItem,
   getRefrigeratorItem,
 } from '@/apis/refrigerator.api';
-import type { RefrigeratorItem, CreateRefrigeratorItemRequest, UpdateRefrigeratorItemRequest } from '@/types/refrigerator';
+import type {
+  RefrigeratorItem,
+  CreateRefrigeratorItemRequest,
+  UpdateRefrigeratorItemRequest,
+} from '@/types/refrigerator';
 import { useToast } from '@/contexts/ToastContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -61,6 +65,9 @@ export default function RefrigeratorPage() {
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [editingPrefill, setEditingPrefill] = useState<RefrigeratorItem | null>(null);
   const [editExpirationDate, setEditExpirationDate] = useState<Date | null>(null);
+  // [REF-06] 삭제 확인 모달 / 애니메이션 관련 상태 추가
+  const [deleteTarget, setDeleteTarget] = useState<RefrigeratorItem | null>(null);
+  const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
 
   // Fetch list
   const { data, isPending, isError } = useQuery({
@@ -167,11 +174,38 @@ export default function RefrigeratorPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteRefrigeratorItem(id),
-    onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
-      showToast('삭제되었습니다.', { type: 'success' });
+    onSuccess: (_data, id) => {
+      // 성공 Toast (문구 명확하게)
+      showToast('식재료가 삭제되었습니다.', { type: 'success' });
+      // 모달 닫기
+      setDeleteTarget(null);
+      // 애니메이션 시작: 해당 행 투명도 0
+      setRemovingIds((prev) => new Set([...prev, id]));
+      // 애니메이션 후 목록 새로고침
+      setTimeout(() => {
+        void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
+        // 제거된 ID 정리 (재사용성 위해)
+        setRemovingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }, 320); // 약간 여유를 둔 300ms + α
     },
-    onError: () => showToast('삭제 중 오류가 발생했습니다.', { type: 'error' }),
+    onError: (error: any) => {
+      const status = error?.response?.status;
+      if (status === 403) {
+        showToast('삭제 권한이 없습니다.', { type: 'error' });
+      } else if (status === 404) {
+        showToast('이미 삭제된 항목입니다.', { type: 'info' });
+        // 최신 상태 반영
+        void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
+      } else {
+        showToast('삭제 중 오류가 발생했습니다.', { type: 'error' });
+      }
+      // 모달은 닫음 (사용자 실수 방지 목적 달성)
+      setDeleteTarget(null);
+    },
   });
 
   const handleAddSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -254,7 +288,9 @@ export default function RefrigeratorPage() {
       <h1 className="text-3xl font-bold mb-6">내 냉장고</h1>
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <label htmlFor="sort" className="text-sm text-gray-600">정렬:</label>
+          <label htmlFor="sort" className="text-sm text-gray-600">
+            정렬:
+          </label>
           <select
             id="sort"
             value={sortBy}
@@ -269,7 +305,9 @@ export default function RefrigeratorPage() {
         <button
           onClick={() => setShowAddForm((v) => !v)}
           className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
-        >식재료 추가</button>
+        >
+          식재료 추가
+        </button>
       </div>
 
       {showAddForm && (
@@ -318,8 +356,13 @@ export default function RefrigeratorPage() {
                         <li
                           key={u}
                           className="px-2 py-1 hover:bg-blue-50 cursor-pointer"
-                          onMouseDown={(e) => { e.preventDefault(); setUnitValue(u); }}
-                        >{u}</li>
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setUnitValue(u);
+                          }}
+                        >
+                          {u}
+                        </li>
                       ))}
                       {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).length === 0 && (
                         <li className="px-2 py-1 text-gray-400">일치하는 제안 없음</li>
@@ -339,7 +382,9 @@ export default function RefrigeratorPage() {
                   placeholderText="소비기한 선택"
                   className="w-full border rounded px-2 py-2 text-sm"
                 />
-                <p className="mt-1 text-xs text-gray-600">{addExpirationDate ? `선택: ${formatDateYMDKorean(addExpirationDate)}` : '선택된 날짜 없음'}</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  {addExpirationDate ? `선택: ${formatDateYMDKorean(addExpirationDate)}` : '선택된 날짜 없음'}
+                </p>
               </div>
               <div>
                 <label className="block text-xs text-gray-600">메모</label>
@@ -351,8 +396,20 @@ export default function RefrigeratorPage() {
                 {formErrors.memo && <p className="mt-1 text-xs text-red-600">{formErrors.memo}</p>}
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <button type="button" onClick={() => setShowAddForm(false)} className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300">취소</button>
-                <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">저장</button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
+                >
+                  취소
+                </button>
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                >
+                  저장
+                </button>
               </div>
             </form>
           </div>
@@ -383,17 +440,35 @@ export default function RefrigeratorPage() {
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className={`${classForItem(item)} border-t`}>
+                <tr
+                  key={item.id}
+                  className={`${classForItem(item)} border-t transition-opacity duration-300 ${removingIds.has(item.id) ? 'opacity-0' : 'opacity-100'}`}
+                >
                   <td className="px-3 py-2 font-medium">{item.name}</td>
                   <td className="px-3 py-2">{item.quantity}</td>
                   <td className="px-3 py-2">{item.unit ?? '—'}</td>
                   <td className={`${dDayTextColor(item)} px-3 py-2`}>
-                    {item.expirationDate ? `${formatDateYMDKorean(item.expirationDate)} (${formatDDay(item.daysUntilExpiration)})` : '—'}
+                    {item.expirationDate
+                      ? `${formatDateYMDKorean(item.expirationDate)} (${formatDDay(item.daysUntilExpiration)})`
+                      : '—'}
                   </td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={item.memo ?? ''}>{item.memo ?? '—'}</td>
-                  <td className="px-3 py-2 space-x-2">
-                    <button onClick={() => setEditingItem(item)} className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300">수정</button>
-                    <button onClick={() => { if (window.confirm('삭제하시겠습니까?')) deleteMutation.mutate(item.id); }} className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700">삭제</button>
+                  <td className="px-3 py-2 max-w-xs truncate" title={item.memo ?? ''}>
+                    {item.memo ?? '—'}
+                  </td>
+                  <td className="px-3 py-2 flex items-center gap-2">
+                    <button
+                      onClick={() => setEditingItem(item)}
+                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(item)}
+                      className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
+                    >
+                      <span>삭제</span>
+                      <span aria-hidden>🗑️</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -453,7 +528,9 @@ export default function RefrigeratorPage() {
                   placeholderText="소비기한 선택"
                   className={`w-full border rounded px-2 py-1 text-sm ${editErrors.expirationDate ? 'border-red-500' : ''}`}
                 />
-                <p className="mt-1 text-xs text-gray-600">{editExpirationDate ? `선택: ${formatDateYMDKorean(editExpirationDate)}` : '선택된 날짜 없음'}</p>
+                <p className="mt-1 text-xs text-gray-600">
+                  {editExpirationDate ? `선택: ${formatDateYMDKorean(editExpirationDate)}` : '선택된 날짜 없음'}
+                </p>
                 {editErrors.expirationDate && <p className="mt-1 text-xs text-red-600">{editErrors.expirationDate}</p>}
               </div>
               <div>
@@ -467,10 +544,51 @@ export default function RefrigeratorPage() {
                 {editErrors.memo && <p className="mt-1 text-xs text-red-600">{editErrors.memo}</p>}
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={updateMutation.isPending} className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50">수정 완료</button>
-                <button type="button" onClick={() => setEditingItem(null)} className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300">닫기</button>
+                <button
+                  type="submit"
+                  disabled={updateMutation.isPending}
+                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                >
+                  수정 완료
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
+                >
+                  닫기
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded shadow-lg p-6 space-y-4" role="dialog" aria-modal="true">
+            <h2 className="text-lg font-semibold">식재료 삭제</h2>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              정말로 '<span className="font-semibold">{deleteTarget.name}</span>' 항목을 냉장고에서 삭제하시겠습니까? 이
+              작업은 되돌릴 수 없습니다.
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate(deleteTarget.id)}
+                disabled={deleteMutation.isPending}
+                className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
           </div>
         </div>
       )}
