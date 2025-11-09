@@ -46,18 +46,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
       - name: Set up Node.js (v20)
         uses: actions/setup-node@v4
         with:
           node-version: '20' # (사용자님 설정 v20 유지)
           cache: 'pnpm'
           cache-dependency-path: '${{ env.WORKING_DIRECTORY }}/pnpm-lock.yaml'
-      
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
       
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
