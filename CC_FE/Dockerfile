@@ -18,8 +18,8 @@ RUN pnpm install
 # 소스 코드를 복사합니다.
 COPY . .
 
-# 프로덕션용으로 앱을 빌드합니다.
-RUN pnpm build
+# dev용으로 앱을 빌드합니다.
+RUN pnpm pnpm build --mode development
 
 
 # --- 2단계: 프로덕션 환경 (Runner) ---

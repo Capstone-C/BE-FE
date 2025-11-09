@@ -2,13 +2,15 @@
 import axios, { AxiosError } from 'axios';
 import { getToken, removeToken } from '@/utils/token';
 
-// publicClient는 아무런 인터셉터가 없어야 합니다.
+// const API_URL = import.meta.env.VITE_API_BASE_URL;
+
 const publicClient = axios.create({
-  baseURL: '/',
+  baseURL: '/', 
 });
 
+// 3. authClient의 baseURL도 ALB 주소로 설정합니다.
 const authClient = axios.create({
-  baseURL: '/',
+  baseURL: '/', 
 });
 
 // 요청 인터셉터는 authClient에만 적용되어야 합니다.
