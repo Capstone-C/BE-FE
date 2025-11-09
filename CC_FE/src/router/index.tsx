@@ -32,6 +32,9 @@ import DiaryEditPage from '@/features/diary/pages/DiaryEditPage';
 // Community
 import CommunityPage from '@/features/community/pages/CommunityPage';
 
+// Refrigerator
+import RefrigeratorPage from '@/features/refrigerator/pages/RefrigeratorPage';
+
 const router = createBrowserRouter([
   {
     path: '/',
@@ -69,6 +72,9 @@ const router = createBrowserRouter([
           // Auth-required boards
           { path: 'boards/new', element: <BoardNewPage /> },
           { path: 'boards/:postId/edit', element: <BoardEditPage /> },
+
+          // 냉장고 페이지
+          { path: 'refrigerator', element: <RefrigeratorPage /> },
         ],
       },
 
