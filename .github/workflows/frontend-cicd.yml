@@ -1,7 +1,9 @@
-# 1. 이름 변경 (CI/CD)
+#
+# .github/workflows/frontend-ci.yml
+#
 name: Frontend CI/CD
 
-# 2. 트리거 (기존과 동일)
+# [트리거] (기존과 동일)
 on:
   pull_request:
     branches: [ main, develop ]
@@ -19,80 +21,81 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# 3. [ ⭐️ 추가 ⭐️ ] 배포용 환경 변수
+# [배포용 환경 변수] (기존과 동일)
 env:
   AWS_REGION: "ap-northeast-2"
   S3_BUCKET_NAME: "capston-cc-frontend-bucket" # ⬅️ [중요] 본인의 S3 버킷 이름으로 수정!
   CLOUDFRONT_DISTRIBUTION_ID: "E2446WI5NQELWF"
-  WORKING_DIRECTORY: ./CC_FE # ⬅️ 본인 프론트엔드 경로 (이대로 OK)
+  # ⭐️ WORKING_DIRECTORY는 삭제됨 (루트에서 실행)
 
-# 4. [ ⭐️ 추가 ⭐️ ] AWS OIDC 인증 권한
+# [AWS OIDC 인증 권한] (기존과 동일)
 permissions:
   id-token: write 
   contents: read
 
 jobs:
   # -----------------------------------------------
-  # [ 1. CI 작업 ] (이름만 변경, 내용은 거의 동일)
+  # [ 1. CI 작업 ] ( ⭐️ 모노레포 방식으로 수정됨 ⭐️ )
   # -----------------------------------------------
   test-and-build:
     name: Run CI (Test, Lint, Build)
     runs-on: ubuntu-latest
     
-    defaults:
-      run:
-        working-directory: ${{ env.WORKING_DIRECTORY }}
+    # [ ⭐️ 삭제됨 ⭐️ ]
+    # 'defaults.run.working-directory'를 삭제하고 모든 명령어를 루트에서 실행합니다.
         
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Install pnpm
         uses: pnpm/action-setup@v3
         with:
           version: 8
-
-      - name: Set up Node.js (v20)
+          
+      - name: Set up Node.js (v22)
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # (사용자님 설정 v20 유지)
+          node-version: '22' 
           cache: 'pnpm'
-          cache-dependency-path: '${{ env.WORKING_DIRECTORY }}/pnpm-lock.yaml'
+          # [ ⭐️ 수정됨 ⭐️ ] 루트의 pnpm-lock.yaml을 캐시
+          cache-dependency-path: 'pnpm-lock.yaml' 
       
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-workspace
+      # [ ⭐️ 수정됨! ⭐️ ]
+      # 루트에서 'pnpm install'을 실행하여 모든 (dev) 의존성을 설치
+      - name: Install dependencies (Monorepo Root)
+        run: pnpm install --no-frozen-lockfile
       
-      - name: Run linter
-        run: pnpm run lint
+      # [ ⭐️ 수정됨! ⭐️ ]
+      # pnpm --filter <패키지명> <스크립트> 형식으로 CC_FE만 골라서 실행
+      - name: Run linter (CC_FE)
+        run: pnpm --filter CC_FE run lint
       
-      - name: Type check
-        run: pnpm run type-check || echo "Type check script not found, skipping..."
+      - name: Type check (CC_FE)
+        run: pnpm --filter CC_FE run type-check || echo "Type check script not found, skipping..."
       
-      - name: Build
-        run: pnpm run build
+      - name: Build (CC_FE)
+        run: pnpm --filter CC_FE run build
       
-      - name: Run tests
-        run: pnpm run test || echo "Test script not found, skipping..."
+      - name: Run tests (CC_FE)
+        run: pnpm --filter CC_FE run test || echo "Test script not found, skipping..."
 
-      # [ ⭐️ 추가 ⭐️ ]
-      # 2번 CD 작업에서 사용할 수 있도록 build 결과물(dist)을 "업로드"
+      # [ ⭐️ 수정됨! ⭐️ ]
+      # 'dist' 폴더의 경로를 루트 기준으로 수정
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: ${{ env.WORKING_DIRECTORY }}/dist/
+          path: ./CC_FE/dist/ # ⬅️ 루트에서 바라본 경로
 
   # -----------------------------------------------
-  # [ 2. CD 작업 ] ( ⭐️ 신규 추가 ⭐️ )
-  #  - "main" 브랜치 Push + "test-and-build" 성공 시에만 실행
+  # [ 2. CD 작업 ] (기존과 동일)
   # -----------------------------------------------
   deploy:
     name: Deploy to S3 and Invalidate CloudFront
     runs-on: ubuntu-latest
-    needs: test-and-build # ⬅️ [중요] 1번(test-and-build) 작업이 성공해야만 실행
+    needs: test-and-build 
     
-    # [ ⭐️ 핵심 조건 ⭐️ ]
-    # 'main' 브랜치에 'push' (merge) 이벤트가 발생했을 때만 실행
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
@@ -102,13 +105,11 @@ jobs:
           role-to-assume: arn:aws:iam::559198857556:role/GitHubActions-CICD-Role 
           aws-region: ${{ env.AWS_REGION }}
 
-      # [ ⭐️ 추가 ⭐️ ]
-      # 1번 작업이 업로드한 'dist' 아티팩트를 "다운로드"
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
           name: frontend-dist
-          path: ./dist # ⬅️ 현재 폴더의 'dist'로 다운로드
+          path: ./dist 
 
       - name: Sync dist folder to S3
         run: |
@@ -117,7 +118,7 @@ jobs:
 
       - name: Create CloudFront Invalidation
         run: |
-          echo "Invalidating CloudFront distribution: ${{ env.CLOUDFRONT_DISTRIBUTION_ID }}"
+          echo "Invalidating CloudFront distribution: ${{ env.CLOUDFRT_DISTRIBUTION_ID }}"
           aws cloudfront create-invalidation \
             --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
