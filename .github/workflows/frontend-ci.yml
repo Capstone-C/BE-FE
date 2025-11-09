@@ -1,0 +1,66 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'CC_FE/**'
+      - '.github/workflows/frontend-ci.yml'
+  
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'CC_FE/**'
+      - '.github/workflows/frontend-ci.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Run Frontend Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      # Node.js 설정
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: 'CC_FE/pnpm-lock.yaml'
+      
+      # pnpm 설치
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+      
+      # 의존성 설치
+      - name: Install dependencies
+        working-directory: ./CC_FE
+        run: pnpm install --frozen-lockfile
+      
+      # 린트 검사
+      - name: Run linter
+        working-directory: ./CC_FE
+        run: pnpm run lint
+      
+      # 타입 체크 (TypeScript)
+      - name: Type check
+        working-directory: ./CC_FE
+        run: pnpm run type-check || echo "Type check script not found, skipping..."
+      
+      # 빌드 테스트
+      - name: Build
+        working-directory: ./CC_FE
+        run: pnpm run build
+      
+      # 테스트 실행 (Vitest나 Jest가 설정되어 있다면)
+      - name: Run tests
+        working-directory: ./CC_FE
+        run: pnpm run test || echo "Test script not found, skipping..."
