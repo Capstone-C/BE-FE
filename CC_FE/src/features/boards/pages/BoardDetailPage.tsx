@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { usePost } from '@/features/boards/hooks/usePosts';
 import { deletePost, toggleLike } from '@/apis/boards.api';
 import CommentList from '@/features/comments/components/CommentList';
-import { formatKST } from '@/utils/date';
+import { formatDateYMDKorean } from '@/utils/date';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
@@ -76,8 +76,8 @@ export default function BoardDetailPage() {
 
       <div className="text-sm text-gray-600 flex flex-wrap gap-2">
         <span>{authorName ?? '익명'}</span>
-        <span>· {formatKST(data.createdAt)}</span>
-        {data.updatedAt ? <span>· 수정 {formatKST(data.updatedAt)}</span> : null}
+        <span>· {formatDateYMDKorean(data.createdAt)}</span>
+        {data.updatedAt ? <span>· 수정 {formatDateYMDKorean(data.updatedAt)}</span> : null}
         <span>· 조회 {data.viewCount}</span>
         <span>· 추천 {currentLikeCount}</span>
       </div>
