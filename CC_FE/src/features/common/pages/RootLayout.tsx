@@ -23,9 +23,14 @@ export default function RootLayout() {
               커뮤니티
             </Link>
             {user && (
-              <Link to="/diary" className="text-sm font-medium text-gray-600 hover:text-blue-600">
-                다이어리
-              </Link>
+              <>
+                <Link to="/diary" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                  다이어리
+                </Link>
+                <Link to="/refrigerator" className="text-sm font-medium text-gray-600 hover:text-blue-600">
+                  내 냉장고
+                </Link>
+              </>
             )}
           </div>
           <div className="flex items-center gap-4">
