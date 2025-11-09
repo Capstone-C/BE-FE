@@ -69,7 +69,7 @@ export default function LoginPage() {
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
         <h1 className="text-2xl font-bold text-center">로그인</h1>
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               이메일
@@ -78,7 +78,7 @@ export default function LoginPage() {
               id="email"
               name="email"
               type="email"
-              autoComplete="email"
+              autoComplete="off"
               required
               value={formData.email}
               onChange={handleChange}
@@ -94,7 +94,7 @@ export default function LoginPage() {
               id="password"
               name="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
               value={formData.password}
               onChange={handleChange}
