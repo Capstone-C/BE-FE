@@ -1,7 +1,7 @@
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { usePosts } from '@/features/boards/hooks/usePosts';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
-import { formatKST } from '@/utils/date';
+import { formatDateYMDKorean } from '@/utils/date';
 import type { Post } from '@/types/post';
 
 function PostListItem({ post, boardId }: { post: Post; boardId?: string | null }) {
@@ -23,8 +23,8 @@ function PostListItem({ post, boardId }: { post: Post; boardId?: string | null }
       </div>
       <div className="mt-1 text-xs text-gray-600 flex flex-wrap items-center gap-3">
         <span>{name}</span>
-        <span>· {formatKST(post.createdAt)}</span>
-        {post.updatedAt ? <span>· 수정 {formatKST(post.updatedAt)}</span> : null}
+        <span>· {formatDateYMDKorean(post.createdAt)}</span>
+        {post.updatedAt ? <span>· 수정 {formatDateYMDKorean(post.updatedAt)}</span> : null}
         <span>· 조회 {post.viewCount}</span>
         <span>· 추천 {post.likeCount}</span>
         <span>· 댓글 {post.commentCount}</span>

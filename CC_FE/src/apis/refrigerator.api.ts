@@ -15,6 +15,12 @@ export async function getRefrigeratorItems(sortBy: string = 'expirationDate') {
   return data;
 }
 
+// 단건 조회 (수정용 프리필)
+export async function getRefrigeratorItem(id: number) {
+  const { data } = await authClient.get<RefrigeratorItem>(`/api/v1/refrigerator/items/${id}`);
+  return data;
+}
+
 export async function createRefrigeratorItem(payload: CreateRefrigeratorItemRequest) {
   const { data } = await authClient.post<RefrigeratorItem>('/api/v1/refrigerator/items', payload, {
     headers: { 'Content-Type': 'application/json' },

@@ -12,8 +12,25 @@ const toDate = (v: string | number | Date) => {
 
 export const formatKST = (value: string | number | Date) =>
   new Intl.DateTimeFormat('ko-KR', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
     hour12: false,
     timeZone: 'Asia/Seoul',
   }).format(toDate(value));
+
+export const formatDateYMD = (value: string | number | Date) => {
+  const d = toDate(value);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`; // ISO-like 유지
+};
+
+export const formatDateYMDKorean = (value: string | number | Date) => {
+  const d = toDate(value);
+  return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, '0')}월 ${String(d.getDate()).padStart(2, '0')}일`;
+};

@@ -4,7 +4,7 @@ import type { Comment } from '@/types/comment';
 import CommentForm from './CommentForm';
 import { useDeleteComment } from '../hooks/useCommentMutations';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
-import { formatKST } from '@/utils/date';
+import { formatDateYMDKorean } from '@/utils/date';
 
 type Props = { c: Comment; postId: number };
 
@@ -20,7 +20,7 @@ function CommentItemImpl({ c, postId }: Props) {
   return (
     <li className="border-b py-3">
       <div className="text-sm text-gray-600">
-        {authorName} · {formatKST(c.createdAt)}
+        {authorName} · {formatDateYMDKorean(c.createdAt)}
       </div>
 
       {!editOpen ? (

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getMe } from '@/apis/auth';
 import { Link } from 'react-router-dom';
+import { formatDateYMDKorean } from '@/utils/date';
 
 export default function ProfilePage() {
   const {
@@ -41,7 +42,7 @@ export default function ProfilePage() {
             <p className="text-lg text-gray-800">{userProfile.email}</p>
           </div>
           <div className="text-sm">
-            <p className="text-gray-500">가입일: {new Date(userProfile.joinedAt).toLocaleDateString()}</p>
+            <p className="text-gray-500">가입일: {formatDateYMDKorean(userProfile.joinedAt)}</p>
           </div>
         </div>
       </div>
