@@ -455,7 +455,7 @@ export default function RefrigeratorPage() {
                   <td className="px-3 py-2 max-w-xs truncate" title={item.memo ?? ''}>
                     {item.memo ?? '—'}
                   </td>
-                  <td className="px-3 py-2 space-x-2">
+                  <td className="px-3 py-2 flex items-center gap-2">
                     <button
                       onClick={() => setEditingItem(item)}
                       className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
