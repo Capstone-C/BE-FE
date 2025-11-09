@@ -1,7 +1,7 @@
 #
 # .github/workflows/frontend-ci.yml
 #
-name: Frontend CI/CD
+name: Frontend CI/CD # (이름 변경)
 
 # [트리거] (기존과 동일)
 on:
@@ -21,29 +21,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# [배포용 환경 변수] (기존과 동일)
+# [ ⭐️ 1. 배포용 환경 변수 추가 ⭐️ ]
 env:
   AWS_REGION: "ap-northeast-2"
   S3_BUCKET_NAME: "capston-cc-frontend-bucket" # ⬅️ [중요] 본인의 S3 버킷 이름으로 수정!
   CLOUDFRONT_DISTRIBUTION_ID: "E2446WI5NQELWF"
-  WORKING_DIRECTORY: ./CC_FE # ⬅️ [⭐️ 되돌림 ⭐️] 하위 폴더 경로 지정
+  WORKING_DIRECTORY: ./CC_FE # ⬅️ (사용자님 설정과 동일)
 
-# [AWS OIDC 인증 권한] (기존과 동일)
+# [ ⭐️ 2. AWS OIDC 인증 권한 추가 ⭐️ ]
 permissions:
   id-token: write 
   contents: read
 
 jobs:
   # -----------------------------------------------
-  # [ 1. CI 작업 ] ( ⭐️ 11:32 AM 버전으로 되돌림 + '--dev' 추가 ⭐️ )
+  # [ 3. CI 작업 ] (사용자님 원본 기반 + 2가지 수정)
   # -----------------------------------------------
-  test-and-build:
-    name: Run CI (Test, Lint, Build)
+  test-and-build: # (이름 변경)
+    name: Run CI (Test, Lint, Build) # (이름 변경)
     runs-on: ubuntu-latest
     
-    # [ ⭐️ 되돌림 ⭐️ ]
-    # 'defaults.run.working-directory'를 다시 추가
-    defaults:
+    defaults: # ( ⭐️ working-directory를 defaults로 이동 - 더 깔끔함 ⭐️ )
       run:
         working-directory: ${{ env.WORKING_DIRECTORY }}
         
@@ -56,22 +54,22 @@ jobs:
         with:
           version: 8
           
+      # [ ⭐️ 수정 1 ⭐️ ]
+      # Node.js 버전을 v20 -> v22로 변경 (package.json 요구사항)
       - name: Set up Node.js (v22)
         uses: actions/setup-node@v4
         with:
           node-version: '22' 
           cache: 'pnpm'
-          # [ ⭐️ 되돌림 ⭐️ ] 
-          # 캐시 경로를 다시 CC_FE 안의 lockfile로 지정
           cache-dependency-path: '${{ env.WORKING_DIRECTORY }}/pnpm-lock.yaml'
       
-      # [ ⭐️ 최종 수정! ⭐️ ]
-      # 1. 호환 안되는 lockfile 무시 (--no-frozen-lockfile)
-      # 2. 상위 workspace 무시 (--ignore-workspace)
-      # 3. devDependencies 강제 설치 (--dev) ⬅️ 'eslint' 오류 해결
+      # [ ⭐️ 수정 2 ⭐️ ]
+      # pnpm install이 상위 워크스페이스를 무시하도록 --ignore-workspace 추가
+      # (참고: 이 명령어가 성공하려면, 아래 3번 작업 (lockfile push)이 필수!)
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile --ignore-workspace --dev
+        run: pnpm install --frozen-lockfile --ignore-workspace
       
+      # (이하 단계는 사용자님 원본과 동일)
       - name: Run linter
         run: pnpm run lint
       
@@ -84,16 +82,16 @@ jobs:
       - name: Run tests
         run: pnpm run test || echo "Test script not found, skipping..."
 
-      # [ ⭐️ 되돌림 ⭐️ ]
-      # 'dist' 폴더의 경로를 working-directory 기준으로 수정
+      # [ ⭐️ 4. 'dist' 업로드 추가 ⭐️ ]
       - name: Upload dist artifact
         uses: actions/upload-artifact@v4
         with:
           name: frontend-dist
-          path: ${{ env.WORKING_DIRECTORY }}/dist/ 
+          path: ${{ env.WORKING_DIRECTORY }}/dist/
 
   # -----------------------------------------------
-  # [ 2. CD 작업 ] (기존과 동일)
+  # [ 5. CD 작업 ] (신규 추가)
+  #  - "main" 브랜치 Push + "test-and-build" 성공 시에만 실행
   # -----------------------------------------------
   deploy:
     name: Deploy to S3 and Invalidate CloudFront
