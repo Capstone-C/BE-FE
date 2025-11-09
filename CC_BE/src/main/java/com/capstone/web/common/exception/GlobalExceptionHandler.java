@@ -30,6 +30,7 @@ import com.capstone.web.refrigerator.exception.DuplicateItemException;
 import com.capstone.web.refrigerator.exception.ItemNotFoundException;
 import com.capstone.web.refrigerator.exception.RefrigeratorErrorCode;
 import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,6 +54,7 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
+
     @ExceptionHandler({InvalidOldPasswordException.class, SameAsOldPasswordException.class, RecentPasswordReuseException.class})
     public ResponseEntity<ErrorResponse> handlePasswordChange(RuntimeException ex) {
         log.info("비밀번호 예외 핸들러 진입: {}", ex.getClass().getSimpleName());
@@ -208,10 +210,24 @@ public class GlobalExceptionHandler {
         return buildRefrigeratorErrorResponse(RefrigeratorErrorCode.UNAUTHORIZED_ITEM_ACCESS);
     }
 
+    /**
+     * 냉장고 관련 도메인 오류 상태 매핑
+     * - ITEM_NOT_FOUND: 404 Not Found
+     * - DUPLICATE_ITEM: 409 Conflict (리소스 상태 충돌)
+     * - UNAUTHORIZED_ITEM_ACCESS: 403 Forbidden (권한 없음)
+     * - 기타: 400 Bad Request
+     */
     private ResponseEntity<ErrorResponse> buildRefrigeratorErrorResponse(RefrigeratorErrorCode errorCode) {
+        HttpStatus status;
+        switch (errorCode) {
+            case ITEM_NOT_FOUND -> status = HttpStatus.NOT_FOUND;
+            case DUPLICATE_ITEM -> status = HttpStatus.CONFLICT;
+            case UNAUTHORIZED_ITEM_ACCESS -> status = HttpStatus.FORBIDDEN;
+            default -> status = HttpStatus.BAD_REQUEST;
+        }
         ErrorResponse.FieldError fieldError = new ErrorResponse.FieldError("refrigeratorItem", errorCode.getCode());
-        ErrorResponse response = ErrorResponse.of(HttpStatus.BAD_REQUEST, errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        ErrorResponse response = ErrorResponse.of(status, errorCode.getCode(), errorCode.getMessage(), List.of(fieldError));
+        return ResponseEntity.status(status).body(response);
     }
 
     // 👇 [추가] CommentNotFoundException 핸들러
