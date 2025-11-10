@@ -1,20 +1,23 @@
-name: Backend CI
+name: 🔥 Backend Full CI
 
-# 이 workflow가 실행되는 조건
+# 완전한 CI: main 브랜치 병합 전, 릴리즈 전용 (목표: 2-3분)
 on:
-  # PR이 생성되거나 업데이트될 때
+  # main 브랜치로의 PR만 (중요한 병합)
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main ]
     paths:
       - 'CC_BE/**'
       - '.github/workflows/backend-ci.yml'
   
-  # main이나 develop 브랜치에 push될 때
+  # main 브랜치에 push될 때 (병합 완료 후)
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
     paths:
       - 'CC_BE/**'
       - '.github/workflows/backend-ci.yml'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
 
 # 동시에 여러 workflow가 실행되지 않도록 설정
 concurrency:
