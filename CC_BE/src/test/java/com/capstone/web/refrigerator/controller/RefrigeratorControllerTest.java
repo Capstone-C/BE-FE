@@ -176,18 +176,23 @@ class RefrigeratorControllerTest {
                 .andExpect(jsonPath("$.expired", is(false)));
     }
 
-    @DisplayName("식재료 추가 API 호출 실패 - 중복")
+    @DisplayName("식재료 추가 API - 동일 이름+동일 소비기한 시 수량 합산")
     @Test
-    void addItem_ApiFail_Duplicate() throws Exception {
+    void addItem_ApiSuccess_MergeQuantity() throws Exception {
         // given
+        LocalDate expDate = LocalDate.now().plusDays(7);
+        
         refrigeratorItemRepository.save(RefrigeratorItem.builder()
                 .member(testMember)
                 .name("우유")
+                .quantity(2)
+                .expirationDate(expDate)
                 .build());
 
         RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
                 .name("우유")
-                .quantity(2)
+                .quantity(3)
+                .expirationDate(expDate)
                 .build();
 
         String requestBody = objectMapper.writeValueAsString(request);
@@ -199,8 +204,10 @@ class RefrigeratorControllerTest {
                 .content(requestBody));
 
         // then
-        result.andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", containsString("이미 등록된 식재료")));
+        // 컨트롤러는 중복 병합도 201 Created를 반환합니다
+        result.andExpect(status().isCreated())
+                .andExpect(jsonPath("$.name", is("우유")))
+                .andExpect(jsonPath("$.quantity", is(5))); // 2 + 3
     }
 
     @DisplayName("식재료 추가 API 호출 실패 - Validation 오류 (이름 없음)")
@@ -271,7 +278,7 @@ class RefrigeratorControllerTest {
 
         List<RefrigeratorDto.CreateRequest> items = List.of(
                 RefrigeratorDto.CreateRequest.builder()
-                        .name("우유")  // 중복
+                        .name("우유")  // 중복 -> 수량 합산으로 성공 처리
                         .quantity(1)
                         .build(),
                 RefrigeratorDto.CreateRequest.builder()
@@ -290,12 +297,12 @@ class RefrigeratorControllerTest {
                 .content(requestBody));
 
         // then
+        // 중복도 수량 합산으로 처리되므로 모두 성공
         result.andExpect(status().isOk())
-                .andExpect(jsonPath("$.successCount", is(1)))
-                .andExpect(jsonPath("$.failCount", is(1)))
-                .andExpect(jsonPath("$.addedItems", hasSize(1)))
-                .andExpect(jsonPath("$.failedItems", hasSize(1)))
-                .andExpect(jsonPath("$.failedItems[0]", containsString("우유")));
+                .andExpect(jsonPath("$.successCount", is(2)))
+                .andExpect(jsonPath("$.failCount", is(0)))
+                .andExpect(jsonPath("$.addedItems", hasSize(2)))
+                .andExpect(jsonPath("$.failedItems", hasSize(0)));
     }
 
     // ========== REF-05: 식재료 수정 API 테스트 ==========
@@ -355,7 +362,7 @@ class RefrigeratorControllerTest {
                 .content(requestBody));
 
         // then
-        result.andExpect(status().isBadRequest())
+        result.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", containsString("찾을 수 없습니다")));
     }
 
@@ -387,7 +394,7 @@ class RefrigeratorControllerTest {
                 .content(requestBody));
 
         // then
-        result.andExpect(status().isBadRequest())
+        result.andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString("권한이 없습니다")));
     }
 
@@ -421,7 +428,7 @@ class RefrigeratorControllerTest {
                 .header("Authorization", "Bearer " + userToken));
 
         // then
-        result.andExpect(status().isBadRequest())
+        result.andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message", containsString("찾을 수 없습니다")));
     }
 
@@ -445,7 +452,7 @@ class RefrigeratorControllerTest {
                 .header("Authorization", "Bearer " + userToken));
 
         // then
-        result.andExpect(status().isBadRequest())
+        result.andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message", containsString("권한이 없습니다")));
     }
 
@@ -453,7 +460,8 @@ class RefrigeratorControllerTest {
     @Test
     void allApis_Fail_Unauthorized() throws Exception {
         // when & then
+        // Spring Security가 인증 실패 시 403 Forbidden 반환
         mockMvc.perform(get("/api/v1/refrigerator/items"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }

@@ -1,22 +1,14 @@
 package com.capstone.web.shopping.config;
 
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
 
 /**
  * Shopping 모듈 설정
- * 외부 API 호출을 위한 RestTemplate 등 Bean 설정
+ * 
+ * Note: RestTemplate은 WebConfig에서 전역 빈으로 정의되어 있어
+ * Shopping 모듈에서도 의존성 주입을 통해 사용 가능합니다.
  */
 @Configuration
 public class ShoppingConfig {
-
-    /**
-     * 외부 쇼핑몰 API 호출용 RestTemplate
-     */
-    @Bean
-    public RestTemplate restTemplate(RestTemplateBuilder builder) {
-        return builder.build();
-    }
+    // RestTemplate Bean removed - using global bean from WebConfig
 }

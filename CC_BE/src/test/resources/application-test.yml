@@ -18,6 +18,12 @@ spring:
     console:
       enabled: true
 
+  # Elasticsearch 비활성화 (테스트 환경에서는 Mock 사용)
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+
 # 테스트 초기화 전략: 필요 시 data.sql 사용 가능
 logging:
   level:

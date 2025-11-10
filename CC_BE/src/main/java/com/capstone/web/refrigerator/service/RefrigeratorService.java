@@ -24,10 +24,15 @@ import java.util.stream.Collectors;
 
 /**
  * 냉장고 식재료 서비스
+ * 
  * REF-01: 내 냉장고 식재료 목록 조회
- * REF-02: 수동으로 식재료 추가
- * REF-05: 식재료 정보 수정
+ * REF-02: 수동으로 식재료 추가 (동일 이름+소비기한 시 수량 병합, 다른 소비기한은 별도 항목)
+ * REF-03: 일괄 식재료 추가 (OCR 결과 등록)
+ * REF-04: 영수증 이미지 스캔 (Gemini Vision API)
+ * REF-05: 식재료 정보 수정 및 단건 조회
  * REF-06: 식재료 삭제
+ * REF-07: 보유 재료 기반 레시피 추천
+ * REF-08: 레시피 재료 차감 (미리보기 및 실행)
  */
 @Slf4j
 @Service
@@ -66,6 +71,13 @@ public class RefrigeratorService {
 
     /**
      * REF-02: 수동으로 식재료 추가
+     * 
+     * 병합 규칙:
+     * - 동일 회원 + 동일 이름 + 동일 소비기한 → 수량 병합 (기존 수량 + 추가 수량)
+     * - 동일 회원 + 동일 이름 + 다른 소비기한 → 별도 항목 생성
+     * - 소비기한이 모두 null인 경우도 병합
+     * 
+     * DB 제약: UNIQUE(member_id, name, expiration_date)
      */
     @Transactional
     public RefrigeratorDto.Response addItem(Long memberId, RefrigeratorDto.CreateRequest request) {
@@ -117,6 +129,10 @@ public class RefrigeratorService {
 
     /**
      * REF-03, 04: 일괄 추가 (OCR 결과 등록)
+     * 
+     * REF-02와 동일한 병합 규칙 적용:
+     * - 동일 이름 + 동일 소비기한 → 수량 병합
+     * - 동일 이름 + 다른 소비기한 → 별도 항목 생성
      */
     @Transactional
     public RefrigeratorDto.BulkCreateResponse addItemsBulk(Long memberId, RefrigeratorDto.BulkCreateRequest request) {
