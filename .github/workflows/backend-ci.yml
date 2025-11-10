@@ -60,17 +60,17 @@ jobs:
       # 5. Gradle 빌드 (테스트 포함) - 병렬 실행 및 최적화
       - name: Build with Gradle
         working-directory: ./CC_BE
-        run: ./gradlew clean build --no-daemon --parallel --build-cache
+        run: ./gradlew clean build --no-daemon --parallel --build-cache --console=plain
         env:
           SPRING_PROFILES_ACTIVE: test
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC"
       
       # 6. 테스트 결과 업로드 (실패 시에만 - 성공 시 불필요)
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()  # 실패 시에만 업로드
         with:
-          name: test-results
+          name: test-results-${{ github.run_number }}  # 실행 번호 추가로 충돌 방지
           path: CC_BE/build/reports/tests/test/
           retention-days: 3  # 7일 → 3일로 단축
 
@@ -109,4 +109,6 @@ jobs:
       # Checkstyle이나 SpotBugs 같은 도구 실행 (설정되어 있다면)
       - name: Run code quality checks
         working-directory: ./CC_BE
-        run: ./gradlew check -x test --no-daemon --parallel --build-cache
+        run: ./gradlew check -x test --no-daemon --parallel --build-cache --console=plain
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m"
