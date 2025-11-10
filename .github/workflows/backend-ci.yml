@@ -48,7 +48,7 @@ jobs:
       
       - name: Build with Gradle
         working-directory: ./CC_BE
-        run: ./gradlew clean build --no-daemon --parallel --build-cache --info
+        run: ./gradlew clean build --no-daemon --parallel --build-cache --quiet
         env:
           SPRING_PROFILES_ACTIVE: test
           GRADLE_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC"
