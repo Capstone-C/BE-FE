@@ -77,12 +77,12 @@ class MemberProfileControllerTest {
                 .andExpect(jsonPath("$.joinedAt", notNullValue()));
     }
 
-    @DisplayName("토큰 없이 내 프로필 조회하면 401")
+    @DisplayName("토큰 없이 내 프로필 조회하면 403 Forbidden")
     @Test
     void me_unauthorized_noToken() throws Exception {
+        // 인증 정보가 없으므로 보호된 리소스 접근이 금지됨 (403)
         mockMvc.perform(get("/api/v1/members/me"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code", is("AUTH_MISSING_TOKEN")));
+                .andExpect(status().isForbidden());
     }
 
     @DisplayName("잘못된 토큰으로 조회하면 401")

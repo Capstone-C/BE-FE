@@ -19,7 +19,7 @@ RUN pnpm install
 COPY . .
 
 # dev용으로 앱을 빌드합니다.
-RUN pnpm pnpm build --mode development
+RUN pnpm build --mode development
 
 
 # --- 2단계: 프로덕션 환경 (Runner) ---

@@ -1,33 +1,25 @@
 #!/bin/bash
 
-# OCR 기능 빠른 테스트 스크립트
+# Gemini AI 기능 빠른 테스트 스크립트
 
-echo "🚀 Capstone OCR 기능 테스트 시작"
+echo "🚀 Capstone Gemini AI 기능 테스트 시작"
 echo ""
 
 # 1. 환경 변수 확인
 echo "📋 1단계: 환경 변수 확인"
 echo "----------------------------------------"
 
-if [ -z "$CLOVA_OCR_SECRET_KEY" ]; then
-    echo "❌ CLOVA_OCR_SECRET_KEY가 설정되지 않았습니다."
-    echo "   export CLOVA_OCR_SECRET_KEY='your-key' 실행 필요"
+if [ -z "$GEMINI_API_KEY" ]; then
+    echo "❌ GEMINI_API_KEY가 설정되지 않았습니다."
+    echo "   export GEMINI_API_KEY='your-key' 실행 필요"
     MISSING_ENV=true
 else
-    echo "✅ CLOVA_OCR_SECRET_KEY: ${CLOVA_OCR_SECRET_KEY:0:8}****"
-fi
-
-if [ -z "$OPENAI_API_KEY" ]; then
-    echo "❌ OPENAI_API_KEY가 설정되지 않았습니다."
-    echo "   export OPENAI_API_KEY='sk-proj-...' 실행 필요"
-    MISSING_ENV=true
-else
-    echo "✅ OPENAI_API_KEY: ${OPENAI_API_KEY:0:8}****"
+    echo "✅ GEMINI_API_KEY: ${GEMINI_API_KEY:0:8}****"
 fi
 
 if [ "$MISSING_ENV" = true ]; then
     echo ""
-    echo "⚠️  API 키 미설정으로 REF-04 기능을 사용할 수 없습니다."
+    echo "⚠️  API 키 미설정으로 이미지 인식 기능을 사용할 수 없습니다."
     echo "   다른 기능은 정상 작동합니다."
     echo ""
 fi

@@ -11,7 +11,6 @@ import com.capstone.web.refrigerator.domain.RefrigeratorItem;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
 import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.DeductionDto;
-import com.capstone.web.refrigerator.exception.DuplicateItemException;
 import com.capstone.web.refrigerator.exception.ItemNotFoundException;
 import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
@@ -31,10 +30,14 @@ import java.util.List;
 @Transactional
 class RefrigeratorServiceTest {
 
-    @Autowired private RefrigeratorService refrigeratorService;
-    @Autowired private RefrigeratorItemRepository refrigeratorItemRepository;
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private RecipeRepository recipeRepository;
+    @Autowired
+    private RefrigeratorService refrigeratorService;
+    @Autowired
+    private RefrigeratorItemRepository refrigeratorItemRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private RecipeRepository recipeRepository;
 
     private Member testMember;
     private Member otherMember;
@@ -63,8 +66,8 @@ class RefrigeratorServiceTest {
     @Test
     void getMyItems_EmptyList() {
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getItems()).isEmpty();
@@ -95,8 +98,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getItems()).hasSize(3);
@@ -125,8 +128,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "name");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "name");
 
         // then
         assertThat(response.getItems()).hasSize(3);
@@ -158,8 +161,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getTotalCount()).isEqualTo(3);
@@ -182,8 +185,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "name");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "name");
 
         // then
         assertThat(response.getItems()).hasSize(1);
@@ -219,24 +222,132 @@ class RefrigeratorServiceTest {
         assertThat(response.isExpired()).isFalse();
     }
 
-    @DisplayName("식재료 추가 - 중복된 이름으로 추가 시 예외")
+    @DisplayName("식재료 추가 - 동일 이름+동일 소비기한 시 수량 합산")
     @Test
-    void addItem_Fail_Duplicate() {
+    void addItem_MergeQuantity_SameNameAndExpiration() {
         // given
+        LocalDate expDate = LocalDate.now().plusDays(7);
+        
         refrigeratorItemRepository.save(RefrigeratorItem.builder()
                 .member(testMember)
                 .name("우유")
+                .quantity(2)
+                .expirationDate(expDate)
                 .build());
 
         RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
                 .name("우유")
-                .quantity(2)
+                .quantity(3)
+                .expirationDate(expDate)
                 .build();
 
-        // when & then
-        assertThatThrownBy(() -> refrigeratorService.addItem(testMember.getId(), request))
-                .isInstanceOf(DuplicateItemException.class)
-                .hasMessageContaining("이미 등록된 식재료");
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("우유");
+        assertThat(response.getQuantity()).isEqualTo(5); // 2 + 3
+        assertThat(response.getExpirationDate()).isEqualTo(expDate);
+        
+        // DB에 하나만 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(1);
+    }
+
+    @DisplayName("식재료 추가 - 동일 이름+다른 소비기한 시 별도 항목 생성")
+    @Test
+    void addItem_CreateSeparate_SameNameDifferentExpiration() {
+        // given
+        LocalDate expDate1 = LocalDate.now().plusDays(7);
+        LocalDate expDate2 = LocalDate.now().plusDays(14);
+        
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("우유")
+                .quantity(2)
+                .expirationDate(expDate1)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("우유")
+                .quantity(3)
+                .expirationDate(expDate2)
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("우유");
+        assertThat(response.getQuantity()).isEqualTo(3);
+        assertThat(response.getExpirationDate()).isEqualTo(expDate2);
+        
+        // DB에 두 개가 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(2);
+        assertThat(items.stream().map(RefrigeratorItem::getExpirationDate))
+                .containsExactlyInAnyOrder(expDate1, expDate2);
+    }
+
+    @DisplayName("식재료 추가 - 소비기한 null인 경우 수량 합산")
+    @Test
+    void addItem_MergeQuantity_BothExpirationNull() {
+        // given
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("소금")
+                .quantity(100)
+                .unit("g")
+                .expirationDate(null)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("소금")
+                .quantity(50)
+                .unit("g")
+                .expirationDate(null)
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("소금");
+        assertThat(response.getQuantity()).isEqualTo(150); // 100 + 50
+        assertThat(response.getExpirationDate()).isNull();
+        
+        // DB에 하나만 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(1);
+    }
+
+    @DisplayName("식재료 추가 - 동일 이름이지만 한쪽만 소비기한 null이면 별도 항목")
+    @Test
+    void addItem_CreateSeparate_OneExpirationNull() {
+        // given
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("설탕")
+                .quantity(100)
+                .expirationDate(null)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("설탕")
+                .quantity(50)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("설탕");
+        assertThat(response.getQuantity()).isEqualTo(50);
+        
+        // DB에 두 개가 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(2);
     }
 
     @DisplayName("식재료 추가 - 소비기한 없이 추가 가능")
@@ -286,8 +397,8 @@ class RefrigeratorServiceTest {
         RefrigeratorDto.BulkCreateRequest request = new RefrigeratorDto.BulkCreateRequest(items);
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isEqualTo(3);
@@ -307,7 +418,7 @@ class RefrigeratorServiceTest {
 
         List<RefrigeratorDto.CreateRequest> items = List.of(
                 RefrigeratorDto.CreateRequest.builder()
-                        .name("우유")  // 중복
+                        .name("우유")  // 중복 -> 수량 합산으로 성공 처리
                         .quantity(1)
                         .build(),
                 RefrigeratorDto.CreateRequest.builder()
@@ -323,27 +434,33 @@ class RefrigeratorServiceTest {
         RefrigeratorDto.BulkCreateRequest request = new RefrigeratorDto.BulkCreateRequest(items);
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
-        assertThat(response.getSuccessCount()).isEqualTo(2);
-        assertThat(response.getFailCount()).isEqualTo(1);
-        assertThat(response.getAddedItems()).hasSize(2);
-        assertThat(response.getFailedItems()).hasSize(1);
-        assertThat(response.getFailedItems().get(0)).contains("우유");
+        // 중복도 수량 합산으로 처리되므로 모두 성공
+        assertThat(response.getSuccessCount()).isEqualTo(3);
+        assertThat(response.getFailCount()).isEqualTo(0);
+        assertThat(response.getAddedItems()).hasSize(3);
+        assertThat(response.getFailedItems()).hasSize(0);
+        
+        // 우유의 수량이 합산되었는지 확인
+        RefrigeratorItem milk = refrigeratorItemRepository
+                .findByMemberAndNameAndExpirationDateIsNull(testMember, "우유")
+                .orElseThrow();
+        assertThat(milk.getQuantity()).isEqualTo(2);  // 기존 1 + 추가 1
     }
 
     @DisplayName("식재료 일괄 추가 - 빈 목록")
     @Test
     void addItemsBulk_EmptyList() {
         // given
-        RefrigeratorDto.BulkCreateRequest request = 
-            new RefrigeratorDto.BulkCreateRequest(List.of());
+        RefrigeratorDto.BulkCreateRequest request =
+                new RefrigeratorDto.BulkCreateRequest(List.of());
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isZero();
@@ -374,8 +491,8 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        RefrigeratorDto.Response response = 
-            refrigeratorService.updateItem(testMember.getId(), saved.getId(), request);
+        RefrigeratorDto.Response response =
+                refrigeratorService.updateItem(testMember.getId(), saved.getId(), request);
 
         // then
         assertThat(response.getName()).isEqualTo("우유");  // 이름은 불변
@@ -510,12 +627,12 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe2);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then
         assertThat(response.getRecommendations()).hasSize(2);
-        
+
         RecommendationDto.RecommendedRecipe first = response.getRecommendations().get(0);
         assertThat(first.getRecipeName()).isEqualTo("김치찌개");
         assertThat(first.getMatchRate()).isEqualTo(100.0);
@@ -547,8 +664,8 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then
         assertThat(response.getRecommendations()).hasSize(1);
@@ -572,8 +689,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when: limit=3
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 3);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 3);
 
         // then: 최대 3개만 반환
         assertThat(response.getRecommendations()).hasSizeLessThanOrEqualTo(3);
@@ -599,8 +716,8 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe2);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then: 매칭률 0인 레시피는 제외
         assertThat(response.getRecommendations()).hasSize(1);
@@ -630,14 +747,14 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isTrue();
         assertThat(response.getWarnings()).isEmpty();
         assertThat(response.getIngredients()).allMatch(
-            ing -> ing.getStatus() == DeductionDto.DeductionStatus.OK
+                ing -> ing.getStatus() == DeductionDto.DeductionStatus.OK
         );
     }
 
@@ -656,14 +773,14 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isFalse();
         assertThat(response.getWarnings()).isNotEmpty();
         assertThat(response.getIngredients().get(0).getStatus())
-            .isEqualTo(DeductionDto.DeductionStatus.INSUFFICIENT);
+                .isEqualTo(DeductionDto.DeductionStatus.INSUFFICIENT);
     }
 
     @DisplayName("REF-08: 재료 차감 미리보기 - 재료 없음")
@@ -675,13 +792,13 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isFalse();
         assertThat(response.getIngredients().get(0).getStatus())
-            .isEqualTo(DeductionDto.DeductionStatus.NOT_FOUND);
+                .isEqualTo(DeductionDto.DeductionStatus.NOT_FOUND);
     }
 
     @DisplayName("REF-08: 재료 차감 실행 - 정상 차감")
@@ -710,13 +827,13 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        DeductionDto.DeductResponse response = 
-            refrigeratorService.deductIngredients(testMember.getId(), request);
+        DeductionDto.DeductResponse response =
+                refrigeratorService.deductIngredients(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isEqualTo(2);
         assertThat(response.getFailedCount()).isZero();
-        
+
         // 실제 수량 감소 확인
         RefrigeratorItem updatedItem1 = refrigeratorItemRepository.findById(item1.getId()).get();
         RefrigeratorItem updatedItem2 = refrigeratorItemRepository.findById(item2.getId()).get();
@@ -744,11 +861,11 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when & then
-        assertThatThrownBy(() -> 
-            refrigeratorService.deductIngredients(testMember.getId(), request)
+        assertThatThrownBy(() ->
+                refrigeratorService.deductIngredients(testMember.getId(), request)
         )
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("필수 재료가 부족합니다");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("필수 재료가 부족합니다");
     }
 
     @DisplayName("REF-08: 재료 차감 실행 - ignoreWarnings=true면 강제 실행")
@@ -771,8 +888,8 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        DeductionDto.DeductResponse response = 
-            refrigeratorService.deductIngredients(testMember.getId(), request);
+        DeductionDto.DeductResponse response =
+                refrigeratorService.deductIngredients(testMember.getId(), request);
 
         // then: 예외 발생 안 하고 실패로 기록
         assertThat(response.getFailedCount()).isEqualTo(1);
@@ -803,73 +920,5 @@ class RefrigeratorServiceTest {
         // then: 1 - 1 = 0 (음수 안 됨)
         RefrigeratorItem updated = refrigeratorItemRepository.findById(item.getId()).get();
         assertThat(updated.getQuantity()).isEqualTo(0);
-    }
-
-    // ================================
-    // REF-04: 구매 이력 OCR 스캔 테스트
-    // ================================
-
-    @Test
-    @DisplayName("REF-04: 구매 이력 OCR 스캔 - Mock 없이 파이프라인 구조만 테스트")
-    void scanPurchaseHistory_pipelineStructure() {
-        // given: 실제 API 호출은 Mock이 필요하므로, 여기서는 구조만 확인
-        // 실제 테스트는 각 서비스별 단위 테스트에서 수행
-        
-        // 참고: 실제 사용 시
-        // 1. CLOVA_OCR_API_URL 환경변수 설정
-        // 2. CLOVA_OCR_SECRET_KEY 환경변수 설정
-        // 3. OPENAI_API_KEY 환경변수 설정
-        
-        // then: 메서드가 존재하고 호출 가능한지만 확인
-        assertThatCode(() -> {
-            // 실제 파일 없이는 호출 불가 (MultipartFile 필요)
-            // refrigeratorService.scanPurchaseHistory(testMember.getId(), mockFile);
-        }).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("REF-04: DTO 구조 검증 - ScanPurchaseHistoryResponse")
-    void scanPurchaseHistory_dtoStructure() {
-        // given
-        LocalDate today = LocalDate.now();
-        
-        RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem item1 = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem.builder()
-                .name("바나나")
-                .price(1500)
-                .quantity(2)
-                .build();
-
-        RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem item2 = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem.builder()
-                .name("우유")
-                .price(2000)
-                .quantity(1)
-                .build();
-
-        // when
-        RefrigeratorDto.ScanPurchaseHistoryResponse response = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.builder()
-                .store("CU 강남점")
-                .purchaseDate(today)
-                .items(List.of(item1, item2))
-                .totalAmount(5000)
-                .rawOcrText("CU 강남점\n바나나 1,500원\n우유 2,000원")
-                .build();
-
-        // then
-        assertThat(response.getStore()).isEqualTo("CU 강남점");
-        assertThat(response.getPurchaseDate()).isEqualTo(today);
-        assertThat(response.getItems()).hasSize(2);
-        assertThat(response.getTotalAmount()).isEqualTo(5000);
-        assertThat(response.getRawOcrText()).contains("CU 강남점");
-        
-        assertThat(response.getItems().get(0).getName()).isEqualTo("바나나");
-        assertThat(response.getItems().get(0).getPrice()).isEqualTo(1500);
-        assertThat(response.getItems().get(0).getQuantity()).isEqualTo(2);
-        
-        assertThat(response.getItems().get(1).getName()).isEqualTo("우유");
-        assertThat(response.getItems().get(1).getPrice()).isEqualTo(2000);
-        assertThat(response.getItems().get(1).getQuantity()).isEqualTo(1);
     }
 }

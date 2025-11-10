@@ -25,8 +25,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
 @Table(
-    name = "refrigerator_items",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "name"})
+        name = "refrigerator_items",
+        // 변경: 동일 회원 + 동일 이름 + 동일 소비기한만 유니크. 소비기한이 다르면 별도 항목 허용.
+        uniqueConstraints = @UniqueConstraint(columnNames = {"member_id", "name", "expiration_date"})
 )
 public class RefrigeratorItem {
 
@@ -62,8 +63,8 @@ public class RefrigeratorItem {
     private LocalDateTime updatedAt;
 
     @Builder
-    public RefrigeratorItem(Member member, String name, Integer quantity, String unit, 
-                           LocalDate expirationDate, String memo) {
+    public RefrigeratorItem(Member member, String name, Integer quantity, String unit,
+                            LocalDate expirationDate, String memo) {
         this.member = member;
         this.name = name;
         this.quantity = quantity != null ? quantity : 1;

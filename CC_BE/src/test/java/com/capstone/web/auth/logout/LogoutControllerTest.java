@@ -73,15 +73,15 @@ class LogoutControllerTest {
     void logoutAndReuseToken() throws Exception {
         String token = loginAndGetToken("logout@example.com", "Abcd1234!", "로그아웃유저");
 
+        // 첫 번째 로그아웃은 성공
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("LOGGED_OUT")));
 
-        // 블랙리스트 진입 확인
+        // 로그아웃된 토큰으로 다시 요청하면 401 Unauthorized
         mockMvc.perform(post("/api/v1/auth/logout")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message", is("LOGGED_OUT")));
+                .andExpect(status().isUnauthorized());
     }
 }

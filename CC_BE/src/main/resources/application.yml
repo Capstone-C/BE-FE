@@ -21,6 +21,10 @@ spring:
   docker:
     compose:
       enabled: false
+  elasticsearch:
+    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    username: ${ELASTICSEARCH_USERNAME:}
+    password: ${ELASTICSEARCH_PASSWORD:}
 
 server:
   port: 8080
@@ -34,18 +38,24 @@ jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
-# CLOVA OCR 설정 (REF-04)
-ocr:
-  clova:
-    api-url: ${CLOVA_OCR_API_URL:https://example.apigw.ntruss.com/custom/v1/YOUR_DOMAIN/general}
-    secret-key: ${CLOVA_OCR_SECRET_KEY:}
+# Gemini 설정 (선택)
+gemini:
+  api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  max-tokens: ${GEMINI_MAX_TOKENS:800}
 
-# OpenAI GPT 설정 (REF-04)
-openai:
-  api-url: ${OPENAI_API_URL:https://api.openai.com/v1/chat/completions}
-  api-key: ${OPENAI_API_KEY:}
-  model: ${OPENAI_MODEL:gpt-5-nano}
-  max-tokens: ${OPENAI_MAX_TOKENS:1000}
+# 네이버 쇼핑 API 설정
+naver:
+  api:
+    client-id: ${NAVER_CLIENT_ID:}
+    client-secret: ${NAVER_CLIENT_SECRET:}
+
+shopping:
+  recommendation:
+    low-quantity-threshold: 2        # 수량이 이 값 이하면 추천 (기본: 2)
+    expiration-days-threshold: 3     # D-day가 이 값 이하면 추천 (기본: 3일)
+    max-products-per-item: 10        # 재료당 최대 추천 상품 수 (기본: 10)
 
 app:
   upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로

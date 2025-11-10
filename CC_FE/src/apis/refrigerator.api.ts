@@ -5,6 +5,9 @@ import type {
   CreateRefrigeratorItemRequest,
   UpdateRefrigeratorItemRequest,
   RefrigeratorItem,
+  BulkCreateRequest,
+  BulkCreateResponse,
+  ScanPurchaseHistoryResponse,
 } from '@/types/refrigerator';
 
 // 목록 조회 (현재 백엔드: /api/v1/refrigerator/items) - sortBy: expirationDate | name | createdAt
@@ -37,4 +40,27 @@ export async function updateRefrigeratorItem(id: number, payload: UpdateRefriger
 
 export async function deleteRefrigeratorItem(id: number) {
   await authClient.delete(`/api/v1/refrigerator/items/${id}`);
+}
+
+// 일괄 추가 (영수증 결과 등) REF-03/04
+export async function bulkCreateRefrigeratorItems(payload: BulkCreateRequest) {
+  const { data } = await authClient.post<BulkCreateResponse>('/api/v1/refrigerator/items/bulk', payload, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  return data;
+}
+
+// 영수증 구매 이력 OCR 스캔 (REF-04 백엔드 구현됨)
+export async function scanPurchaseHistory(imageFile: File) {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  // Gemini 전용으로 provider 파라미터 제거
+  const { data } = await authClient.post<ScanPurchaseHistoryResponse>(
+    '/api/v1/refrigerator/scan/purchase-history',
+    formData,
+    {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    },
+  );
+  return data;
 }

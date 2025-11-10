@@ -34,6 +34,7 @@ import CommunityPage from '@/features/community/pages/CommunityPage';
 
 // Refrigerator
 import RefrigeratorPage from '@/features/refrigerator/pages/RefrigeratorPage';
+import ReceiptScanPage from '../features/refrigerator/pages/ReceiptScanPage';
 
 const router = createBrowserRouter([
   {
@@ -75,6 +76,7 @@ const router = createBrowserRouter([
 
           // 냉장고 페이지
           { path: 'refrigerator', element: <RefrigeratorPage /> },
+          { path: 'refrigerator/receipt-scan', element: <ReceiptScanPage /> },
         ],
       },
 
