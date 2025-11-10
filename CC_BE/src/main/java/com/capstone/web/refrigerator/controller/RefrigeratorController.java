@@ -164,6 +164,35 @@ public class RefrigeratorController {
     }
 
     @Operation(
+            summary = "REF-04: 구매 이력 스캔 (Gemini 이미지 이해)",
+            description = """
+                    영수증 이미지를 업로드하면 Gemini Vision 모델이 직접 이미지를 해석하여 
+                    식재료 항목을 JSON으로 반환합니다.
+                    
+                    처리 흐름:
+                    1) 이미지 업로드
+                    2) Gemini Vision API 호출 (inline_data)
+                    3) JSON 파싱하여 구조화 결과 반환
+                    
+                    지원 포맷: JPG, PNG (최대 10MB 권장)
+                    출력: items[{ name, quantity, unit }]
+                    """,
+            security = @SecurityRequirement(name = "JWT")
+    )
+    @PostMapping(value = "/scan/purchase-history", consumes = "multipart/form-data")
+    public ResponseEntity<RefrigeratorDto.ScanPurchaseHistoryResponse> scanPurchaseHistory(
+            @Parameter(description = "영수증 이미지 파일", required = true)
+            @RequestParam("image") MultipartFile image,
+            Authentication authentication
+    ) {
+        Long memberId = AuthenticationUtils.extractMemberId(authentication);
+        RefrigeratorDto.ScanPurchaseHistoryResponse response =
+                refrigeratorService.scanPurchaseHistory(memberId, image);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
             summary = "REF-07: 보유 재료 기반 레시피 추천",
             description = """
                     냉장고에 보유한 재료를 기반으로 만들 수 있는 레시피를 추천합니다.

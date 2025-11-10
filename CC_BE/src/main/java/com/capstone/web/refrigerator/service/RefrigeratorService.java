@@ -9,7 +9,6 @@ import com.capstone.web.refrigerator.domain.RefrigeratorItem;
 import com.capstone.web.refrigerator.dto.DeductionDto;
 import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
-import com.capstone.web.refrigerator.exception.DuplicateItemException;
 import com.capstone.web.refrigerator.exception.ItemNotFoundException;
 import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
@@ -40,6 +39,9 @@ public class RefrigeratorService {
     private final MemberRepository memberRepository;
     private final RecipeRepository recipeRepository;
 
+    // REF-04 의존성
+    private final GeminiService geminiService;
+
     /**
      * REF-01: 내 냉장고 식재료 목록 조회
      * 소비기한 임박순으로 정렬
@@ -69,23 +71,47 @@ public class RefrigeratorService {
     public RefrigeratorDto.Response addItem(Long memberId, RefrigeratorDto.CreateRequest request) {
         Member member = getMemberById(memberId);
 
-        // 중복 체크
-        if (refrigeratorItemRepository.existsByMemberAndName(member, request.getName())) {
-            throw new DuplicateItemException("이미 등록된 식재료입니다: " + request.getName());
+        RefrigeratorItem savedItem;
+        if (request.getExpirationDate() == null) {
+            var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, request.getName());
+            if (existingOpt.isPresent()) {
+                RefrigeratorItem existing = existingOpt.get();
+                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
+                existing.updateQuantity(prev + add);
+                savedItem = existing;
+            } else {
+                RefrigeratorItem item = RefrigeratorItem.builder()
+                        .member(member)
+                        .name(request.getName())
+                        .quantity(request.getQuantity())
+                        .unit(request.getUnit())
+                        .expirationDate(null)
+                        .memo(request.getMemo())
+                        .build();
+                savedItem = refrigeratorItemRepository.save(item);
+            }
+        } else {
+            var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, request.getName(), request.getExpirationDate());
+            if (existingOpt.isPresent()) {
+                RefrigeratorItem existing = existingOpt.get();
+                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
+                existing.updateQuantity(prev + add);
+                savedItem = existing;
+            } else {
+                RefrigeratorItem item = RefrigeratorItem.builder()
+                        .member(member)
+                        .name(request.getName())
+                        .quantity(request.getQuantity())
+                        .unit(request.getUnit())
+                        .expirationDate(request.getExpirationDate())
+                        .memo(request.getMemo())
+                        .build();
+                savedItem = refrigeratorItemRepository.save(item);
+            }
         }
-
-        RefrigeratorItem item = RefrigeratorItem.builder()
-                .member(member)
-                .name(request.getName())
-                .quantity(request.getQuantity())
-                .unit(request.getUnit())
-                .expirationDate(request.getExpirationDate())
-                .memo(request.getMemo())
-                .build();
-
-        RefrigeratorItem savedItem = refrigeratorItemRepository.save(item);
-        log.info("식재료 추가: memberId={}, itemName={}", memberId, request.getName());
-
+        log.info("식재료 추가(병합 규칙 적용): memberId={}, itemName={}, expiration={}", memberId, request.getName(), request.getExpirationDate());
         return new RefrigeratorDto.Response(savedItem);
     }
 
@@ -95,37 +121,56 @@ public class RefrigeratorService {
     @Transactional
     public RefrigeratorDto.BulkCreateResponse addItemsBulk(Long memberId, RefrigeratorDto.BulkCreateRequest request) {
         Member member = getMemberById(memberId);
-
         List<RefrigeratorItem> addedItems = new ArrayList<>();
         List<String> failedItems = new ArrayList<>();
-
         for (RefrigeratorDto.CreateRequest itemRequest : request.getItems()) {
             try {
-                // 중복 체크: 중복이면 건너뛰기 (에러 발생 안 함)
-                if (refrigeratorItemRepository.existsByMemberAndName(member, itemRequest.getName())) {
-                    failedItems.add(itemRequest.getName() + " (이미 등록됨)");
-                    continue;
+                String name = itemRequest.getName();
+                Integer qty = itemRequest.getQuantity();
+                var expiration = itemRequest.getExpirationDate();
+                if (expiration == null) {
+                    refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, name)
+                            .ifPresentOrElse(existing -> {
+                                int add = (qty != null && qty > 0) ? qty : 1;
+                                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                                existing.updateQuantity(prev + add);
+                                addedItems.add(existing);
+                            }, () -> {
+                                RefrigeratorItem item = RefrigeratorItem.builder()
+                                        .member(member)
+                                        .name(name)
+                                        .quantity(qty != null ? qty : 1)
+                                        .unit(itemRequest.getUnit())
+                                        .expirationDate(null)
+                                        .memo(itemRequest.getMemo())
+                                        .build();
+                                addedItems.add(refrigeratorItemRepository.save(item));
+                            });
+                } else {
+                    refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, name, expiration)
+                            .ifPresentOrElse(existing -> {
+                                int add = (qty != null && qty > 0) ? qty : 1;
+                                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                                existing.updateQuantity(prev + add);
+                                addedItems.add(existing);
+                            }, () -> {
+                                RefrigeratorItem item = RefrigeratorItem.builder()
+                                        .member(member)
+                                        .name(name)
+                                        .quantity(qty != null ? qty : 1)
+                                        .unit(itemRequest.getUnit())
+                                        .expirationDate(expiration)
+                                        .memo(itemRequest.getMemo())
+                                        .build();
+                                addedItems.add(refrigeratorItemRepository.save(item));
+                            });
                 }
-
-                RefrigeratorItem item = RefrigeratorItem.builder()
-                        .member(member)
-                        .name(itemRequest.getName())
-                        .quantity(itemRequest.getQuantity())
-                        .unit(itemRequest.getUnit())
-                        .expirationDate(itemRequest.getExpirationDate())
-                        .memo(itemRequest.getMemo())
-                        .build();
-
-                RefrigeratorItem savedItem = refrigeratorItemRepository.save(item);
-                addedItems.add(savedItem);
             } catch (Exception e) {
-                log.warn("식재료 일괄 추가 실패: {}", itemRequest.getName(), e);
+                log.warn("식재료 일괄 추가/병합 실패: {}", itemRequest.getName(), e);
                 failedItems.add(itemRequest.getName() + " (오류)");
             }
         }
-
-        log.info("식재료 일괄 추가: memberId={}, success={}, fail={}", memberId, addedItems.size(), failedItems.size());
-
+        log.info("식재료 일괄 추가 완료 (병합 로직 적용): memberId={}, success={}, fail={}", memberId, addedItems.size(), failedItems.size());
         return RefrigeratorDto.BulkCreateResponse.builder()
                 .addedItems(addedItems)
                 .failedItems(failedItems)
@@ -451,6 +496,28 @@ public class RefrigeratorService {
     private RefrigeratorItem getItemById(Long itemId) {
         return refrigeratorItemRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("식재료를 찾을 수 없습니다: " + itemId));
+    }
+
+    /**
+     * REF-04: 영수증 이미지 스캔 (Gemini 이미지 이해)
+     * 처리 흐름:
+     * 1) 프론트에서 업로드된 영수증 이미지를 그대로 전달
+     * 2) Gemini Vision API가 이미지를 해석하여 매장/날짜/항목/총액 JSON 생성
+     * 3) 결과를 ScanPurchaseHistoryResponse로 반환
+     */
+    @Transactional
+    public RefrigeratorDto.ScanPurchaseHistoryResponse scanPurchaseHistory(
+            Long memberId,
+            MultipartFile image) {
+
+        log.info("[REF-04] (Gemini 전용) 구매 이력 스캔 시작 - memberId={}, file={} size={} bytes",
+                memberId, image.getOriginalFilename(), image.getSize());
+
+        RefrigeratorDto.ScanPurchaseHistoryResponse response = geminiService.parseReceiptImage(image);
+
+        return RefrigeratorDto.ScanPurchaseHistoryResponse.builder()
+                .items(response.getItems())
+                .build();
     }
 
     /**

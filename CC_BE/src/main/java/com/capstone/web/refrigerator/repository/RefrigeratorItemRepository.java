@@ -22,8 +22,8 @@ public interface RefrigeratorItemRepository extends JpaRepository<RefrigeratorIt
      * 소비기한이 없는 항목은 하단에 위치
      */
     @Query("SELECT r FROM RefrigeratorItem r WHERE r.member = :member " +
-           "ORDER BY CASE WHEN r.expirationDate IS NULL THEN 1 ELSE 0 END, " +
-           "r.expirationDate ASC, r.createdAt DESC")
+            "ORDER BY CASE WHEN r.expirationDate IS NULL THEN 1 ELSE 0 END, " +
+            "r.expirationDate ASC, r.createdAt DESC")
     List<RefrigeratorItem> findByMemberOrderByExpirationDateAsc(@Param("member") Member member);
 
     /**
@@ -50,4 +50,14 @@ public interface RefrigeratorItemRepository extends JpaRepository<RefrigeratorIt
      * REF-07: 회원 ID로 모든 식재료 조회
      */
     List<RefrigeratorItem> findByMemberId(Long memberId);
+
+    /**
+     * 특정 회원의 특정 이름과 소비기한으로 식재료 조회
+     */
+    Optional<RefrigeratorItem> findByMemberAndNameAndExpirationDate(Member member, String name, java.time.LocalDate expirationDate);
+
+    /**
+     * 소비기한이 NULL인 특정 회원의 특정 이름 식재료 조회
+     */
+    Optional<RefrigeratorItem> findByMemberAndNameAndExpirationDateIsNull(Member member, String name);
 }

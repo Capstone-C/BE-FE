@@ -38,11 +38,12 @@ jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
-# Gemini AI 설정
+# Gemini 설정 (선택)
 gemini:
-  api-key: ${GEMINI_API_KEY:}
   api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
-  model: ${GEMINI_MODEL:gemini-2.5-flash}
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-1.5-flash}
+  max-tokens: ${GEMINI_MAX_TOKENS:800}
 
 # 네이버 쇼핑 API 설정
 naver:

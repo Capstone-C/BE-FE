@@ -40,8 +40,12 @@ services:
       MYSQL_DATABASE: ccdb
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
-      # Gemini AI API
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      # Gemini only
+      GEMINI_API_URL: ${GEMINI_API_URL}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-${GEMINI_API_KEY}}
+      GEMINI_MODEL: ${GEMINI_MODEL}
+      GEMINI_MAX_TOKENS: ${GEMINI_MAX_TOKENS}
     ports:
       - "8080:8080"
     volumes: # volumes 섹션을 추가합니다.

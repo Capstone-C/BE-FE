@@ -167,20 +167,17 @@ public class RefrigeratorDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ScanReceiptResponse {
-        private String extractedText; // OCR 추출 원문
-        private List<ScannedItem> scannedItems; // 파싱된 식재료 목록
-        private int totalItemsFound; // 추출된 총 항목 수
+    public static class ScanPurchaseHistoryResponse {
+        private List<PurchasedItem> items;
 
         @Getter
         @Builder
         @NoArgsConstructor
         @AllArgsConstructor
-        public static class ScannedItem {
+        public static class PurchasedItem {
             private String name;
             private Integer quantity;
             private String unit;
-            private Integer price; // 참고용 (저장 안 함)
         }
     }
 }
