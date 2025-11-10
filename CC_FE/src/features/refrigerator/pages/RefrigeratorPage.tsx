@@ -17,6 +17,7 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
 import { formatDateYMDKorean } from '@/utils/date';
+import { Link } from 'react-router-dom';
 
 function formatDDay(days: number | null): string {
   if (days === null || days === undefined) return '—';
@@ -302,12 +303,20 @@ export default function RefrigeratorPage() {
             <option value="createdAt">등록일순</option>
           </select>
         </div>
-        <button
-          onClick={() => setShowAddForm((v) => !v)}
-          className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
-        >
-          식재료 추가
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAddForm((v) => !v)}
+            className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+          >
+            식재료 추가
+          </button>
+          <Link
+            to="/refrigerator/receipt-scan"
+            className="px-4 py-2 rounded bg-green-600 text-white text-sm hover:bg-green-700"
+          >
+            영수증으로 추가
+          </Link>
+        </div>
       </div>
 
       {showAddForm && (

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 export interface Toast {
   id: number;
   message: string;
-  type?: 'success' | 'error' | 'info';
+  type?: 'success' | 'error' | 'info' | 'warning';
   duration?: number; // ms
 }
 
@@ -50,7 +50,9 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 ? 'border-green-300 text-green-700'
                 : t.type === 'error'
                   ? 'border-red-300 text-red-700'
-                  : 'border-gray-300 text-gray-700'
+                  : t.type === 'warning'
+                    ? 'border-yellow-300 text-yellow-700'
+                    : 'border-gray-300 text-gray-700'
             }`}
             onClick={() => remove(t.id)}
           >

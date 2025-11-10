@@ -167,44 +167,17 @@ public class RefrigeratorDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ScanReceiptResponse {
-        private String extractedText; // OCR 추출 원문
-        private List<ScannedItem> scannedItems; // 파싱된 식재료 목록
-        private int totalItemsFound; // 추출된 총 항목 수
-
-        @Getter
-        @Builder
-        @NoArgsConstructor
-        @AllArgsConstructor
-        public static class ScannedItem {
-            private String name;
-            private Integer quantity;
-            private String unit;
-            private Integer price; // 참고용 (저장 안 함)
-        }
-    }
-
-    // REF-04: 구매 이력 OCR (CLOVA + GPT-5 Nano)
-    @Getter
-    @Builder
-    @NoArgsConstructor
-    @AllArgsConstructor
     public static class ScanPurchaseHistoryResponse {
-        private String store; // 매장명
-        @JsonFormat(pattern = "yyyy-MM-dd")
-        private LocalDate purchaseDate; // 구매 날짜
-        private List<PurchasedItem> items; // 구매 항목 목록
-        private Integer totalAmount; // 총 금액
-        private String rawOcrText; // CLOVA OCR 원문 (디버깅/검증용)
+        private List<PurchasedItem> items;
 
         @Getter
         @Builder
         @NoArgsConstructor
         @AllArgsConstructor
         public static class PurchasedItem {
-            private String name; // 상품명
-            private Integer price; // 가격
-            private Integer quantity; // 수량 (기본값 1)
+            private String name;
+            private Integer quantity;
+            private String unit;
         }
     }
 }

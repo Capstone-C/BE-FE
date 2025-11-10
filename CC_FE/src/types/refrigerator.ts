@@ -35,3 +35,26 @@ export interface UpdateRefrigeratorItemRequest {
   expirationDate?: string; // yyyy-MM-dd
   memo?: string;
 }
+
+// Bulk create (REF-03/04)
+export interface BulkCreateRequest {
+  items: CreateRefrigeratorItemRequest[];
+}
+
+export interface BulkCreateResponse {
+  successCount: number;
+  failCount: number;
+  failedItems: string[];
+  addedItems: RefrigeratorItem[];
+}
+
+// Receipt OCR purchase-history scan (REF-04 backend endpoint)
+export interface ScanPurchaseHistoryResponse {
+  items: PurchasedItem[];
+}
+
+export interface PurchasedItem {
+  name: string;
+  quantity?: number; // default 1
+  unit?: string | null; // e.g., 개, 팩, 봉, 병, g, ml, L
+}

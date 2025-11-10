@@ -31,10 +31,14 @@ import java.util.List;
 @Transactional
 class RefrigeratorServiceTest {
 
-    @Autowired private RefrigeratorService refrigeratorService;
-    @Autowired private RefrigeratorItemRepository refrigeratorItemRepository;
-    @Autowired private MemberRepository memberRepository;
-    @Autowired private RecipeRepository recipeRepository;
+    @Autowired
+    private RefrigeratorService refrigeratorService;
+    @Autowired
+    private RefrigeratorItemRepository refrigeratorItemRepository;
+    @Autowired
+    private MemberRepository memberRepository;
+    @Autowired
+    private RecipeRepository recipeRepository;
 
     private Member testMember;
     private Member otherMember;
@@ -63,8 +67,8 @@ class RefrigeratorServiceTest {
     @Test
     void getMyItems_EmptyList() {
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getItems()).isEmpty();
@@ -95,8 +99,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getItems()).hasSize(3);
@@ -125,8 +129,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "name");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "name");
 
         // then
         assertThat(response.getItems()).hasSize(3);
@@ -158,8 +162,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "expirationDate");
 
         // then
         assertThat(response.getTotalCount()).isEqualTo(3);
@@ -182,8 +186,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when
-        RefrigeratorDto.ItemListResponse response = 
-            refrigeratorService.getMyItems(testMember.getId(), "name");
+        RefrigeratorDto.ItemListResponse response =
+                refrigeratorService.getMyItems(testMember.getId(), "name");
 
         // then
         assertThat(response.getItems()).hasSize(1);
@@ -286,8 +290,8 @@ class RefrigeratorServiceTest {
         RefrigeratorDto.BulkCreateRequest request = new RefrigeratorDto.BulkCreateRequest(items);
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isEqualTo(3);
@@ -323,8 +327,8 @@ class RefrigeratorServiceTest {
         RefrigeratorDto.BulkCreateRequest request = new RefrigeratorDto.BulkCreateRequest(items);
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isEqualTo(2);
@@ -338,12 +342,12 @@ class RefrigeratorServiceTest {
     @Test
     void addItemsBulk_EmptyList() {
         // given
-        RefrigeratorDto.BulkCreateRequest request = 
-            new RefrigeratorDto.BulkCreateRequest(List.of());
+        RefrigeratorDto.BulkCreateRequest request =
+                new RefrigeratorDto.BulkCreateRequest(List.of());
 
         // when
-        RefrigeratorDto.BulkCreateResponse response = 
-            refrigeratorService.addItemsBulk(testMember.getId(), request);
+        RefrigeratorDto.BulkCreateResponse response =
+                refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isZero();
@@ -374,8 +378,8 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        RefrigeratorDto.Response response = 
-            refrigeratorService.updateItem(testMember.getId(), saved.getId(), request);
+        RefrigeratorDto.Response response =
+                refrigeratorService.updateItem(testMember.getId(), saved.getId(), request);
 
         // then
         assertThat(response.getName()).isEqualTo("우유");  // 이름은 불변
@@ -510,12 +514,12 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe2);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then
         assertThat(response.getRecommendations()).hasSize(2);
-        
+
         RecommendationDto.RecommendedRecipe first = response.getRecommendations().get(0);
         assertThat(first.getRecipeName()).isEqualTo("김치찌개");
         assertThat(first.getMatchRate()).isEqualTo(100.0);
@@ -547,8 +551,8 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then
         assertThat(response.getRecommendations()).hasSize(1);
@@ -572,8 +576,8 @@ class RefrigeratorServiceTest {
                 .build());
 
         // when: limit=3
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 3);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 3);
 
         // then: 최대 3개만 반환
         assertThat(response.getRecommendations()).hasSizeLessThanOrEqualTo(3);
@@ -599,8 +603,8 @@ class RefrigeratorServiceTest {
         recipeRepository.save(recipe2);
 
         // when
-        RecommendationDto.RecommendationResponse response = 
-            refrigeratorService.getRecommendations(testMember.getId(), 10);
+        RecommendationDto.RecommendationResponse response =
+                refrigeratorService.getRecommendations(testMember.getId(), 10);
 
         // then: 매칭률 0인 레시피는 제외
         assertThat(response.getRecommendations()).hasSize(1);
@@ -630,14 +634,14 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isTrue();
         assertThat(response.getWarnings()).isEmpty();
         assertThat(response.getIngredients()).allMatch(
-            ing -> ing.getStatus() == DeductionDto.DeductionStatus.OK
+                ing -> ing.getStatus() == DeductionDto.DeductionStatus.OK
         );
     }
 
@@ -656,14 +660,14 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isFalse();
         assertThat(response.getWarnings()).isNotEmpty();
         assertThat(response.getIngredients().get(0).getStatus())
-            .isEqualTo(DeductionDto.DeductionStatus.INSUFFICIENT);
+                .isEqualTo(DeductionDto.DeductionStatus.INSUFFICIENT);
     }
 
     @DisplayName("REF-08: 재료 차감 미리보기 - 재료 없음")
@@ -675,13 +679,13 @@ class RefrigeratorServiceTest {
         Recipe saved = recipeRepository.save(recipe);
 
         // when
-        DeductionDto.DeductPreviewResponse response = 
-            refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
+        DeductionDto.DeductPreviewResponse response =
+                refrigeratorService.previewDeduction(testMember.getId(), saved.getId());
 
         // then
         assertThat(response.isCanProceed()).isFalse();
         assertThat(response.getIngredients().get(0).getStatus())
-            .isEqualTo(DeductionDto.DeductionStatus.NOT_FOUND);
+                .isEqualTo(DeductionDto.DeductionStatus.NOT_FOUND);
     }
 
     @DisplayName("REF-08: 재료 차감 실행 - 정상 차감")
@@ -710,13 +714,13 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        DeductionDto.DeductResponse response = 
-            refrigeratorService.deductIngredients(testMember.getId(), request);
+        DeductionDto.DeductResponse response =
+                refrigeratorService.deductIngredients(testMember.getId(), request);
 
         // then
         assertThat(response.getSuccessCount()).isEqualTo(2);
         assertThat(response.getFailedCount()).isZero();
-        
+
         // 실제 수량 감소 확인
         RefrigeratorItem updatedItem1 = refrigeratorItemRepository.findById(item1.getId()).get();
         RefrigeratorItem updatedItem2 = refrigeratorItemRepository.findById(item2.getId()).get();
@@ -744,11 +748,11 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when & then
-        assertThatThrownBy(() -> 
-            refrigeratorService.deductIngredients(testMember.getId(), request)
+        assertThatThrownBy(() ->
+                refrigeratorService.deductIngredients(testMember.getId(), request)
         )
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessageContaining("필수 재료가 부족합니다");
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("필수 재료가 부족합니다");
     }
 
     @DisplayName("REF-08: 재료 차감 실행 - ignoreWarnings=true면 강제 실행")
@@ -771,8 +775,8 @@ class RefrigeratorServiceTest {
                 .build();
 
         // when
-        DeductionDto.DeductResponse response = 
-            refrigeratorService.deductIngredients(testMember.getId(), request);
+        DeductionDto.DeductResponse response =
+                refrigeratorService.deductIngredients(testMember.getId(), request);
 
         // then: 예외 발생 안 하고 실패로 기록
         assertThat(response.getFailedCount()).isEqualTo(1);
@@ -806,70 +810,8 @@ class RefrigeratorServiceTest {
     }
 
     // ================================
-    // REF-04: 구매 이력 OCR 스캔 테스트
+    // (REMOVED) REF-04: 구매 이력 OCR 스캔 테스트 - Gemini-only migration
     // ================================
-
-    @Test
-    @DisplayName("REF-04: 구매 이력 OCR 스캔 - Mock 없이 파이프라인 구조만 테스트")
-    void scanPurchaseHistory_pipelineStructure() {
-        // given: 실제 API 호출은 Mock이 필요하므로, 여기서는 구조만 확인
-        // 실제 테스트는 각 서비스별 단위 테스트에서 수행
-        
-        // 참고: 실제 사용 시
-        // 1. CLOVA_OCR_API_URL 환경변수 설정
-        // 2. CLOVA_OCR_SECRET_KEY 환경변수 설정
-        // 3. OPENAI_API_KEY 환경변수 설정
-        
-        // then: 메서드가 존재하고 호출 가능한지만 확인
-        assertThatCode(() -> {
-            // 실제 파일 없이는 호출 불가 (MultipartFile 필요)
-            // refrigeratorService.scanPurchaseHistory(testMember.getId(), mockFile);
-        }).doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("REF-04: DTO 구조 검증 - ScanPurchaseHistoryResponse")
-    void scanPurchaseHistory_dtoStructure() {
-        // given
-        LocalDate today = LocalDate.now();
-        
-        RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem item1 = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem.builder()
-                .name("바나나")
-                .price(1500)
-                .quantity(2)
-                .build();
-
-        RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem item2 = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.PurchasedItem.builder()
-                .name("우유")
-                .price(2000)
-                .quantity(1)
-                .build();
-
-        // when
-        RefrigeratorDto.ScanPurchaseHistoryResponse response = 
-            RefrigeratorDto.ScanPurchaseHistoryResponse.builder()
-                .store("CU 강남점")
-                .purchaseDate(today)
-                .items(List.of(item1, item2))
-                .totalAmount(5000)
-                .rawOcrText("CU 강남점\n바나나 1,500원\n우유 2,000원")
-                .build();
-
-        // then
-        assertThat(response.getStore()).isEqualTo("CU 강남점");
-        assertThat(response.getPurchaseDate()).isEqualTo(today);
-        assertThat(response.getItems()).hasSize(2);
-        assertThat(response.getTotalAmount()).isEqualTo(5000);
-        assertThat(response.getRawOcrText()).contains("CU 강남점");
-        
-        assertThat(response.getItems().get(0).getName()).isEqualTo("바나나");
-        assertThat(response.getItems().get(0).getPrice()).isEqualTo(1500);
-        assertThat(response.getItems().get(0).getQuantity()).isEqualTo(2);
-        
-        assertThat(response.getItems().get(1).getName()).isEqualTo("우유");
-        assertThat(response.getItems().get(1).getPrice()).isEqualTo(2000);
-        assertThat(response.getItems().get(1).getQuantity()).isEqualTo(1);
-    }
+    // 기존 CLOVA/OpenAI OCR 파이프라인 관련 테스트 (scanPurchaseHistory_pipelineStructure, dtoStructure)
+    // 는 Gemini Vision 직해석으로 대체되어 제거되었습니다.
 }

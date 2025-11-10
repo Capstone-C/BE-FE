@@ -164,38 +164,18 @@ public class RefrigeratorController {
     }
 
     @Operation(
-            summary = "REF-04: 구매 이력 OCR 스캔 (실험적 기능)",
+            summary = "REF-04: 구매 이력 스캔 (Gemini 이미지 이해)",
             description = """
-                    ⚠️ **주의: 현재 파싱 정확도가 불완전합니다. 실험적 기능으로 제공됩니다.**
+                    영수증 이미지를 업로드하면 Gemini Vision 모델이 직접 이미지를 해석하여 
+                    식재료 항목을 JSON으로 반환합니다.
                     
-                    영수증 이미지를 스캔하여 구매 이력을 자동으로 인식합니다.
+                    처리 흐름:
+                    1) 이미지 업로드
+                    2) Gemini Vision API 호출 (inline_data)
+                    3) JSON 파싱하여 구조화 결과 반환
                     
-                    **처리 흐름**:
-                    1. CLOVA OCR로 영수증 텍스트 추출
-                    2. 전처리: 광고/바코드 등 불필요한 정보 제거
-                    3. GPT-5 Nano로 JSON 파싱 (매장명, 날짜, 항목, 금액)
-                    4. 구조화된 구매 이력 반환
-                    
-                    **현재 알려진 문제**:
-                    - 한국어 영수증 파싱 정확도 불안정
-                    - 일부 매장의 영수증 포맷 미지원
-                    - items 배열이 비어있을 수 있음
-                    
-                    **응답 정보**:
-                    - store: 매장명 (예: "CU 강남점")
-                    - purchaseDate: 구매 날짜 (YYYY-MM-DD)
-                    - items: 구매 항목 배열
-                      - name: 상품명
-                      - price: 가격
-                      - quantity: 수량 (기본값 1)
-                    - totalAmount: 총 금액
-                    - rawOcrText: CLOVA OCR 원문 (디버깅용)
-                    
-                    **지원 포맷**:
-                    - 이미지: JPG, PNG
-                    - 최대 파일 크기: 10MB
-                    
-                    **참고**: 향후 프롬프트 개선 및 fine-tuning으로 정확도 향상 예정
+                    지원 포맷: JPG, PNG (최대 10MB 권장)
+                    출력: items[{ name, quantity, unit }]
                     """,
             security = @SecurityRequirement(name = "JWT")
     )
@@ -208,6 +188,7 @@ public class RefrigeratorController {
         Long memberId = AuthenticationUtils.extractMemberId(authentication);
         RefrigeratorDto.ScanPurchaseHistoryResponse response =
                 refrigeratorService.scanPurchaseHistory(memberId, image);
+
         return ResponseEntity.ok(response);
     }
 
