@@ -8,13 +8,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      # ddl-auto: create-drop
       ddl-auto: update
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: false  # 보안: 프로덕션에서 SQL 포맷팅 비활성화
-    show-sql: false  # 보안: 프로덕션에서 SQL 로그 비활성화
+        format_sql: false
+    show-sql: false
   sql:
     init:
       mode: never
@@ -25,31 +24,33 @@ spring:
     uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
     username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
+  servlet:
+    multipart:
+      max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
+      max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:10MB}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 logging:
   level:
-    root: INFO  # 보안: 기본 로그 레벨 INFO
-    org.springframework: INFO
-    org.hibernate.SQL: WARN  # 보안: SQL 로그 최소화
-    org.hibernate.type.descriptor.sql.BasicBinder: OFF  # 보안: 바인딩 파라미터 숨김
-    com.zaxxer.hikari: WARN  # 보안: 커넥션 풀 로그 최소화
-    com.capstone: INFO
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    org.springframework: ${LOGGING_LEVEL_SPRING:INFO}
+    org.hibernate.SQL: ${LOGGING_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+    com.zaxxer.hikari: WARN
+    com.capstone: ${LOGGING_LEVEL_APP:INFO}
 
 jwt:
-  secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}
+  secret: ${JWT_SECRET}
   expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
-# Gemini 설정 (선택)
 gemini:
   api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
   api-key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-1.5-flash}
   max-tokens: ${GEMINI_MAX_TOKENS:800}
 
-# 네이버 쇼핑 API 설정
 naver:
   api:
     client-id: ${NAVER_CLIENT_ID:}
@@ -57,12 +58,12 @@ naver:
 
 shopping:
   recommendation:
-    low-quantity-threshold: 2        # 수량이 이 값 이하면 추천 (기본: 2)
-    expiration-days-threshold: 3     # D-day가 이 값 이하면 추천 (기본: 3일)
-    max-products-per-item: 10        # 재료당 최대 추천 상품 수 (기본: 10)
+    low-quantity-threshold: ${SHOPPING_LOW_QUANTITY_THRESHOLD:2}
+    expiration-days-threshold: ${SHOPPING_EXPIRATION_DAYS_THRESHOLD:3}
+    max-products-per-item: ${SHOPPING_MAX_PRODUCTS_PER_ITEM:10}
 
 app:
-  upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로
+  upload-dir: ${APP_UPLOAD_DIR:uploads/}
 
 # SpringDoc OpenAPI 설정
 springdoc:
