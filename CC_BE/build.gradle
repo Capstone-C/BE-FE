@@ -80,14 +80,14 @@ tasks.named('test') {
     // 병렬 테스트 실행 (CPU 코어의 절반 사용)
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     
-    // 테스트 로깅 최적화 (실패한 테스트만 상세 출력)
+    // 테스트 로깅 - 최소화 (실패만 출력)
     testLogging {
-        events "failed"  // 실패한 테스트만 출력 (CI 로그 최소화)
-        exceptionFormat "full"
+        events "failed"
+        exceptionFormat "short"
         showExceptions true
         showCauses true
         showStackTraces true
-        showStandardStreams = false
+        showStandardStreams = false  // STDOUT/STDERR 숨김
     }
     
     // JVM 메모리 최적화
@@ -95,11 +95,21 @@ tasks.named('test') {
         '-Xmx1g',
         '-XX:MaxMetaspaceSize=512m',
         '-XX:+UseParallelGC',  // 병렬 GC 사용
-        '-Dfile.encoding=UTF-8'
+        '-XX:-PrintWarnings',  // 보안: JVM 경고 메시지 숨김
+        '-Xshare:off',  // OpenJDK 클래스 공유 경고 차단
+        '-Dfile.encoding=UTF-8',
+        '-Dspring.jpa.show-sql=false',  // 보안: SQL 로그 강제 비활성화
+        '-Dspring.jpa.properties.hibernate.show_sql=false',  // 보안: Hibernate SQL 로그 강제 비활성화
+        '-Dlogging.level.org.hibernate=WARN',  // 보안: Hibernate 로그 최소화
+        '-Dlogging.level.org.hibernate.SQL=OFF',  // 보안: SQL 로그 완전 차단
+        '-Dlogging.level.org.hibernate.tool.schema=OFF',  // 보안: DDL 스키마 로그 완전 차단
+        '-Dspring.main.banner-mode=off',  // Spring Boot 배너 숨김 (속도 향상)
+        '-Dlogging.level.root=WARN',  // 전체 로그 레벨 WARN으로 설정
+        '-Dlogging.level.org.springframework=WARN'  // Spring Framework 로그 최소화
     ]
     
     // 테스트 격리 및 성능 향상
-    forkEvery = 100  // 100개 테스트마다 새 JVM 프로세스 생성 (메모리 누수 방지)
+    forkEvery = 0  // 모든 테스트를 하나의 JVM에서 실행 (속도 최적화)
 }
 
 // 생성되는 Boot JAR 이름 고정 (배포 자동화에 유리)
