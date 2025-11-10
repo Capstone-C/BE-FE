@@ -19,8 +19,8 @@ jobs:
       # Docker Compose로 전체 스택 실행
       - name: Build and start services
         run: |
-          docker-compose build
-          docker-compose up -d
+          docker compose build
+          docker compose up -d
       
       # 서비스가 준비될 때까지 대기
       - name: Wait for services
@@ -40,10 +40,10 @@ jobs:
       - name: Output logs on failure
         if: failure()
         run: |
-          docker-compose logs backend
-          docker-compose logs frontend
+          docker compose logs backend
+          docker compose logs frontend
       
       # 정리
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v

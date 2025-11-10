@@ -38,12 +38,14 @@
 
 ### Backend
 
-| 항목              | 선택                | 비고                |
-|-----------------|-------------------|-------------------|
-| Language        | Java 17           |                   |
-| Framework       | Spring Boot 3.5.6 | build.gradle 기준   |
-| Persistence     | Spring Data JPA   |                   |
-| DB (Prod, Test) | MySQL 8.0         | Docker compose 사용 |
+| 항목              | 선택                | 비고                           |
+|-----------------|-------------------|------------------------------|
+| Language        | Java 17           |                              |
+| Framework       | Spring Boot 3.5.6 | build.gradle 기준              |
+| Persistence     | Spring Data JPA   |                              |
+| DB (Prod)       | MySQL 8.0         | Docker compose 사용            |
+| DB (Test)       | H2 Database       | In-memory, MySQL 호환 모드      |
+| Search Engine   | Elasticsearch     | 상품 검색/인덱싱 (Docker compose) |
 
 ## 3-1. 개발 환경 (Docker Compose)
 

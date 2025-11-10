@@ -26,24 +26,6 @@ jobs:
     name: Run Tests
     runs-on: ubuntu-latest
     
-    # MySQL Service Container 설정
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: ccdb_test
-          MYSQL_USER: ccuser
-          MYSQL_PASSWORD: devpass
-          MYSQL_ROOT_PASSWORD: rootpass
-          TZ: Asia/Seoul
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -h localhost -p$MYSQL_ROOT_PASSWORD"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=10
-    
     steps:
       # 1. 코드 체크아웃
       - name: Checkout code
@@ -70,40 +52,14 @@ jobs:
         working-directory: ./CC_BE
         run: chmod +x gradlew
       
-      # 5. 테스트용 application.yml 생성 (필요한 경우)
-      - name: Create test application.yml
-        working-directory: ./CC_BE
-        run: |
-          mkdir -p src/test/resources
-          cat > src/test/resources/application-test.yml << EOF
-          spring:
-            datasource:
-              url: jdbc:mysql://localhost:3306/ccdb_test
-              username: ccuser
-              password: devpass
-              driver-class-name: com.mysql.cj.jdbc.Driver
-            jpa:
-              hibernate:
-                ddl-auto: create-drop
-              properties:
-                hibernate:
-                  format_sql: true
-          
-          # OCR Tesseract 설정
-          ocr:
-            tesseract:
-              datapath: /usr/share/tesseract-ocr/5/tessdata
-              language: kor+eng
-          EOF
-      
-      # 6. Gradle 빌드 (테스트 포함)
+      # 5. Gradle 빌드 (테스트 포함) - H2 인메모리 DB 사용
       - name: Build with Gradle
         working-directory: ./CC_BE
         run: ./gradlew clean build --no-daemon
         env:
           SPRING_PROFILES_ACTIVE: test
       
-      # 7. 테스트 결과 업로드 (실패 시에도 실행)
+      # 6. 테스트 결과 업로드 (실패 시에도 실행)
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -112,7 +68,7 @@ jobs:
           path: CC_BE/build/reports/tests/test/
           retention-days: 7
       
-      # 8. 테스트 커버리지 리포트 (JaCoCo 사용 시)
+      # 7. 테스트 커버리지 리포트 (JaCoCo 사용 시)
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         if: success()
