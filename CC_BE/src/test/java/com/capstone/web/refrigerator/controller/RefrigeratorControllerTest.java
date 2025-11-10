@@ -456,11 +456,11 @@ class RefrigeratorControllerTest {
                 .andExpect(jsonPath("$.message", containsString("권한이 없습니다")));
     }
 
-    @DisplayName("인증 없이 API 호출 시 실패")
+    @DisplayName("인증 없이 API 호출 시 403 Forbidden을 응답한다")
     @Test
     void allApis_Fail_Unauthorized() throws Exception {
         // when & then
-        // Spring Security가 인증 실패 시 403 Forbidden 반환
+        // 인증 정보가 없으므로 보호된 리소스 접근이 금지됨 (403)
         mockMvc.perform(get("/api/v1/refrigerator/items"))
                 .andExpect(status().isForbidden());
     }

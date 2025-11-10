@@ -77,10 +77,10 @@ class MemberProfileControllerTest {
                 .andExpect(jsonPath("$.joinedAt", notNullValue()));
     }
 
-    @DisplayName("토큰 없이 내 프로필 조회하면 401")
+    @DisplayName("토큰 없이 내 프로필 조회하면 403 Forbidden")
     @Test
     void me_unauthorized_noToken() throws Exception {
-        // Spring Security는 토큰이 없으면 403 Forbidden을 반환합니다
+        // 인증 정보가 없으므로 보호된 리소스 접근이 금지됨 (403)
         mockMvc.perform(get("/api/v1/members/me"))
                 .andExpect(status().isForbidden());
     }

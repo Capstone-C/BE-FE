@@ -39,6 +39,8 @@ public class SecurityConfig {
                         // 멤버 관련 보호 API
                         .requestMatchers("/api/v1/members/me").authenticated()
                         .requestMatchers("/api/v1/members/blocks/**").authenticated()
+                        // 냉장고 관련 보호 API
+                        .requestMatchers("/api/v1/refrigerator/**").authenticated()
                         .anyRequest().permitAll()
                 )
                 .addFilterBefore(authenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
