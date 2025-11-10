@@ -88,7 +88,7 @@ docker compose down -v  # 데이터까지 초기화
 ```bash
 # Gemini API
 export GEMINI_API_KEY="your-gemini-key"            # 로컬 개발 시 시스템 환경변수 또는 .env
-export GEMINI_MODEL="gemini-2.5-flash"             # 기본값
+export GEMINI_MODEL="gemini-1.5-flash"             # 기본값
 export GEMINI_MAX_TOKENS="800"                     # 최대 출력 토큰 (필요 시 조정)
 export GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta/models"
 ```
