@@ -1,0 +1,65 @@
+🔍 Gemini AI 이미지 분석 시작...
+📁 파일: uploads/profile/test-receipt.jpg
+⏳ API 호출 중...
+
+✅ 분석 완료!
+
+=== API 응답 ===
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "영수증에서 식재료로 보이는 품목들은 다음과 같습니다:\n\n- 우유\n- 양파\n- 무\n- 깻잎\n- 장아찌\n- 브로커리"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 316,
+    "candidatesTokenCount": 42,
+    "totalTokenCount": 1120,
+    "cachedContentTokenCount": 169,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 58
+      },
+      {
+        "modality": "IMAGE",
+        "tokenCount": 258
+      }
+    ],
+    "cacheTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 31
+      },
+      {
+        "modality": "IMAGE",
+        "tokenCount": 138
+      }
+    ],
+    "thoughtsTokenCount": 762
+  },
+  "modelVersion": "gemini-2.5-flash",
+  "responseId": "sjoRaZbyOLCgrfcPsP-w0Qc"
+}
+
+
+=== 추출된 식재료 ===
+영수증에서 식재료로 보이는 품목들은 다음과 같습니다:
+
+- 우유
+- 양파
+- 무
+- 깻잎
+- 장아찌
+- 브로커리
+===================
+

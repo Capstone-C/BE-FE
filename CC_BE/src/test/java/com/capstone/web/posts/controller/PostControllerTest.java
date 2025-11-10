@@ -80,8 +80,13 @@ class PostControllerTest {
     @Test
     void createPost_Success() throws Exception {
         // given
-        // DTO에서 authorId 제거
-        PostDto.CreateRequest request = new PostDto.CreateRequest(category.getId(), "새 게시글 제목", "새 게시글 내용", Posts.PostStatus.PUBLISHED, false);
+        // DTO에서 authorId 제거, Validation 조건: 제목 5자 이상, 내용 10자 이상
+        PostDto.CreateRequest request = new PostDto.CreateRequest(
+                category.getId(), 
+                "새 게시글 제목입니다", // 5자 이상
+                "새 게시글의 내용입니다. 10자 이상이어야 합니다.", // 10자 이상
+                Posts.PostStatus.PUBLISHED, 
+                false);
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when
@@ -152,9 +157,25 @@ class PostControllerTest {
     @Test
     void updatePost_Success() throws Exception {
         // given
-        Posts originalPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("원본 제목").content("원본 내용").status(Posts.PostStatus.PUBLISHED).build());
-        Category newCategory = categoryRepository.save(Category.builder().name("공지사항").type(Category.CategoryType.QA).build());
-        PostDto.UpdateRequest request = new PostDto.UpdateRequest("수정된 제목", "수정된 내용", newCategory.getId(), Posts.PostStatus.ARCHIVED, true);
+        Posts originalPost = postsRepository.save(Posts.builder()
+                .authorId(author)
+                .category(category)
+                .title("원본 제목입니다")
+                .content("원본 내용입니다. 10자 이상입니다.")
+                .status(Posts.PostStatus.PUBLISHED)
+                .build());
+        Category newCategory = categoryRepository.save(Category.builder()
+                .name("공지사항")
+                .type(Category.CategoryType.QA)
+                .build());
+        
+        // Validation 조건: 제목 5자 이상, 내용 10자 이상
+        PostDto.UpdateRequest request = new PostDto.UpdateRequest(
+                "수정된 제목입니다", // 5자 이상
+                "수정된 내용입니다. 10자 이상이어야 합니다.", // 10자 이상
+                newCategory.getId(), 
+                Posts.PostStatus.ARCHIVED, 
+                true);
         String requestBody = objectMapper.writeValueAsString(request);
 
         // when

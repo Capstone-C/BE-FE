@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDate;
 
 /**
  * 냉장고 식재료 레포지토리
@@ -54,7 +55,7 @@ public interface RefrigeratorItemRepository extends JpaRepository<RefrigeratorIt
     /**
      * 특정 회원의 특정 이름과 소비기한으로 식재료 조회
      */
-    Optional<RefrigeratorItem> findByMemberAndNameAndExpirationDate(Member member, String name, java.time.LocalDate expirationDate);
+    Optional<RefrigeratorItem> findByMemberAndNameAndExpirationDate(Member member, String name, LocalDate expirationDate);
 
     /**
      * 소비기한이 NULL인 특정 회원의 특정 이름 식재료 조회

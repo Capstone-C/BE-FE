@@ -11,7 +11,6 @@ import com.capstone.web.refrigerator.domain.RefrigeratorItem;
 import com.capstone.web.refrigerator.dto.RefrigeratorDto;
 import com.capstone.web.refrigerator.dto.RecommendationDto;
 import com.capstone.web.refrigerator.dto.DeductionDto;
-import com.capstone.web.refrigerator.exception.DuplicateItemException;
 import com.capstone.web.refrigerator.exception.ItemNotFoundException;
 import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
@@ -223,24 +222,132 @@ class RefrigeratorServiceTest {
         assertThat(response.isExpired()).isFalse();
     }
 
-    @DisplayName("식재료 추가 - 중복된 이름으로 추가 시 예외")
+    @DisplayName("식재료 추가 - 동일 이름+동일 소비기한 시 수량 합산")
     @Test
-    void addItem_Fail_Duplicate() {
+    void addItem_MergeQuantity_SameNameAndExpiration() {
         // given
+        LocalDate expDate = LocalDate.now().plusDays(7);
+        
         refrigeratorItemRepository.save(RefrigeratorItem.builder()
                 .member(testMember)
                 .name("우유")
+                .quantity(2)
+                .expirationDate(expDate)
                 .build());
 
         RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
                 .name("우유")
-                .quantity(2)
+                .quantity(3)
+                .expirationDate(expDate)
                 .build();
 
-        // when & then
-        assertThatThrownBy(() -> refrigeratorService.addItem(testMember.getId(), request))
-                .isInstanceOf(DuplicateItemException.class)
-                .hasMessageContaining("이미 등록된 식재료");
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("우유");
+        assertThat(response.getQuantity()).isEqualTo(5); // 2 + 3
+        assertThat(response.getExpirationDate()).isEqualTo(expDate);
+        
+        // DB에 하나만 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(1);
+    }
+
+    @DisplayName("식재료 추가 - 동일 이름+다른 소비기한 시 별도 항목 생성")
+    @Test
+    void addItem_CreateSeparate_SameNameDifferentExpiration() {
+        // given
+        LocalDate expDate1 = LocalDate.now().plusDays(7);
+        LocalDate expDate2 = LocalDate.now().plusDays(14);
+        
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("우유")
+                .quantity(2)
+                .expirationDate(expDate1)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("우유")
+                .quantity(3)
+                .expirationDate(expDate2)
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("우유");
+        assertThat(response.getQuantity()).isEqualTo(3);
+        assertThat(response.getExpirationDate()).isEqualTo(expDate2);
+        
+        // DB에 두 개가 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(2);
+        assertThat(items.stream().map(RefrigeratorItem::getExpirationDate))
+                .containsExactlyInAnyOrder(expDate1, expDate2);
+    }
+
+    @DisplayName("식재료 추가 - 소비기한 null인 경우 수량 합산")
+    @Test
+    void addItem_MergeQuantity_BothExpirationNull() {
+        // given
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("소금")
+                .quantity(100)
+                .unit("g")
+                .expirationDate(null)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("소금")
+                .quantity(50)
+                .unit("g")
+                .expirationDate(null)
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("소금");
+        assertThat(response.getQuantity()).isEqualTo(150); // 100 + 50
+        assertThat(response.getExpirationDate()).isNull();
+        
+        // DB에 하나만 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(1);
+    }
+
+    @DisplayName("식재료 추가 - 동일 이름이지만 한쪽만 소비기한 null이면 별도 항목")
+    @Test
+    void addItem_CreateSeparate_OneExpirationNull() {
+        // given
+        refrigeratorItemRepository.save(RefrigeratorItem.builder()
+                .member(testMember)
+                .name("설탕")
+                .quantity(100)
+                .expirationDate(null)
+                .build());
+
+        RefrigeratorDto.CreateRequest request = RefrigeratorDto.CreateRequest.builder()
+                .name("설탕")
+                .quantity(50)
+                .expirationDate(LocalDate.now().plusDays(30))
+                .build();
+
+        // when
+        RefrigeratorDto.Response response = refrigeratorService.addItem(testMember.getId(), request);
+
+        // then
+        assertThat(response.getName()).isEqualTo("설탕");
+        assertThat(response.getQuantity()).isEqualTo(50);
+        
+        // DB에 두 개가 존재하는지 확인
+        List<RefrigeratorItem> items = refrigeratorItemRepository.findByMemberOrderByNameAsc(testMember);
+        assertThat(items).hasSize(2);
     }
 
     @DisplayName("식재료 추가 - 소비기한 없이 추가 가능")
@@ -311,7 +418,7 @@ class RefrigeratorServiceTest {
 
         List<RefrigeratorDto.CreateRequest> items = List.of(
                 RefrigeratorDto.CreateRequest.builder()
-                        .name("우유")  // 중복
+                        .name("우유")  // 중복 -> 수량 합산으로 성공 처리
                         .quantity(1)
                         .build(),
                 RefrigeratorDto.CreateRequest.builder()
@@ -331,11 +438,17 @@ class RefrigeratorServiceTest {
                 refrigeratorService.addItemsBulk(testMember.getId(), request);
 
         // then
-        assertThat(response.getSuccessCount()).isEqualTo(2);
-        assertThat(response.getFailCount()).isEqualTo(1);
-        assertThat(response.getAddedItems()).hasSize(2);
-        assertThat(response.getFailedItems()).hasSize(1);
-        assertThat(response.getFailedItems().get(0)).contains("우유");
+        // 중복도 수량 합산으로 처리되므로 모두 성공
+        assertThat(response.getSuccessCount()).isEqualTo(3);
+        assertThat(response.getFailCount()).isEqualTo(0);
+        assertThat(response.getAddedItems()).hasSize(3);
+        assertThat(response.getFailedItems()).hasSize(0);
+        
+        // 우유의 수량이 합산되었는지 확인
+        RefrigeratorItem milk = refrigeratorItemRepository
+                .findByMemberAndNameAndExpirationDateIsNull(testMember, "우유")
+                .orElseThrow();
+        assertThat(milk.getQuantity()).isEqualTo(2);  // 기존 1 + 추가 1
     }
 
     @DisplayName("식재료 일괄 추가 - 빈 목록")
@@ -808,10 +921,4 @@ class RefrigeratorServiceTest {
         RefrigeratorItem updated = refrigeratorItemRepository.findById(item.getId()).get();
         assertThat(updated.getQuantity()).isEqualTo(0);
     }
-
-    // ================================
-    // (REMOVED) REF-04: 구매 이력 OCR 스캔 테스트 - Gemini-only migration
-    // ================================
-    // 기존 CLOVA/OpenAI OCR 파이프라인 관련 테스트 (scanPurchaseHistory_pipelineStructure, dtoStructure)
-    // 는 Gemini Vision 직해석으로 대체되어 제거되었습니다.
 }
