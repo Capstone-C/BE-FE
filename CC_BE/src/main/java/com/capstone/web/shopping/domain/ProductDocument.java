@@ -7,8 +7,9 @@ import org.springframework.data.elasticsearch.annotations.*;
 import java.time.LocalDateTime;
 
 /**
- * Elasticsearch 상품 검색용 Document
- * RDB의 Product 엔티티와 동기화되어 검색에 최적화된 구조로 저장
+ * Elasticsearch 상품 Document
+ * 외부 쇼핑몰 API에서 수집한 상품 데이터를 Elasticsearch에 직접 저장
+ * RDB를 사용하지 않고 Elasticsearch만 사용
  */
 @Document(indexName = "products")
 @Setting(settingPath = "elasticsearch/product-settings.json")
@@ -19,14 +20,12 @@ import java.time.LocalDateTime;
 @Builder
 public class ProductDocument {
 
+    /**
+     * Elasticsearch 문서 ID
+     * 형식: {mallType}_{externalProductId}
+     */
     @Id
     private String id;
-
-    /**
-     * RDB의 Product 엔티티 ID
-     */
-    @Field(type = FieldType.Long)
-    private Long productId;
 
     /**
      * 상품명 (검색 대상)
@@ -113,25 +112,51 @@ public class ProductDocument {
     private LocalDateTime updatedAt;
 
     /**
-     * Product 엔티티로부터 Document 생성
+     * 외부 쇼핑몰의 상품 ID
      */
-    public static ProductDocument from(Product product) {
+    @Field(type = FieldType.Keyword)
+    private String externalProductId;
+
+    /**
+     * 할인율 계산
+     */
+    public Integer getDiscountRate() {
+        if (originalPrice == null || originalPrice <= 0 || price >= originalPrice) {
+            return 0;
+        }
+        return (int) Math.round((double) (originalPrice - price) / originalPrice * 100);
+    }
+
+    /**
+     * Document ID 생성 헬퍼 메서드
+     * 형식: {mallType}_{externalProductId}
+     */
+    public static String generateId(String mallType, String externalProductId) {
+        return mallType + "_" + externalProductId;
+    }
+
+    /**
+     * 상품 정보 업데이트 (Elasticsearch 문서 갱신용)
+     */
+    public ProductDocument updateInfo(String name, Integer price, Integer originalPrice,
+                                      String imageUrl, String description,
+                                      String deliveryInfo, Double rating, Integer reviewCount) {
         return ProductDocument.builder()
-                .productId(product.getId())
-                .name(product.getName())
-                .price(product.getPrice())
-                .originalPrice(product.getOriginalPrice())
-                .discountRate(product.getDiscountRate())
-                .imageUrl(product.getImageUrl())
-                .productUrl(product.getProductUrl())
-                .mallType(product.getMallType().name())
-                .category(product.getCategory().name())
-                .description(product.getDescription())
-                .deliveryInfo(product.getDeliveryInfo())
-                .rating(product.getRating())
-                .reviewCount(product.getReviewCount())
-                .createdAt(product.getCreatedAt())
-                .updatedAt(product.getUpdatedAt())
+                .id(this.id)
+                .name(name)
+                .price(price)
+                .originalPrice(originalPrice)
+                .imageUrl(imageUrl)
+                .productUrl(this.productUrl)
+                .mallType(this.mallType)
+                .category(this.category)
+                .description(description)
+                .deliveryInfo(deliveryInfo)
+                .rating(rating)
+                .reviewCount(reviewCount)
+                .externalProductId(this.externalProductId)
+                .createdAt(this.createdAt)
+                .updatedAt(LocalDateTime.now())
                 .build();
     }
 }
