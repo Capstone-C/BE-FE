@@ -80,14 +80,14 @@ tasks.named('test') {
     // 병렬 테스트 실행 (CPU 코어의 절반 사용)
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     
-    // 테스트 로깅 최적화 (보안: 민감한 정보 노출 방지)
+    // 테스트 로깅 - 디버깅용 상세 출력
     testLogging {
-        events "failed"  // 실패한 테스트만 출력 (CI 로그 최소화)
-        exceptionFormat "short"  // 보안: 스택 트레이스 최소화
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
         showExceptions true
-        showCauses false  // 보안: cause 체인 숨김
-        showStackTraces false  // 보안: 전체 스택 트레이스 숨김
-        showStandardStreams = false  // 보안: System.out/err 숨김
+        showCauses true
+        showStackTraces true
+        showStandardStreams = true
     }
     
     // JVM 메모리 최적화
