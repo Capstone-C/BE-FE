@@ -5,7 +5,36 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+# ==========================================
+# Security & Sensitive Files
+# ==========================================
+*.env
+.env*
+!.env.example
+application-local.yml
+application-local.properties
+application-prod.yml
+application-prod.properties
+secrets/
+*.key
+*.pem
+*.p12
+*.jks
+
+# ==========================================
+# Uploads & Runtime Data
+# ==========================================
 ../uploads/
+uploads/
+test-uploads/
+
+# ==========================================
+# Logs
+# ==========================================
+logs/
+*.log
+*.log.*
+
 ### STS ###
 .apt_generated
 .classpath

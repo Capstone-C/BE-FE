@@ -13,8 +13,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
-    show-sql: true
+        format_sql: false  # 보안: 프로덕션에서 SQL 포맷팅 비활성화
+    show-sql: false  # 보안: 프로덕션에서 SQL 로그 비활성화
   sql:
     init:
       mode: never
@@ -31,8 +31,12 @@ server:
 
 logging:
   level:
-    org.hibernate.SQL: debug
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
+    root: INFO  # 보안: 기본 로그 레벨 INFO
+    org.springframework: INFO
+    org.hibernate.SQL: WARN  # 보안: SQL 로그 최소화
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF  # 보안: 바인딩 파라미터 숨김
+    com.zaxxer.hikari: WARN  # 보안: 커넥션 풀 로그 최소화
+    com.capstone: INFO
 
 jwt:
   secret: ${JWT_SECRET:ZXhhbXBsZUpoZktleUFQSVNFQ1JFVEtFWVNIT1VMREJFTE9OR0dFTk9VR0g=}

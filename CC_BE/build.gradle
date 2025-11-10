@@ -80,14 +80,14 @@ tasks.named('test') {
     // 병렬 테스트 실행 (CPU 코어의 절반 사용)
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     
-    // 테스트 로깅 최적화 (실패한 테스트만 상세 출력)
+    // 테스트 로깅 최적화 (보안: 민감한 정보 노출 방지)
     testLogging {
         events "failed"  // 실패한 테스트만 출력 (CI 로그 최소화)
-        exceptionFormat "full"
+        exceptionFormat "short"  // 보안: 스택 트레이스 최소화
         showExceptions true
-        showCauses true
-        showStackTraces true
-        showStandardStreams = false
+        showCauses false  // 보안: cause 체인 숨김
+        showStackTraces false  // 보안: 전체 스택 트레이스 숨김
+        showStandardStreams = false  // 보안: System.out/err 숨김
     }
     
     // JVM 메모리 최적화
@@ -95,7 +95,9 @@ tasks.named('test') {
         '-Xmx1g',
         '-XX:MaxMetaspaceSize=512m',
         '-XX:+UseParallelGC',  // 병렬 GC 사용
-        '-Dfile.encoding=UTF-8'
+        '-Dfile.encoding=UTF-8',
+        '-Dspring.jpa.show-sql=false',  // 보안: SQL 로그 강제 비활성화
+        '-Dlogging.level.org.hibernate=WARN'  // 보안: Hibernate 로그 최소화
     ]
     
     // 테스트 격리 및 성능 향상

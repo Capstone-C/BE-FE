@@ -11,8 +11,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: true
-    show-sql: false
+        format_sql: false  # 보안: SQL 포맷팅 비활성화
+    show-sql: false  # 보안: SQL 로그 비활성화
     
   h2:
     console:
@@ -27,11 +27,16 @@ spring:
 # 테스트 초기화 전략: 필요 시 data.sql 사용 가능
 logging:
   level:
-    org.hibernate.SQL: warn
-    org.hibernate.type.descriptor.sql.BasicBinder: off
+    root: WARN  # 보안: 기본 로그 레벨 WARN으로 설정
+    org.springframework: WARN
+    org.hibernate: WARN  # 보안: Hibernate 로그 최소화
+    org.hibernate.SQL: OFF  # 보안: SQL 로그 완전 비활성화
+    org.hibernate.type.descriptor.sql.BasicBinder: OFF
+    com.zaxxer.hikari: WARN  # 보안: HikariCP 로그 최소화
+    com.capstone: INFO  # 애플리케이션 로그만 INFO
 
 jwt:
-  secret: dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw
+  secret: ${JWT_SECRET:dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw}
   expiration: 3600000
 
 upload:
@@ -40,6 +45,6 @@ upload:
   max-request-size: 10MB
 
 gemini:
-  api-key: test-api-key
+  api-key: ${GEMINI_API_KEY:test-api-key}  # 보안: 환경변수 우선
   api-url: https://generativelanguage.googleapis.com/v1beta/models
   model: gemini-2.0-flash-exp
