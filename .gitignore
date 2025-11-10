@@ -1,103 +1,105 @@
+# ==========================================
+# Backend (Java/Spring Boot)
+# ==========================================
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
-
-### IntelliJ IDEA ###
-.idea
-*.iws
-*.iml
-*.ipr
-
-### NetBeans ###
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
-
-### VS Code ###
-.vscode/
-
-### OS ###
-.DS_Store
-Thumbs.db
-
-### Logs ###
-*.log
-logs/
-
-### Application specific ###
-application-local.properties
-
-
-dist/
-build/
-coverage/
-.nyc_output/
-*.tsbuildinfo
-
-# Java / JVM
 *.class
 *.jar
 *.war
 *.ear
-.target/
 
-# Logs & diagnostics
-logs/
+# Gradle
+.gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+!gradle-wrapper.jar
+
+# ==========================================
+# Frontend (Node.js/React)
+# ==========================================
+node_modules/
+dist/
+dist-ssr/
+.nyc_output/
+*.tsbuildinfo
+coverage/
+
+# Package manager locks (선택적 - 팀 정책에 따라)
+# pnpm-lock.yaml
+# package-lock.json
+# yarn.lock
+
+# ==========================================
+# IDE / Editor
+# ==========================================
+.idea/
+.vscode/
+*.iws
+*.iml
+*.ipr
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+*.swp
+
+# ==========================================
+# OS
+# ==========================================
+.DS_Store
+Thumbs.db
+
+# ==========================================
+# Logs
+# ==========================================
 *.log
+logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# IDE / Editor
-.vscode/
-.idea/
-*.swp
-.DS_Store
+# ==========================================
+# Environment & Secrets
+# ==========================================
+.env
+.env*.local
+application-local.properties
+secrets.local.*
 
+# ==========================================
 # Docker
+# ==========================================
 *.tar
 **/docker-data/
 
-# Cache / Misc
-.cache/
-.tmp/
-.tmp/**
-coverage-final.json
-
-# OS
-Thumbs.db
-
-# Runtime data
+# ==========================================
+# Uploads & Runtime
+# ==========================================
+uploads/
 pids/
 *.pid
 *.seed
 
-# Local only
-local-
-secrets.local.*
-
-# Test artifacts
+# ==========================================
+# Test & Coverage
+# ==========================================
+coverage-final.json
 junit-report.xml
 
-.env
+# ==========================================
+# Misc
+# ==========================================
+.cache/
+.tmp/
+.tmp/**
 
-uploads/
 
 # Terraform
 .terraform/
