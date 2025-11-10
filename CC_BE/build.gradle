@@ -60,12 +60,21 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
     
+    // 병렬 테스트 실행 활성화
+    maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+    
     // 테스트 로그 상세 출력
 	testLogging {
 		events "passed", "skipped", "failed"
 		exceptionFormat "full"
 		showStandardStreams = false
 	}
+	
+	// 테스트 실행 최적화
+	jvmArgs = [
+		'-Xmx1g',
+		'-XX:MaxMetaspaceSize=512m'
+	]
 }
 
 // 생성되는 Boot JAR 이름 고정

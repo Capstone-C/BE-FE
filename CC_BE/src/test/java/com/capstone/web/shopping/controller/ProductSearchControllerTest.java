@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -29,7 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * ProductSearchController 테스트
  * 
  * NOTE: Elasticsearch 관련 빈들은 TestElasticsearchConfig에서 자동으로 Mock으로 제공됩니다.
- * ProductSearchService는 @MockBean으로 제공합니다. (deprecated이지만 Controller 테스트에서는 아직 사용 가능)
+ * ProductSearchService는 @MockitoBean으로 제공합니다.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -40,7 +40,7 @@ class ProductSearchControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private ProductSearchService productSearchService;
 
     @Test
