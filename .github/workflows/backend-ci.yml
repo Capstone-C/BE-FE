@@ -6,22 +6,12 @@ on:
     paths:
       - 'CC_BE/**'
       - '.github/workflows/backend-ci.yml'
-    paths-ignore:
-      - 'CC_FE/**'
-      - 'CC_INFRA/**'
-      - '*.md'
-      - 'docs/**'
   
   push:
     branches: [ main, develop ]
     paths:
       - 'CC_BE/**'
       - '.github/workflows/backend-ci.yml'
-    paths-ignore:
-      - 'CC_FE/**'
-      - 'CC_INFRA/**'
-      - '*.md'
-      - 'docs/**'
   
   workflow_dispatch:
 

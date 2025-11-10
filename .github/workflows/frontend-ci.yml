@@ -7,22 +7,12 @@ on:
     paths:
       - 'CC_FE/**'
       - '.github/workflows/frontend-ci.yml'
-    paths-ignore:
-      - 'CC_BE/**'
-      - 'CC_INFRA/**'
-      - '*.md'
-      - 'docs/**'
   
   push:
     branches: [ main, develop ]
     paths:
       - 'CC_FE/**'
       - '.github/workflows/frontend-ci.yml'
-    paths-ignore:
-      - 'CC_BE/**'
-      - 'CC_INFRA/**'
-      - '*.md'
-      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
