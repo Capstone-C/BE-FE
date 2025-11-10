@@ -42,7 +42,7 @@ jwt:
 gemini:
   api-key: ${GEMINI_API_KEY:}
   api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
-  model: ${GEMINI_MODEL:gemini-2.0-flash-exp}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
 
 # 네이버 쇼핑 API 설정
 naver:
