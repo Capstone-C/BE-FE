@@ -95,6 +95,26 @@ export GEMINI_API_URL="https://generativelanguage.googleapis.com/v1beta/models"
 
 Docker Compose 사용 시 루트 `.env` 파일에 위 값을 넣고 `docker compose up --build` 실행하면 됩니다.
 
+#### 쇼핑몰 상품 검색 (네이버 쇼핑 API 기반)
+
+네이버 쇼핑 API를 통해 실시간 상품 데이터를 검색하고 Elasticsearch에 저장합니다.
+
+```bash
+# 네이버 쇼핑 API
+export NAVER_CLIENT_ID="your-client-id"            # 네이버 개발자 센터에서 발급
+export NAVER_CLIENT_SECRET="your-client-secret"    # 네이버 개발자 센터에서 발급
+```
+
+**API 키 발급**:
+1. [네이버 개발자 센터](https://developers.naver.com/apps/#/register) 접속
+2. 애플리케이션 등록 → 검색 API 선택
+3. Client ID와 Client Secret 발급
+
+**동작 요약**:
+1. 카테고리별로 네이버 쇼핑 API를 호출하여 상품 데이터 수집
+2. Elasticsearch에 인덱싱하여 빠른 검색 제공
+3. 실시간 가격, 이미지, 상품 정보 제공
+
 **동작 요약**:
 
 1. 프론트엔드에서 이미지 업로드 (JPG/PNG 권장, <= ~1MB 권장)

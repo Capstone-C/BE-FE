@@ -1,6 +1,9 @@
 package com.capstone.web.shopping.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
@@ -10,6 +13,9 @@ import java.util.List;
  */
 @Getter
 @Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class NaverShoppingResponse {
 
     private String lastBuildDate;
@@ -20,6 +26,9 @@ public class NaverShoppingResponse {
 
     @Getter
     @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class NaverProduct {
         private String title;           // 상품명 (HTML 태그 포함 가능)
         private String link;            // 상품 상세 URL
