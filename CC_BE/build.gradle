@@ -14,6 +14,17 @@ java {
     }
 }
 
+// 점진적 컴파일 활성화 (빌드 속도 향상)
+tasks.withType(JavaCompile).configureEach {
+    options.incremental = true
+    options.encoding = 'UTF-8'
+    
+    // Spring Framework의 reflection 기반 기능을 위한 파라미터 이름 보존
+    if (!options.compilerArgs.contains('-parameters')) {
+        options.compilerArgs += '-parameters'
+    }
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
@@ -25,66 +36,79 @@ repositories {
 }
 
 dependencies {
-    // --- Spring Boot 기본 기능 ---
-    implementation 'org.springframework.boot:spring-boot-starter-web'         // 웹 서버
-    implementation 'org.springframework.boot:spring-boot-starter-security'    // 인증/인가
-    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'    // JPA/DB
-    implementation 'org.springframework.boot:spring-boot-starter-validation'  // 입력값 검증
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'    // 모니터링/헬스체크
-    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch' // Elasticsearch
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'  // Swagger UI
+    // --- Spring Boot 핵심 기능 ---
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    
+    // --- API 문서화 ---
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
-    // HTML Sanitizer
-    implementation 'org.jsoup:jsoup:1.18.1'
+    // --- 보안 및 유틸리티 ---
+    implementation 'org.jsoup:jsoup:1.18.1'  // HTML Sanitizer
 
-    // --- 개발 편의/도구 ---
-    compileOnly 'org.projectlombok:lombok'                                   // 코드 자동 생성
+    // --- 개발 편의 도구 ---
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'     // 도커 연동
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'  // 개발 환경 Hot Reload
+    developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
 
     // --- DB 드라이버 ---
-    runtimeOnly 'com.mysql:mysql-connector-j'                                 // MySQL
+    runtimeOnly 'com.mysql:mysql-connector-j'
 
-    // --- 테스트 ---
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'    // 테스트
-    testImplementation 'org.springframework.security:spring-security-test'     // 시큐리티 테스트
-    testImplementation 'com.h2database:h2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'              // JUnit 런처
-
-    // --- JWT ---
+    // --- JWT 인증 ---
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'
+
+    // --- 테스트 (최적화: 불필요한 모듈 제외) ---
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        // 테스트 환경에서 불필요한 actuator endpoint 제외
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-actuator'
+    }
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.h2database:h2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
     
-    // 병렬 테스트 실행 활성화
+    // 병렬 테스트 실행 (CPU 코어의 절반 사용)
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
     
-    // 테스트 로그 상세 출력
-	testLogging {
-		events "passed", "skipped", "failed"
-		exceptionFormat "full"
-		showStandardStreams = false
-	}
-	
-	// 테스트 실행 최적화
-	jvmArgs = [
-		'-Xmx1g',
-		'-XX:MaxMetaspaceSize=512m'
-	]
+    // 테스트 로깅 최적화 (실패한 테스트만 상세 출력)
+    testLogging {
+        events "failed"  // 실패한 테스트만 출력 (CI 로그 최소화)
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
+        showStackTraces true
+        showStandardStreams = false
+    }
+    
+    // JVM 메모리 최적화
+    jvmArgs = [
+        '-Xmx1g',
+        '-XX:MaxMetaspaceSize=512m',
+        '-XX:+UseParallelGC',  // 병렬 GC 사용
+        '-Dfile.encoding=UTF-8'
+    ]
+    
+    // 테스트 격리 및 성능 향상
+    forkEvery = 100  // 100개 테스트마다 새 JVM 프로세스 생성 (메모리 누수 방지)
 }
 
-// 생성되는 Boot JAR 이름 고정
+// 생성되는 Boot JAR 이름 고정 (배포 자동화에 유리)
 bootJar {
     archiveFileName = 'cc-be.jar'
+    
+    // JAR 파일 최적화
+    requiresUnpack '**/jruby-complete-*.jar'  // JRuby 압축 해제
+    launchScript()  // Unix 실행 스크립트 추가
 }
 
-// Ensure Java compiler retains parameter names for reflection-based frameworks (e.g., Spring Data @Query named params)
-tasks.withType(JavaCompile).configureEach {
-    if (!options.compilerArgs.contains('-parameters')) {
-        options.compilerArgs += '-parameters'
-    }
-}
+
