@@ -40,11 +40,6 @@ public class RefrigeratorService {
     private final MemberRepository memberRepository;
     private final RecipeRepository recipeRepository;
 
-    // REF-04 의존성
-    private final ClovaOcrService clovaOcrService;
-    private final OpenAIService openAIService;
-    private final ReceiptPreprocessor receiptPreprocessor;
-
     /**
      * REF-01: 내 냉장고 식재료 목록 조회
      * 소비기한 임박순으로 정렬
@@ -456,47 +451,6 @@ public class RefrigeratorService {
     private RefrigeratorItem getItemById(Long itemId) {
         return refrigeratorItemRepository.findById(itemId)
                 .orElseThrow(() -> new ItemNotFoundException("식재료를 찾을 수 없습니다: " + itemId));
-    }
-
-    /**
-     * REF-04: 구매 이력 OCR 스캔 (CLOVA + GPT-5 Nano)
-     * <p>
-     * 처리 흐름:
-     * 1. CLOVA OCR로 영수증 이미지에서 텍스트 추출
-     * 2. 전처리: 광고/바코드 등 불필요한 정보 제거
-     * 3. GPT-5 Nano로 JSON 파싱 (매장명, 날짜, 항목, 금액)
-     * 4. 구조화된 구매 이력 반환
-     *
-     * @param memberId 회원 ID (향후 구매 이력 저장에 사용)
-     * @param image    영수증 이미지 파일
-     * @return 파싱된 구매 이력 데이터
-     */
-    @Transactional
-    public RefrigeratorDto.ScanPurchaseHistoryResponse scanPurchaseHistory(
-            Long memberId,
-            MultipartFile image) {
-
-        // 1단계: CLOVA OCR로 텍스트 추출
-        log.info("[REF-04] 구매 이력 OCR 시작 - 회원ID: {}, 파일: {}",
-                memberId, image.getOriginalFilename());
-
-        String rawOcrText = clovaOcrService.extractText(image);
-
-        // 2단계: 텍스트 전처리 (토큰 절감)
-        String cleanedText = receiptPreprocessor.clean(rawOcrText);
-
-        // 3단계: GPT-5 Nano로 JSON 파싱
-        RefrigeratorDto.ScanPurchaseHistoryResponse response =
-                openAIService.parseReceipt(cleanedText);
-
-        // 4단계: 원문 추가 (디버깅/검증용)
-        return RefrigeratorDto.ScanPurchaseHistoryResponse.builder()
-                .store(response.getStore())
-                .purchaseDate(response.getPurchaseDate())
-                .items(response.getItems())
-                .totalAmount(response.getTotalAmount())
-                .rawOcrText(rawOcrText) // CLOVA OCR 원문 포함
-                .build();
     }
 
     /**

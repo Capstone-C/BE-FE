@@ -68,24 +68,19 @@ docker compose down -v  # 데이터까지 초기화
 - 백엔드 포트: 8080
 - 프론트엔드 포트: 3000 (추후)
 
-#### REF-04: 구매 이력 OCR 스캔 기능 (선택적)
-영수증 이미지 OCR 스캔 기능을 사용하려면 아래 환경 변수를 설정해야 합니다:
+#### Gemini AI 이미지 인식 기능 (선택적)
+영수증 이미지 인식 기능을 사용하려면 아래 환경 변수를 설정해야 합니다:
 
 ```bash
-# CLOVA OCR API (Naver Cloud Platform)
-export CLOVA_OCR_API_URL="https://your-domain.apigw.ntruss.com/custom/v1/YOUR_DOMAIN/general"
-export CLOVA_OCR_SECRET_KEY="your-clova-secret-key"
-
-# OpenAI GPT-5 Nano API
-export OPENAI_API_KEY="sk-your-openai-api-key"
+# Gemini AI API
+export GEMINI_API_KEY="your-gemini-api-key"
 ```
 
 **API 키 발급 방법:**
-- **CLOVA OCR**: [Naver Cloud Platform OCR](https://www.ncloud.com/product/aiService/ocr) - 무료 100건/월
-- **OpenAI API**: [OpenAI Platform](https://platform.openai.com/api-keys) - GPT-5 Nano 모델 사용
+- **Gemini API**: [Google AI Studio](https://makersuite.google.com/app/apikey) - 무료 티어 제공
 
 **참고:**
-- 환경 변수가 설정되지 않으면 REF-04 기능만 사용 불가하며, 다른 기능은 정상 작동합니다.
+- 환경 변수가 설정되지 않으면 이미지 인식 기능만 사용 불가하며, 다른 기능은 정상 작동합니다.
 - Docker Compose 사용 시 `compose.yaml`의 `backend` 서비스에 환경 변수를 추가하세요.
 
 ### 자주 발생하는 이슈

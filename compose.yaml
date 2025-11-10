@@ -40,10 +40,8 @@ services:
       MYSQL_DATABASE: ccdb
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
-      # REF-04: CLOVA OCR + OpenAI API (선택적)
-      CLOVA_OCR_API_URL: ${CLOVA_OCR_API_URL:-}
-      CLOVA_OCR_SECRET_KEY: ${CLOVA_OCR_SECRET_KEY:-}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Gemini AI API
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "8080:8080"
     volumes: # volumes 섹션을 추가합니다.
