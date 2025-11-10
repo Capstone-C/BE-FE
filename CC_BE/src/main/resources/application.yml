@@ -44,6 +44,12 @@ gemini:
   api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
   model: ${GEMINI_MODEL:gemini-2.0-flash-exp}
 
+# 네이버 쇼핑 API 설정
+naver:
+  api:
+    client-id: ${NAVER_CLIENT_ID:}
+    client-secret: ${NAVER_CLIENT_SECRET:}
+
 app:
   upload-dir: uploads/ # 애플리케이션 루트 기준 상대 경로
 
