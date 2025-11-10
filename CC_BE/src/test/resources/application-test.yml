@@ -12,7 +12,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
         format_sql: false  # 보안: SQL 포맷팅 비활성화
-    show-sql: false  # 보안: SQL 로그 비활성화
+        show_sql: false    # 보안: Hibernate 내부 SQL 로그 비활성화
+        use_sql_comments: false  # 보안: SQL 주석 비활성화
+    show-sql: false  # 보안: Spring SQL 로그 비활성화
     
   h2:
     console:
@@ -31,6 +33,8 @@ logging:
     org.springframework: WARN
     org.hibernate: WARN  # 보안: Hibernate 로그 최소화
     org.hibernate.SQL: OFF  # 보안: SQL 로그 완전 비활성화
+    org.hibernate.tool.schema: OFF  # 보안: DDL 스키마 로그 완전 차단
+    org.hibernate.type.descriptor.sql: OFF  # 보안: SQL 타입 로그 차단
     org.hibernate.type.descriptor.sql.BasicBinder: OFF
     com.zaxxer.hikari: WARN  # 보안: HikariCP 로그 최소화
     com.capstone: INFO  # 애플리케이션 로그만 INFO
@@ -47,4 +51,4 @@ upload:
 gemini:
   api-key: ${GEMINI_API_KEY:test-api-key}  # 보안: 환경변수 우선
   api-url: https://generativelanguage.googleapis.com/v1beta/models
-  model: gemini-2.0-flash-exp
+  model: gemini-1.5-flash

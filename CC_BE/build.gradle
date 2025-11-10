@@ -95,9 +95,14 @@ tasks.named('test') {
         '-Xmx1g',
         '-XX:MaxMetaspaceSize=512m',
         '-XX:+UseParallelGC',  // 병렬 GC 사용
+        '-XX:-PrintWarnings',  // 보안: JVM 경고 메시지 숨김
+        '-Xshare:off',  // OpenJDK 클래스 공유 경고 차단
         '-Dfile.encoding=UTF-8',
         '-Dspring.jpa.show-sql=false',  // 보안: SQL 로그 강제 비활성화
-        '-Dlogging.level.org.hibernate=WARN'  // 보안: Hibernate 로그 최소화
+        '-Dspring.jpa.properties.hibernate.show_sql=false',  // 보안: Hibernate SQL 로그 강제 비활성화
+        '-Dlogging.level.org.hibernate=WARN',  // 보안: Hibernate 로그 최소화
+        '-Dlogging.level.org.hibernate.SQL=OFF',  // 보안: SQL 로그 완전 차단
+        '-Dlogging.level.org.hibernate.tool.schema=OFF'  // 보안: DDL 스키마 로그 완전 차단
     ]
     
     // 테스트 격리 및 성능 향상
