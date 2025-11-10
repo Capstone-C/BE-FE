@@ -55,7 +55,7 @@ jobs:
         run: ./gradlew clean build --no-daemon --parallel --build-cache --quiet
         env:
           SPRING_PROFILES_ACTIVE: test
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC -Dspring.jpa.show-sql=false -Dlogging.level.org.hibernate=WARN"
+          GRADLE_OPTS: "-Xmx2g -XX:MaxMetaspaceSize=512m -XX:+UseParallelGC"
       
       - name: Upload test results
         uses: actions/upload-artifact@v4
