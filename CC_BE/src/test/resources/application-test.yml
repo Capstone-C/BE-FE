@@ -40,8 +40,8 @@ logging:
     com.capstone: INFO  # 애플리케이션 로그만 INFO
 
 jwt:
-  secret: ${JWT_SECRET:dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw}
-  expiration: 3600000
+  secret: ${JWT_SECRET:dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw==}
+  expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
 
 upload:
   dir: build/test-uploads
