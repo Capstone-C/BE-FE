@@ -20,17 +20,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class HealthController {
 
-    @Value("${ocr.clova.api-url}")
-    private String clovaApiUrl;
+    @Value("${gemini.api-key:}")
+    private String geminiApiKey;
 
-    @Value("${ocr.clova.secret-key}")
-    private String clovaSecretKey;
-
-    @Value("${openai.api-key}")
-    private String openaiApiKey;
-
-    @Value("${openai.model}")
-    private String openaiModel;
+    @Value("${gemini.model:}")
+    private String geminiModel;
 
     @GetMapping
     @Operation(summary = "기본 헬스체크", description = "서버가 정상 작동하는지 확인")
@@ -41,35 +35,28 @@ public class HealthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/ocr-config")
+    @GetMapping("/ai-config")
     @Operation(
-            summary = "OCR 설정 확인 (REF-04)",
-            description = "CLOVA OCR 및 OpenAI API 키가 설정되어 있는지 확인합니다. " +
+            summary = "AI 설정 확인",
+            description = "Gemini API 키가 설정되어 있는지 확인합니다. " +
                     "실제 키 값은 마스킹되어 표시됩니다."
     )
-    public ResponseEntity<Map<String, Object>> checkOcrConfig() {
+    public ResponseEntity<Map<String, Object>> checkAiConfig() {
         Map<String, Object> response = new HashMap<>();
         
-        // CLOVA OCR 설정 확인
-        Map<String, Object> clovaConfig = new HashMap<>();
-        clovaConfig.put("apiUrl", clovaApiUrl);
-        clovaConfig.put("secretKeyConfigured", !clovaSecretKey.isEmpty());
-        clovaConfig.put("secretKeyMasked", maskKey(clovaSecretKey));
-        response.put("clova", clovaConfig);
+        // Gemini 설정 확인
+        Map<String, Object> geminiConfig = new HashMap<>();
+        geminiConfig.put("model", geminiModel);
+        geminiConfig.put("apiKeyConfigured", !geminiApiKey.isEmpty());
+        geminiConfig.put("apiKeyMasked", maskKey(geminiApiKey));
+        response.put("gemini", geminiConfig);
 
-        // OpenAI 설정 확인
-        Map<String, Object> openaiConfig = new HashMap<>();
-        openaiConfig.put("model", openaiModel);
-        openaiConfig.put("apiKeyConfigured", !openaiApiKey.isEmpty());
-        openaiConfig.put("apiKeyMasked", maskKey(openaiApiKey));
-        response.put("openai", openaiConfig);
-
-        // REF-04 사용 가능 여부
-        boolean ref04Ready = !clovaSecretKey.isEmpty() && !openaiApiKey.isEmpty();
-        response.put("ref04Ready", ref04Ready);
-        response.put("message", ref04Ready 
-                ? "REF-04 영수증 스캔 기능을 사용할 수 있습니다." 
-                : "REF-04 사용을 위해 CLOVA_OCR_SECRET_KEY 및 OPENAI_API_KEY 환경 변수를 설정하세요.");
+        // AI 기능 사용 가능 여부
+        boolean aiReady = !geminiApiKey.isEmpty();
+        response.put("aiReady", aiReady);
+        response.put("message", aiReady 
+                ? "Gemini AI 기능을 사용할 수 있습니다." 
+                : "AI 기능 사용을 위해 GEMINI_API_KEY 환경 변수를 설정하세요.");
 
         return ResponseEntity.ok(response);
     }
@@ -87,3 +74,4 @@ public class HealthController {
         return key.substring(0, 4) + "****" + key.substring(key.length() - 4);
     }
 }
+

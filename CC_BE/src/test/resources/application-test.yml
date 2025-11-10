@@ -1,18 +1,22 @@
 spring:
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_TEST_DATABASE:ccdb_test}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: ${MYSQL_USER:ccuser}
-    password: ${MYSQL_PASSWORD:devpass}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
 
   jpa:
     hibernate:
       ddl-auto: create-drop
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
     show-sql: false
+    
+  h2:
+    console:
+      enabled: true
 
 # 테스트 초기화 전략: 필요 시 data.sql 사용 가능
 logging:
@@ -22,12 +26,14 @@ logging:
 
 jwt:
   secret: dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw
-  expiration-millis: 3600000
+  expiration: 3600000
 
-# OCR Tesseract 설정 (테스트용)
-# OCR 설정
-ocr:
-  type: tesseract  # 테스트에서는 Tesseract 사용
-  tesseract:
-    datapath: ${TESSDATA_PREFIX:/opt/homebrew/share/tessdata}
-    language: kor+eng
+upload:
+  dir: build/test-uploads
+  max-file-size: 10MB
+  max-request-size: 10MB
+
+gemini:
+  api-key: test-api-key
+  api-url: https://generativelanguage.googleapis.com/v1beta/models
+  model: gemini-2.0-flash-exp
