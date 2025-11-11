@@ -21,7 +21,7 @@ spring:
     compose:
       enabled: false
   elasticsearch:
-    uris: ${ELASTICSEARCH_URIS:http://localhost:9200}
+    uris: ${ELASTICSEARCH_URIS:http://elasticsearch:9200}
     username: ${ELASTICSEARCH_USERNAME:}
     password: ${ELASTICSEARCH_PASSWORD:}
   servlet:
