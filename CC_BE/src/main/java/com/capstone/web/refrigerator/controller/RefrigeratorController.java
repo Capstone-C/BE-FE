@@ -66,11 +66,12 @@ public class RefrigeratorController {
             description = """
                     새로운 식재료를 냉장고에 추가합니다.
                     
-                    **필수 입력**: 식재료명
-                    **선택 입력**: 수량, 용량/단위, 소비기한, 메모
+                    정책:
+                    1) 이미 등록된 식재료와 이름이 같고, 소비기한도 같으면 해당 항목의 수량만 증가합니다.
+                    2) 이름은 같지만 소비기한이 다르면 새로운 항목으로 등록됩니다.
+                    3) 소비기한이 기재되지 않은(null) 식재료에 대해서도 1)과 2) 규칙을 동일하게 적용합니다.
                     
-                    **중복 체크**: 같은 이름의 식재료는 등록할 수 없습니다.
-                    (기존 항목의 수정을 권장)
+                    예) 같은 이름 + 같은 날짜 → 수량 합산, 같은 이름 + 다른 날짜 → 별도 항목
                     """,
             security = @SecurityRequirement(name = "JWT")
     )
@@ -96,12 +97,14 @@ public class RefrigeratorController {
             description = """
                     여러 식재료를 한 번에 추가합니다.
                     
-                    **사용 시나리오**:
+                    사용 시나리오:
                     - REF-03, 04: 영수증 스캔 OCR 결과 일괄 등록
                     - 구매 내역 일괄 등록
                     
-                    **처리 방식**:
-                    - 중복된 식재료는 건너뛰고 나머지만 추가
+                    처리 방식:
+                    - 단건 추가와 동일한 병합 규칙 적용
+                      · 같은 이름 + 같은 소비기한(둘 다 null 포함) → 수량 합산
+                      · 같은 이름 + 다른 소비기한 → 별도 항목 생성
                     - 성공/실패 개수 및 실패 항목 목록 반환
                     """,
             security = @SecurityRequirement(name = "JWT")
@@ -121,10 +124,10 @@ public class RefrigeratorController {
             description = """
                     기존 식재료의 정보를 수정합니다.
                     
-                    **수정 가능 항목**: 수량, 용량/단위, 소비기한, 메모
-                    **수정 불가 항목**: 식재료명 (삭제 후 재등록 권장)
+                    수정 가능 항목: 수량, 용량/단위, 소비기한, 메모
+                    수정 불가 항목: 식재료명 (삭제 후 재등록 권장)
                     
-                    **권한 확인**: 본인이 등록한 식재료만 수정 가능
+                    권한 확인: 본인이 등록한 식재료만 수정 가능
                     """,
             security = @SecurityRequirement(name = "JWT")
     )
@@ -144,12 +147,12 @@ public class RefrigeratorController {
             description = """
                     냉장고에서 식재료를 삭제합니다.
                     
-                    **사용 시나리오**:
+                    사용 시나리오:
                     - 다 사용한 식재료
                     - 소비기한이 지나 폐기한 식재료
                     - 잘못 등록한 식재료
                     
-                    **권한 확인**: 본인이 등록한 식재료만 삭제 가능
+                    권한 확인: 본인이 등록한 식재료만 삭제 가능
                     """,
             security = @SecurityRequirement(name = "JWT")
     )
@@ -166,7 +169,7 @@ public class RefrigeratorController {
     @Operation(
             summary = "REF-04: 구매 이력 스캔 (Gemini 이미지 이해)",
             description = """
-                    영수증 이미지를 업로드하면 Gemini Vision 모델이 직접 이미지를 해석하여 
+                    영수증 이미지를 업로드하면 Gemini Vision 모델이 직접 이미지를 해석하여
                     식재료 항목을 JSON으로 반환합니다.
                     
                     처리 흐름:
@@ -197,23 +200,23 @@ public class RefrigeratorController {
             description = """
                     냉장고에 보유한 재료를 기반으로 만들 수 있는 레시피를 추천합니다.
                     
-                    **추천 알고리즘**:
+                    추천 알고리즘:
                     1. 사용자의 냉장고 재료 조회
                     2. 모든 레시피의 필요 재료와 비교
                     3. 매칭률 계산 = (보유 재료 / 전체 필요 재료) × 100
                     4. 매칭률 높은 순으로 정렬하여 반환
                     
-                    **매칭 방식**:
+                    매칭 방식:
                     - 완전 일치 또는 부분 일치 (예: "양파" ↔ "양파즙")
                     - 대소문자 무시
                     
-                    **응답 정보**:
+                    응답 정보:
                     - 레시피 기본 정보 (이름, 조리시간, 난이도 등)
                     - 매칭률 (0-100%)
                     - 보유 중인 재료 목록
                     - 부족한 재료 목록 (필수 여부 포함)
                     
-                    **파라미터**:
+                    파라미터:
                     - limit: 추천 개수 (기본값: 10, 최대: 50)
                     """,
             security = @SecurityRequirement(name = "JWT")
@@ -240,17 +243,17 @@ public class RefrigeratorController {
             description = """
                     레시피를 만들 때 필요한 재료를 냉장고에서 차감하기 전에 미리 확인합니다.
                     
-                    **확인 항목**:
+                    확인 항목:
                     - 각 재료별 보유 여부 (OK/INSUFFICIENT/NOT_FOUND)
                     - 현재 수량과 필요량 비교
                     - 필수 재료 부족 여부
                     
-                    **상태**:
+                    상태:
                     - OK: 충분히 보유 중
                     - INSUFFICIENT: 수량 부족
                     - NOT_FOUND: 냉장고에 없음
                     
-                    **canProceed**: 모든 필수 재료가 충분할 때만 true
+                    canProceed: 모든 필수 재료가 충분할 때만 true
                     """,
             security = @SecurityRequirement(name = "JWT")
     )
@@ -270,18 +273,18 @@ public class RefrigeratorController {
             description = """
                     레시피를 만들 때 사용한 재료를 냉장고에서 차감합니다.
                     
-                    **처리 과정**:
+                    처리 과정:
                     1. 미리보기로 재료 확인
                     2. canProceed가 false이고 ignoreWarnings=false이면 예외 발생
                     3. 각 재료 수량 -1 (최소 0)
                     4. 차감 결과 반환
                     
-                    **주의사항**:
+                    주의사항:
                     - 수량만 감소, 재료 삭제는 하지 않음
                     - ignoreWarnings=true 시 경고 무시하고 강제 실행
                     - 트랜잭션으로 관리 (일부 실패 시 전체 롤백 아님)
                     
-                    **요청 파라미터**:
+                    요청 파라미터:
                     - recipeId: 레시피 ID
                     - ignoreWarnings: 경고 무시 여부 (기본: false)
                     """,
