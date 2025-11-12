@@ -8,12 +8,18 @@ import com.capstone.web.member.exception.UserNotFoundException;
 import com.capstone.web.member.repository.MemberRepository;
 import com.capstone.web.posts.domain.PostLike;
 import com.capstone.web.posts.domain.Posts;
+import com.capstone.web.posts.domain.PostIngredient;
 import com.capstone.web.posts.dto.PostDto;
 import com.capstone.web.posts.dto.PostListRequest;
+import com.capstone.web.posts.dto.PostIngredientDto;
+import com.capstone.web.posts.dto.PostComparisonDto; // (추가)
 import com.capstone.web.posts.exception.PostNotFoundException;
-import com.capstone.web.posts.exception.PostPermissionException; // (추가) 권한 예외 임포트
-import com.capstone.web.posts.repository.PostsRepository;
+import com.capstone.web.posts.exception.PostPermissionException;
 import com.capstone.web.posts.repository.PostLikeRepository;
+import com.capstone.web.posts.repository.PostsRepository;
+import com.capstone.web.posts.repository.PostIngredientRepository;
+import com.capstone.web.refrigerator.domain.RefrigeratorItem; // (추가)
+import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository; // (추가)
 import lombok.RequiredArgsConstructor;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
@@ -25,6 +31,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList; // (추가)
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,9 +45,10 @@ public class PostService {
     private final CategoryRepository categoryRepository;
     private final MemberRepository memberRepository;
     private final PostLikeRepository postLikeRepository;
+    private final PostIngredientRepository ingredientRepository;
+    private final RefrigeratorItemRepository refrigeratorItemRepository; // (추가)
 
     private String sanitizeHtml(String html) {
-        // 허용할 태그/속성만 화이트리스트로 지정 (기본: 단순 텍스트 + img/a 일부)
         Safelist safelist = Safelist.relaxed()
                 .addTags("img")
                 .addAttributes("img", "src", "alt", "title")
@@ -50,8 +59,7 @@ public class PostService {
     }
 
     @Transactional
-    public Long createPost(Long memberId, PostDto.CreateRequest request) { // (수정) memberId 받기
-        // (수정) DTO가 아닌 파라미터로 받은 memberId 사용
+    public Long createPost(Long memberId, PostDto.CreateRequest request) {
         Member author = memberRepository.findById(memberId)
                 .orElseThrow(() -> new UserNotFoundException("작성자를 찾을 수 없습니다. ID: " + memberId));
 
@@ -65,9 +73,29 @@ public class PostService {
                 .content(sanitizeHtml(request.getContent()))
                 .status(request.getStatus())
                 .isRecipe(request.getIsRecipe())
+                .dietType(request.getDietType())
+                .cookTimeInMinutes(request.getCookTimeInMinutes())
+                .servings(request.getServings())
+                .difficulty(request.getDifficulty())
                 .build();
 
         Posts savedPost = postsRepository.save(post);
+
+        if (request.getIsRecipe() && request.getIngredients() != null) {
+            List<PostIngredient> ingredients = request.getIngredients().stream()
+                    .map(dto -> PostIngredient.builder()
+                            .post(savedPost)
+                            .name(dto.getName())
+                            .quantity(dto.getQuantity())
+                            .unit(dto.getUnit())
+                            .memo(dto.getMemo())
+                            .expirationDate(dto.getExpirationDate())
+                            .build())
+                    .collect(Collectors.toList());
+
+            ingredientRepository.saveAll(ingredients);
+        }
+
         return savedPost.getId();
     }
 
@@ -90,15 +118,15 @@ public class PostService {
     }
 
     private Posts postsNextPage(Long id) {
+        // (수정) @EntityGraph가 적용된 findById를 호출하여 N+1 문제 해결
         return postsRepository.findById(id)
                 .orElseThrow(() -> new PostNotFoundException("게시글을 찾을 수 없습니다. ID: " + id));
     }
 
     @Transactional
-    public void updatePost(Long id, Long memberId, PostDto.UpdateRequest request) { // (수정) memberId 받기
+    public void updatePost(Long id, Long memberId, PostDto.UpdateRequest request) {
         Posts post = postsNextPage(id);
 
-        // (추가) 작성자 본인 확인 로직
         if (!post.getAuthorId().getId().equals(memberId)) {
             throw new PostPermissionException("게시글을 수정할 권한이 없습니다.");
         }
@@ -106,11 +134,41 @@ public class PostService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리를 찾을 수 없습니다. ID: " + request.getCategoryId()));
 
-        post.update(request.getTitle().trim(), sanitizeHtml(request.getContent()), request.getStatus(), category, request.getIsRecipe());
+        post.getIngredients().clear();
+
+        List<PostIngredient> newIngredients;
+        if (request.getIsRecipe() && request.getIngredients() != null) {
+            newIngredients = request.getIngredients().stream()
+                    .map(dto -> PostIngredient.builder()
+                            .post(post)
+                            .name(dto.getName())
+                            .quantity(dto.getQuantity())
+                            .unit(dto.getUnit())
+                            .memo(dto.getMemo())
+                            .expirationDate(dto.getExpirationDate())
+                            .build())
+                    .collect(Collectors.toList());
+        } else {
+            newIngredients = Collections.emptyList();
+        }
+
+        post.update(
+                request.getTitle().trim(),
+                sanitizeHtml(request.getContent()),
+                request.getStatus(),
+                category,
+                request.getIsRecipe(),
+                request.getDietType(),
+                request.getCookTimeInMinutes(),
+                request.getServings(),
+                request.getDifficulty()
+        );
+
+        post.getIngredients().addAll(newIngredients);
     }
 
     @Transactional
-    public void deletePost(Long id, Long memberId) { // (수정) memberId 받기
+    public void deletePost(Long id, Long memberId) {
         Posts post = postsNextPage(id);
 
         if (!post.getAuthorId().getId().equals(memberId)) {
@@ -123,7 +181,6 @@ public class PostService {
     public Page<PostDto.Response> list(PostListRequest req) {
         Pageable pageable = PageRequest.of(req.pageIndex(), req.getSize(), req.sort());
 
-        // Start with a neutral spec without using deprecated Specification.where(null)
         Specification<Posts> spec = Specification.anyOf();
         if (req.getBoardId() != null) {
             spec = spec.and((root, q, cb) -> cb.equal(root.get("category").get("id"), req.getBoardId()));
@@ -148,6 +205,7 @@ public class PostService {
         }
 
         Page<Posts> page = postsRepository.findAll(spec, pageable);
+
         List<PostDto.Response> content = page.getContent().stream().map(PostDto.Response::new).collect(Collectors.toList());
         return new PageImpl<>(content, pageable, page.getTotalElements());
     }
@@ -158,12 +216,10 @@ public class PostService {
         boolean liked;
         var existing = postLikeRepository.findByPostIdAndMemberId(postId, memberId);
         if (existing.isPresent()) {
-            // unlike
             postLikeRepository.delete(existing.get());
             post.decreaseLikeCount();
             liked = false;
         } else {
-            // like
             var member = memberRepository.findById(memberId)
                     .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다. ID: " + memberId));
             postLikeRepository.save(new PostLike(post, member));
@@ -174,5 +230,62 @@ public class PostService {
     }
 
     public record ToggleLikeResult(boolean liked, int likeCount) {
+    }
+
+    // --- (신규) 내 냉장고와 재료 비교 ---
+    public PostComparisonDto.Response compareWithRefrigerator(Long postId, Long memberId) {
+
+        // 1. (필요 재료) 게시글의 재료 목록 조회
+        //    (postsNextPage가 @EntityGraph 적용된 findById를 호출하므로 N+1 해결됨)
+        Posts post = postsNextPage(postId);
+        List<PostIngredient> requiredIngredients = post.getIngredients();
+
+        // 2. (보유 재료) 내 냉장고 재료 목록 조회
+        List<RefrigeratorItem> myItems = refrigeratorItemRepository.findByMemberId(memberId);
+        List<String> myItemNames = myItems.stream()
+                .map(item -> item.getName().toLowerCase().trim())
+                .collect(Collectors.toList());
+
+        int ownedCount = 0;
+        List<PostComparisonDto.ComparedIngredient> comparedList = new ArrayList<>();
+
+        // 3. (비교) 필요 재료 목록을 기준으로, 내 냉장고에 있는지 확인
+        for (PostIngredient required : requiredIngredients) {
+            String requiredName = required.getName().toLowerCase().trim();
+
+            // RefrigeratorService의 퍼지 매칭(부분 일치) 로직과 유사하게 구현
+            boolean isOwned = myItemNames.stream()
+                    .anyMatch(ownedName -> ownedName.contains(requiredName) || requiredName.contains(ownedName));
+
+            // 재료 양(amount) 포맷팅
+            String amount = (required.getUnit() != null && !required.getUnit().isBlank())
+                    ? required.getQuantity() + required.getUnit()
+                    : String.valueOf(required.getQuantity());
+
+            if (isOwned) {
+                ownedCount++;
+                comparedList.add(PostComparisonDto.ComparedIngredient.builder()
+                        .name(required.getName())
+                        .amount(amount)
+                        .status(PostComparisonDto.ComparisonStatus.OWNED)
+                        .build());
+            } else {
+                comparedList.add(PostComparisonDto.ComparedIngredient.builder()
+                        .name(required.getName())
+                        .amount(amount)
+                        .status(PostComparisonDto.ComparisonStatus.MISSING)
+                        .build());
+            }
+        }
+
+        // 4. (응답)
+        return PostComparisonDto.Response.builder()
+                .postId(post.getId())
+                .postTitle(post.getTitle())
+                .ingredients(comparedList)
+                .totalNeeded(requiredIngredients.size())
+                .ownedCount(ownedCount)
+                .missingCount(requiredIngredients.size() - ownedCount)
+                .build();
     }
 }
