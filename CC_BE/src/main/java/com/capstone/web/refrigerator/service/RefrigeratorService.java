@@ -14,6 +14,7 @@ import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * 냉장고 식재료 서비스
- * 
+ * <p>
  * REF-01: 내 냉장고 식재료 목록 조회
  * REF-02: 수동으로 식재료 추가 (동일 이름+소비기한 시 수량 병합, 다른 소비기한은 별도 항목)
  * REF-03: 일괄 식재료 추가 (OCR 결과 등록)
@@ -71,12 +72,12 @@ public class RefrigeratorService {
 
     /**
      * REF-02: 수동으로 식재료 추가
-     * 
+     * <p>
      * 병합 규칙:
      * - 동일 회원 + 동일 이름 + 동일 소비기한 → 수량 병합 (기존 수량 + 추가 수량)
      * - 동일 회원 + 동일 이름 + 다른 소비기한 → 별도 항목 생성
      * - 소비기한이 모두 null인 경우도 병합
-     * 
+     * <p>
      * DB 제약: UNIQUE(member_id, name, expiration_date)
      */
     @Transactional
@@ -84,44 +85,34 @@ public class RefrigeratorService {
         Member member = getMemberById(memberId);
 
         RefrigeratorItem savedItem;
-        if (request.getExpirationDate() == null) {
-            var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, request.getName());
-            if (existingOpt.isPresent()) {
-                RefrigeratorItem existing = existingOpt.get();
-                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
-                int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
-                existing.updateQuantity(prev + add);
-                savedItem = existing;
+        try {
+            if (request.getExpirationDate() == null) {
+                var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, request.getName());
+                if (existingOpt.isPresent()) {
+                    RefrigeratorItem existing = existingOpt.get();
+                    int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                    int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
+                    existing.updateQuantity(prev + add);
+                    savedItem = existing;
+                } else {
+                    savedItem = refrigeratorItemRepository.save(buildNewItem(member, request, null));
+                }
             } else {
-                RefrigeratorItem item = RefrigeratorItem.builder()
-                        .member(member)
-                        .name(request.getName())
-                        .quantity(request.getQuantity())
-                        .unit(request.getUnit())
-                        .expirationDate(null)
-                        .memo(request.getMemo())
-                        .build();
-                savedItem = refrigeratorItemRepository.save(item);
+                var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, request.getName(), request.getExpirationDate());
+                if (existingOpt.isPresent()) {
+                    RefrigeratorItem existing = existingOpt.get();
+                    int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+                    int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
+                    existing.updateQuantity(prev + add);
+                    savedItem = existing;
+                } else {
+                    savedItem = refrigeratorItemRepository.save(buildNewItem(member, request, request.getExpirationDate()));
+                }
             }
-        } else {
-            var existingOpt = refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, request.getName(), request.getExpirationDate());
-            if (existingOpt.isPresent()) {
-                RefrigeratorItem existing = existingOpt.get();
-                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
-                int add = request.getQuantity() != null && request.getQuantity() > 0 ? request.getQuantity() : 1;
-                existing.updateQuantity(prev + add);
-                savedItem = existing;
-            } else {
-                RefrigeratorItem item = RefrigeratorItem.builder()
-                        .member(member)
-                        .name(request.getName())
-                        .quantity(request.getQuantity())
-                        .unit(request.getUnit())
-                        .expirationDate(request.getExpirationDate())
-                        .memo(request.getMemo())
-                        .build();
-                savedItem = refrigeratorItemRepository.save(item);
-            }
+        } catch (DataIntegrityViolationException dive) {
+            // Fallback: re-check if matching item now exists (race condition) and merge, otherwise rethrow
+            log.warn("[REF-02] DataIntegrityViolation on addItem → retry logic: memberId={}, name={}, expiration={}", memberId, request.getName(), request.getExpirationDate(), dive);
+            savedItem = retryAfterIntegrityViolation(member, request);
         }
         log.info("식재료 추가(병합 규칙 적용): memberId={}, itemName={}, expiration={}", memberId, request.getName(), request.getExpirationDate());
         return new RefrigeratorDto.Response(savedItem);
@@ -129,7 +120,7 @@ public class RefrigeratorService {
 
     /**
      * REF-03, 04: 일괄 추가 (OCR 결과 등록)
-     * 
+     * <p>
      * REF-02와 동일한 병합 규칙 적용:
      * - 동일 이름 + 동일 소비기한 → 수량 병합
      * - 동일 이름 + 다른 소비기한 → 별도 항목 생성
@@ -147,38 +138,32 @@ public class RefrigeratorService {
                 if (expiration == null) {
                     refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, name)
                             .ifPresentOrElse(existing -> {
-                                int add = (qty != null && qty > 0) ? qty : 1;
-                                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
-                                existing.updateQuantity(prev + add);
+                                mergeQuantity(existing, qty);
                                 addedItems.add(existing);
                             }, () -> {
-                                RefrigeratorItem item = RefrigeratorItem.builder()
-                                        .member(member)
-                                        .name(name)
-                                        .quantity(qty != null ? qty : 1)
-                                        .unit(itemRequest.getUnit())
-                                        .expirationDate(null)
-                                        .memo(itemRequest.getMemo())
-                                        .build();
-                                addedItems.add(refrigeratorItemRepository.save(item));
+                                try {
+                                    RefrigeratorItem item = buildNewItem(member, itemRequest, null);
+                                    addedItems.add(refrigeratorItemRepository.save(item));
+                                } catch (DataIntegrityViolationException dive) {
+                                    log.warn("[REF-03] Integrity violation (null expiration) bulk add, retry merge: name={}", name, dive);
+                                    RefrigeratorItem merged = retryAfterIntegrityViolation(member, itemRequest);
+                                    addedItems.add(merged);
+                                }
                             });
                 } else {
                     refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, name, expiration)
                             .ifPresentOrElse(existing -> {
-                                int add = (qty != null && qty > 0) ? qty : 1;
-                                int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
-                                existing.updateQuantity(prev + add);
+                                mergeQuantity(existing, qty);
                                 addedItems.add(existing);
                             }, () -> {
-                                RefrigeratorItem item = RefrigeratorItem.builder()
-                                        .member(member)
-                                        .name(name)
-                                        .quantity(qty != null ? qty : 1)
-                                        .unit(itemRequest.getUnit())
-                                        .expirationDate(expiration)
-                                        .memo(itemRequest.getMemo())
-                                        .build();
-                                addedItems.add(refrigeratorItemRepository.save(item));
+                                try {
+                                    RefrigeratorItem item = buildNewItem(member, itemRequest, expiration);
+                                    addedItems.add(refrigeratorItemRepository.save(item));
+                                } catch (DataIntegrityViolationException dive) {
+                                    log.warn("[REF-03] Integrity violation (dated) bulk add, retry merge: name={}, expiration={}", name, expiration, dive);
+                                    RefrigeratorItem merged = retryAfterIntegrityViolation(member, itemRequest);
+                                    addedItems.add(merged);
+                                }
                             });
                 }
             } catch (Exception e) {
@@ -546,5 +531,44 @@ public class RefrigeratorService {
             throw new UnauthorizedItemAccessException("식재료 조회 권한이 없습니다");
         }
         return new RefrigeratorDto.Response(item);
+    }
+
+    private RefrigeratorItem buildNewItem(Member member, RefrigeratorDto.CreateRequest request, java.time.LocalDate expirationDate) {
+        return RefrigeratorItem.builder()
+                .member(member)
+                .name(request.getName().trim())
+                .quantity(request.getQuantity())
+                .unit(request.getUnit())
+                .expirationDate(expirationDate)
+                .memo(request.getMemo())
+                .build();
+    }
+
+    private void mergeQuantity(RefrigeratorItem existing, Integer addQty) {
+        int prev = existing.getQuantity() != null ? existing.getQuantity() : 0;
+        int add = (addQty != null && addQty > 0) ? addQty : 1;
+        existing.updateQuantity(prev + add);
+    }
+
+    /**
+     * Retry logic after a DataIntegrityViolationException possibly caused by a race condition.
+     * Attempts to find existing exact-match (name+expiration) and merge; if not found, rethrows original exception.
+     */
+    private RefrigeratorItem retryAfterIntegrityViolation(Member member, RefrigeratorDto.CreateRequest request) {
+        if (request.getExpirationDate() == null) {
+            return refrigeratorItemRepository.findByMemberAndNameAndExpirationDateIsNull(member, request.getName())
+                    .map(existing -> {
+                        mergeQuantity(existing, request.getQuantity());
+                        return existing;
+                    })
+                    .orElseThrow(() -> new DataIntegrityViolationException("Retry failed (null expiration): still no existing row"));
+        } else {
+            return refrigeratorItemRepository.findByMemberAndNameAndExpirationDate(member, request.getName(), request.getExpirationDate())
+                    .map(existing -> {
+                        mergeQuantity(existing, request.getQuantity());
+                        return existing;
+                    })
+                    .orElseThrow(() -> new DataIntegrityViolationException("Retry failed (dated): still no existing row"));
+        }
     }
 }

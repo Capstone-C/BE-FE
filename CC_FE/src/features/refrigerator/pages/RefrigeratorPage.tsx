@@ -118,16 +118,14 @@ export default function RefrigeratorPage() {
   const createMutation = useMutation({
     mutationFn: (payload: CreateRefrigeratorItemRequest) => createRefrigeratorItem(payload),
     onSuccess: () => {
-      showToast('식재료가 추가되었습니다.', { type: 'success' });
+      showToast('식재료가 추가되었습니다. (동일 이름+소비기한은 수량 합산)', { type: 'success' });
       void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
       setShowAddForm(false);
     },
     onError: (error: any) => {
       const resp = error?.response;
-      if (resp?.status === 409 || resp?.data?.code === 'DUPLICATE_ITEM') {
-        setFormErrors((prev) => ({ ...prev, name: '이미 등록된 식재료입니다. 기존 항목을 수정해주세요.' }));
-        nameInputRef.current?.focus();
-      } else if (resp?.data?.code === 'VALIDATION_ERROR') {
+      // 중복 409 정책 제거: 서버는 병합 처리하므로 여기서는 검증 오류만 처리
+      if (resp?.data?.code === 'VALIDATION_ERROR') {
         const fieldErrors: Record<string, string> = {};
         resp.data.errors?.forEach((fe: any) => {
           fieldErrors[fe.field] = fe.message;
@@ -335,6 +333,11 @@ export default function RefrigeratorPage() {
                   className={`mt-1 w-full border rounded px-2 py-2 text-sm ${formErrors.name ? 'border-red-500' : ''}`}
                 />
                 {formErrors.name && <p className="mt-1 text-xs text-red-600">{formErrors.name}</p>}
+                {!formErrors.name && (
+                  <p className="mt-1 text-[10px] text-gray-500">
+                    같은 이름+같은 소비기한(또는 모두 미지정)은 수량이 합산됩니다.
+                  </p>
+                )}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -505,7 +508,9 @@ export default function RefrigeratorPage() {
                   defaultValue={editingPrefill.name}
                   className="mt-1 w-full border rounded px-2 py-1 text-sm bg-gray-100 cursor-not-allowed"
                 />
-                <p className="mt-1 text-[10px] text-gray-500">식재료명은 수정할 수 없습니다. 삭제 후 재등록하세요.</p>
+                <p className="mt-1 text-[10px] text-gray-500">
+                  식재료명은 수정할 수 없습니다. 삭제 후 재등록하세요. (동일 정책: 이름+날짜 동일 시 추가 시 수량 합산)
+                </p>
               </div>
               <div>
                 <label className="block text-xs text-gray-600">수량</label>
