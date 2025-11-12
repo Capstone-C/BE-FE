@@ -3,6 +3,7 @@ package com.capstone.web.posts.controller;
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
 import com.capstone.web.posts.dto.PostDto;
 import com.capstone.web.posts.dto.PostListRequest;
+import com.capstone.web.posts.dto.PostComparisonDto; // (추가)
 import com.capstone.web.posts.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -89,5 +90,17 @@ public class PostController {
     ) {
         var result = postService.toggleLike(id, userPrincipal.id());
         return ResponseEntity.ok(result);
+    }
+
+    // --- (신규) 내 냉장고와 재료 비교 API ---
+    @GetMapping("/{postId}/compare-refrigerator")
+    public ResponseEntity<PostComparisonDto.Response> compareWithRefrigerator(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal MemberPrincipal userPrincipal
+    ) {
+        // (주의) userPrincipal이 null일 경우(비로그인) NullPointerException 발생.
+        // Spring Security에서 이 엔드포인트는 인증이 필수(permitAll이 아님)여야 합니다.
+        PostComparisonDto.Response response = postService.compareWithRefrigerator(postId, userPrincipal.id());
+        return ResponseEntity.ok(response);
     }
 }

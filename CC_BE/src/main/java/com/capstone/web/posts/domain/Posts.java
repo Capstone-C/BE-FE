@@ -12,7 +12,12 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+@NamedEntityGraph(name = "Posts.withIngredients", attributeNodes = {
+        @NamedAttributeNode("ingredients")
+})
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -75,23 +80,51 @@ public class Posts {
     @Column(name = "is_recipe", nullable = false)
     private boolean isRecipe;
 
+    // --- 레시피 기본 정보 ---
+    @Enumerated(EnumType.STRING)
+    @Column(name = "diet_type")
+    private DietType dietType; // 식단 타입
+
+    @Column(name = "cook_time_in_minutes")
+    private Integer cookTimeInMinutes; // 조리 시간(분)
+
+    @Column(name = "servings")
+    private Integer servings; // 분량(인분)
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty")
+    private Difficulty difficulty; // 난이도
+    // ----------------------------
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostIngredient> ingredients = new ArrayList<>();
 
     @Builder
-    public Posts(Member authorId, Category category, String title, String content, PostStatus status, boolean isRecipe) {
+    public Posts(Member authorId, Category category, String title, String content, PostStatus status, boolean isRecipe,
+                 DietType dietType, Integer cookTimeInMinutes, Integer servings, Difficulty difficulty) {
         this.authorId = authorId;
         this.category = category;
         this.title = title;
         this.content = content;
         this.status = status != null ? status : PostStatus.DRAFT;
         this.isRecipe = isRecipe;
+        this.dietType = dietType;
+        this.cookTimeInMinutes = cookTimeInMinutes;
+        this.servings = servings;
+        this.difficulty = difficulty;
     }
 
-    public void update(String title, String content, PostStatus status, Category category, boolean isRecipe) {
+    public void update(String title, String content, PostStatus status, Category category, boolean isRecipe,
+                       DietType dietType, Integer cookTimeInMinutes, Integer servings, Difficulty difficulty) {
         this.title = title;
         this.content = content;
         this.status = status;
         this.category = category;
         this.isRecipe = isRecipe;
+        this.dietType = dietType;
+        this.cookTimeInMinutes = cookTimeInMinutes;
+        this.servings = servings;
+        this.difficulty = difficulty;
     }
 
     public void increaseViewCount() {
@@ -105,6 +138,27 @@ public class Posts {
     public void decreaseLikeCount() {
         this.likeCount = Math.max(0, this.likeCount - 1);
     }
+
+    // --- (수정) Enum 정의 ---
+    public enum DietType {
+        VEGAN,        // 비건
+        VEGETARIAN,   // 락토/오보 등 채식 위주
+        KETO,         // 키토제닉
+        PALEO,        // 팔레오식
+        MEDITERRANEAN, // 지중해식
+        LOW_CARB,     // 저탄수화물
+        HIGH_PROTEIN, // 고단백
+        GENERAL       // 일반식
+    }
+
+    public enum Difficulty {
+        VERY_HIGH, // 매우 어려움
+        HIGH,      // 어려움
+        MEDIUM,    // 중간
+        LOW,       // 쉬움
+        VERY_LOW   // 매우 쉬움
+    }
+    // ----------------------
 
     public enum PostStatus {
         DRAFT, PUBLISHED, ARCHIVED
