@@ -10,8 +10,9 @@ import com.capstone.web.member.exception.UserNotFoundException;
 import com.capstone.web.member.repository.MemberRepository;
 import com.capstone.web.posts.domain.Posts;
 import com.capstone.web.posts.dto.PostDto;
+import com.capstone.web.posts.dto.PostIngredientDto; // (추가)
 import com.capstone.web.posts.exception.PostNotFoundException;
-import com.capstone.web.posts.exception.PostPermissionException; // (추가) 권한 예외 임포트
+import com.capstone.web.posts.exception.PostPermissionException;
 import com.capstone.web.posts.repository.PostsRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections; // (추가)
+import java.util.List; // (추가)
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -39,8 +43,16 @@ class PostServiceTest {
     private CategoryRepository categoryRepository;
 
     private Member author;
-    private Member otherUser; // (추가) 권한 테스트를 위한 다른 사용자
+    private Member otherUser;
     private Category category;
+
+    // (추가) 레시피 필드를 위한 기본값
+    private final Posts.DietType DEFAULT_DIET_TYPE = Posts.DietType.GENERAL;
+    private final Integer DEFAULT_COOK_TIME = 30;
+    private final Integer DEFAULT_SERVINGS = 2;
+    private final Posts.Difficulty DEFAULT_DIFFICULTY = Posts.Difficulty.MEDIUM;
+    private final List<PostIngredientDto.Request> DEFAULT_INGREDIENTS = Collections.emptyList();
+
 
     @BeforeEach
     void setup() {
@@ -49,7 +61,6 @@ class PostServiceTest {
         categoryRepository.deleteAll();
 
         author = memberRepository.save(Member.builder().email("author@example.com").nickname("글쓴이").password("password").build());
-        // (추가) 다른 사용자 생성
         otherUser = memberRepository.save(Member.builder().email("other@example.com").nickname("다른유저").password("password").build());
 
         category = categoryRepository.save(Category.builder()
@@ -62,13 +73,22 @@ class PostServiceTest {
     @Test
     void createPost_Success() {
         // given
-        // (수정) CreateRequest에서 authorId 제거
+        // (수정) 10개 인자 모두 전달
         PostDto.CreateRequest request = new PostDto.CreateRequest(
-                category.getId(), "테스트 제목", "테스트 내용", Posts.PostStatus.PUBLISHED, false
+                category.getId(),
+                "테스트 제목",
+                "테스트 내용",
+                Posts.PostStatus.PUBLISHED,
+                false, // isRecipe
+                DEFAULT_DIET_TYPE,
+                DEFAULT_COOK_TIME,
+                DEFAULT_SERVINGS,
+                DEFAULT_DIFFICULTY,
+                DEFAULT_INGREDIENTS
         );
 
         // when
-        // (수정) createPost 호출 시 memberId를 파라미터로 전달
+        // (수정) createPost (2개 인자) 호출
         Long postId = postService.createPost(author.getId(), request);
 
         // then
@@ -83,13 +103,22 @@ class PostServiceTest {
     void createPost_UserNotFound() {
         // given
         Long nonExistentAuthorId = 999L;
-        // (수정) CreateRequest에서 authorId 제거
+        // (수정) 10개 인자 모두 전달
         PostDto.CreateRequest request = new PostDto.CreateRequest(
-                category.getId(), "테스트 제목", "테스트 내용", Posts.PostStatus.PUBLISHED, false
+                category.getId(),
+                "테스트 제목",
+                "테스트 내용",
+                Posts.PostStatus.PUBLISHED,
+                false,
+                DEFAULT_DIET_TYPE,
+                DEFAULT_COOK_TIME,
+                DEFAULT_SERVINGS,
+                DEFAULT_DIFFICULTY,
+                DEFAULT_INGREDIENTS
         );
 
         // when & then
-        // (수정) createPost 호출 시 존재하지 않는 authorId 전달
+        // (수정) createPost (2개 인자) 호출
         assertThatThrownBy(() -> postService.createPost(nonExistentAuthorId, request))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("작성자를 찾을 수 없습니다.");
@@ -100,19 +129,27 @@ class PostServiceTest {
     void createPost_CategoryNotFound() {
         // given
         Long nonExistentCategoryId = 999L;
-        // (수정) CreateRequest에서 authorId 제거
+        // (수정) 10개 인자 모두 전달
         PostDto.CreateRequest request = new PostDto.CreateRequest(
-                nonExistentCategoryId, "테스트 제목", "테스트 내용", Posts.PostStatus.PUBLISHED, false
+                nonExistentCategoryId,
+                "테스트 제목",
+                "테스트 내용",
+                Posts.PostStatus.PUBLISHED,
+                false,
+                DEFAULT_DIET_TYPE,
+                DEFAULT_COOK_TIME,
+                DEFAULT_SERVINGS,
+                DEFAULT_DIFFICULTY,
+                DEFAULT_INGREDIENTS
         );
 
         // when & then
-        // (수정) createPost 호출 시 authorId 전달
+        // (수정) createPost (2개 인자) 호출
         assertThatThrownBy(() -> postService.createPost(author.getId(), request))
                 .isInstanceOf(CategoryNotFoundException.class)
                 .hasMessageContaining("카테고리를 찾을 수 없습니다.");
     }
 
-    // --- (getPostById_Success, getPostById_PostNotFound는 변경 없음) ---
     @DisplayName("ID로 게시글 단건 조회 성공")
     @Test
     void getPostById_Success() {
@@ -129,27 +166,46 @@ class PostServiceTest {
         assertThatThrownBy(() -> postService.getPostById(nonExistentPostId))
                 .isInstanceOf(PostNotFoundException.class);
     }
-    // --- (여기까지 변경 없음) ---
 
 
     @DisplayName("게시글 수정 성공")
     @Test
     void updatePost_Success() {
         // given
-        Posts originalPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("원본 제목").content("원본 내용").status(Posts.PostStatus.PUBLISHED).isRecipe(false).build());
+        Posts originalPost = postsRepository.save(Posts.builder()
+                .authorId(author)
+                .category(category)
+                .title("원본 제목")
+                .content("원본 내용")
+                .status(Posts.PostStatus.PUBLISHED)
+                .isRecipe(false)
+                .build());
         Category newCategory = categoryRepository.save(Category.builder().name("공지사항").type(Category.CategoryType.QA).build());
+
+        // (수정) 10개 인자 모두 전달
         PostDto.UpdateRequest request = new PostDto.UpdateRequest(
-                "수정된 제목", "수정된 내용", newCategory.getId(), Posts.PostStatus.ARCHIVED, true
+                "수정된 제목",
+                "수정된 내용",
+                newCategory.getId(),
+                Posts.PostStatus.ARCHIVED,
+                true, // isRecipe
+                Posts.DietType.VEGAN, // 수정된 레시피 정보
+                45,
+                4,
+                Posts.Difficulty.HIGH,
+                DEFAULT_INGREDIENTS
         );
 
         // when
-        // (수정) updatePost 호출 시 memberId(author.getId()) 전달
+        // (수정) updatePost (3개 인자) 호출
         postService.updatePost(originalPost.getId(), author.getId(), request);
 
         // then
         Posts updatedPost = postsRepository.findById(originalPost.getId()).orElseThrow();
         assertThat(updatedPost.getTitle()).isEqualTo("수정된 제목");
         assertThat(updatedPost.getCategory().getName()).isEqualTo("공지사항");
+        assertThat(updatedPost.isRecipe()).isTrue();
+        assertThat(updatedPost.getCookTimeInMinutes()).isEqualTo(45);
     }
 
     @DisplayName("존재하지 않는 게시글 수정 시 예외 발생")
@@ -157,23 +213,31 @@ class PostServiceTest {
     void updatePost_PostNotFound() {
         // given
         Long nonExistentPostId = 999L;
-        PostDto.UpdateRequest request = new PostDto.UpdateRequest("수정", "수정", category.getId(), Posts.PostStatus.PUBLISHED, false);
+        // (수정) 10개 인자 모두 전달
+        PostDto.UpdateRequest request = new PostDto.UpdateRequest(
+                "수정", "수정", category.getId(), Posts.PostStatus.PUBLISHED, false,
+                DEFAULT_DIET_TYPE, DEFAULT_COOK_TIME, DEFAULT_SERVINGS, DEFAULT_DIFFICULTY, DEFAULT_INGREDIENTS
+        );
 
         // when & then
-        // (수정) updatePost 호출 시 memberId(author.getId()) 전달
+        // (수정) updatePost (3개 인자) 호출
         assertThatThrownBy(() -> postService.updatePost(nonExistentPostId, author.getId(), request))
                 .isInstanceOf(PostNotFoundException.class);
     }
 
-    @DisplayName("다른 사람의 게시글 수정 시 예외 발생 (권한 없음)") // 👇 [추가된 테스트]
+    @DisplayName("다른 사람의 게시글 수정 시 예외 발생 (권한 없음)")
     @Test
     void updatePost_Fail_PermissionDenied() {
         // given
         Posts originalPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("원본 제목").content("원본 내용").build());
-        PostDto.UpdateRequest request = new PostDto.UpdateRequest("해킹 시도", "해킹 시도", category.getId(), Posts.PostStatus.PUBLISHED, false);
+        // (수정) 10개 인자 모두 전달
+        PostDto.UpdateRequest request = new PostDto.UpdateRequest(
+                "해킹 시도", "해킹 시도", category.getId(), Posts.PostStatus.PUBLISHED, false,
+                DEFAULT_DIET_TYPE, DEFAULT_COOK_TIME, DEFAULT_SERVINGS, DEFAULT_DIFFICULTY, DEFAULT_INGREDIENTS
+        );
 
         // when & then
-        // 'otherUser'의 ID로 수정을 시도
+        // (수정) updatePost (3개 인자) 호출
         assertThatThrownBy(() -> postService.updatePost(originalPost.getId(), otherUser.getId(), request))
                 .isInstanceOf(PostPermissionException.class)
                 .hasMessageContaining("게시글을 수정할 권한이 없습니다.");
@@ -187,7 +251,6 @@ class PostServiceTest {
         Posts postToDelete = postsRepository.save(Posts.builder().authorId(author).category(category).title("삭제될 게시글").content("내용").build());
 
         // when
-        // (수정) deletePost 호출 시 memberId(author.getId()) 전달
         postService.deletePost(postToDelete.getId(), author.getId());
 
         // then
@@ -201,19 +264,17 @@ class PostServiceTest {
         Long nonExistentPostId = 999L;
 
         // when & then
-        // (수정) deletePost 호출 시 memberId(author.getId()) 전달
         assertThatThrownBy(() -> postService.deletePost(nonExistentPostId, author.getId()))
                 .isInstanceOf(PostNotFoundException.class);
     }
 
-    @DisplayName("다른 사람의 게시글 삭제 시 예외 발생 (권한 없음)") // 👇 [추가된 테스트]
+    @DisplayName("다른 사람의 게시글 삭제 시 예외 발생 (권한 없음)")
     @Test
     void deletePost_Fail_PermissionDenied() {
         // given
         Posts postToDelete = postsRepository.save(Posts.builder().authorId(author).category(category).title("삭제될 게시글").content("내용").build());
 
         // when & then
-        // 'otherUser'의 ID로 삭제를 시도
         assertThatThrownBy(() -> postService.deletePost(postToDelete.getId(), otherUser.getId()))
                 .isInstanceOf(PostPermissionException.class)
                 .hasMessageContaining("게시글을 삭제할 권한이 없습니다.");
