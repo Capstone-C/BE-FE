@@ -22,13 +22,9 @@ public class BoardPostsController {
     public ResponseEntity<Void> create(@PathVariable Long boardId,
                                        @AuthenticationPrincipal MemberPrincipal userPrincipal,
                                        @Valid @RequestBody PostDto.CreateRequest request) {
-
-        // (수정) 1. DTO를 새로 만들지 않고, 받아온 request 객체에 boardId만 설정
-        request.setCategoryId(boardId);
-
-        // (수정) 2. 수정된 request 객체를 그대로 서비스로 전달
-        Long id = postService.createPost(userPrincipal.id(), request);
-
+        PostDto.CreateRequest req = new PostDto.CreateRequest(boardId, request.getTitle(), request.getContent(), request.getStatus(), request.getIsRecipe());
+        Long id = postService.createPost(userPrincipal.id(), req);
         return ResponseEntity.created(URI.create("/api/posts/" + id)).build();
     }
 }
+
