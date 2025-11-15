@@ -115,7 +115,8 @@ export default function ReceiptScanPage() {
       const mapped: EditableItem[] = (data.items || []).map((it: PurchasedItem, idx) => ({
         id: `${idx}`,
         checked: true,
-        name: (it.name || '').replace(/\s+\d+(ml|l|g|kg|개|팩|봉|캔)?$/i, '').trim(),
+        // OCR에서 받아온 전체 상품명(브랜드 + 맛 + 용량)을 그대로 사용
+        name: (it.name || '').trim(),
         quantity: it.quantity && it.quantity > 0 ? it.quantity : 1,
         unit: it.unit || '', // preserve inferred unit
         expirationDate: null,
