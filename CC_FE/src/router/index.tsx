@@ -1,5 +1,5 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import RootLayout from '@/features/common/pages/RootLayout';
+import { RootLayout } from '@/features/common/pages/RootLayout';
 import HomePage from '@/features/common/pages/HomePage';
 import NotFoundPage from '@/features/common/pages/NotFoundPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -35,6 +35,10 @@ import CommunityPage from '@/features/community/pages/CommunityPage';
 // Refrigerator
 import RefrigeratorPage from '@/features/refrigerator/pages/RefrigeratorPage';
 import ReceiptScanPage from '../features/refrigerator/pages/ReceiptScanPage';
+
+// Recipes
+import RecipeCreatePage from '@/features/recipes/pages/RecipeCreatePage';
+import RecipeEditPage from '@/features/recipes/pages/RecipeEditPage';
 
 const router = createBrowserRouter([
   {
@@ -77,6 +81,10 @@ const router = createBrowserRouter([
           // 냉장고 페이지
           { path: 'refrigerator', element: <RefrigeratorPage /> },
           { path: 'refrigerator/receipt-scan', element: <ReceiptScanPage /> },
+
+          // 레시피
+          { path: 'recipes/new', element: <RecipeCreatePage /> },
+          { path: 'recipes/:postId/edit', element: <RecipeEditPage /> },
         ],
       },
 
