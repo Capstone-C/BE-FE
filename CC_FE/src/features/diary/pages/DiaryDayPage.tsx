@@ -66,7 +66,7 @@ export default function DiaryDayPage() {
       }
     }
   };
-  const onRecipeClick = (recipeId: number) => navigate(`/recipes/${recipeId}`);
+  const onRecipeClick = (recipeId: number) => navigate(`/boards/${recipeId}`);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
