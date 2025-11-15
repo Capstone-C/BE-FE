@@ -178,6 +178,8 @@ public class RefrigeratorDto {
             private String name;
             private Integer quantity;
             private String unit;
+            // 선택: 이미지에서 무게/용량을 인지한 경우 (예: 4.5kg)
+            private Double weight;
         }
     }
 }
