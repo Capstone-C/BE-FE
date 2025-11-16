@@ -93,4 +93,27 @@ class MemberProfileControllerTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code", is("AUTH_INVALID_TOKEN")));
     }
+
+    @DisplayName("회원 단건 조회 성공")
+    @Test
+    void getById_success() throws Exception {
+        Member m = Member.builder()
+                .email("target@example.com")
+                .password(passwordEncoder.encode("Abcd1234!"))
+                .nickname("타겟")
+                .build();
+        memberRepository.save(m);
+
+        mockMvc.perform(get("/api/v1/members/" + m.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email", is("target@example.com")))
+                .andExpect(jsonPath("$.nickname", is("타겟")));
+    }
+
+    @DisplayName("없는 회원을 조회하면 404")
+    @Test
+    void getById_notFound() throws Exception {
+        mockMvc.perform(get("/api/v1/members/999999"))
+                .andExpect(status().isNotFound());
+    }
 }

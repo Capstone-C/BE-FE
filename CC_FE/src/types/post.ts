@@ -5,7 +5,6 @@ export type Post = {
   content: string;
 
   categoryId: number;
-  isRecipe: boolean;
 
   /** BE에 맞춰 작성자 식별자는 memberId 사용 */
   memberId: number;
@@ -26,16 +25,11 @@ export type Post = {
   authorName?: string | null;
   categoryName?: string | null;
 
+  /** 레시피 여부 (백엔드에서 제공) */
+  isRecipe?: boolean;
+
   /** 레시피 관련 확장 필드 */
-  dietType?:
-    | 'VEGAN'
-    | 'VEGETARIAN'
-    | 'KETO'
-    | 'PALEO'
-    | 'MEDITERRANEAN'
-    | 'LOW_CARB'
-    | 'HIGH_PROTEIN'
-    | 'GENERAL';
+  dietType?: 'VEGAN' | 'VEGETARIAN' | 'KETO' | 'PALEO' | 'MEDITERRANEAN' | 'LOW_CARB' | 'HIGH_PROTEIN' | 'GENERAL';
   cookTimeInMinutes?: number | null;
   servings?: number | null;
   difficulty?: 'VERY_HIGH' | 'HIGH' | 'MEDIUM' | 'LOW' | 'VERY_LOW';

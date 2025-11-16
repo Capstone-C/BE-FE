@@ -2,40 +2,41 @@
 import axios from 'axios';
 import { useState, type ChangeEvent, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { createPost } from '@/apis/boards.api';
-import { listCategories, type Category, type CategoryType } from '@/apis/categories.api';
+import { listCategories, type Category } from '@/apis/categories.api';
+import { useToast } from '@/contexts/ToastContext';
+import { useCreatePostMutation } from '@/features/boards/hooks/usePostMutations';
 
 export default function BoardNewPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [categoryId, setCategoryId] = useState<number>(0);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [isRecipe, setIsRecipe] = useState<boolean>(false);
   const [loading, setLoading] = useState(false);
 
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const location = useLocation() as { state?: { fromCategoryId?: number } };
+  const { show } = useToast();
+  const createMutation = useCreatePostMutation();
 
-  // 쿼리 또는 state에서 categoryId를 읽어와 해당 보드에서 진입했는지 판단
   const fixedCategoryId = useMemo(() => {
     const fromState = location.state?.fromCategoryId;
     const fromQuery = sp.get('categoryId');
-    // 우선순위: state > query
-    const cid = Number.isFinite(fromState) ? fromState : fromQuery ? Number(fromQuery) : undefined;
-    return cid;
+    if (Number.isFinite(fromState)) return fromState as number;
+    if (fromQuery) {
+      const n = Number(fromQuery);
+      if (Number.isFinite(n)) return n;
+    }
+    return undefined;
   }, [location.state, sp]);
 
   useEffect(() => {
-    // 초기 카테고리 불러오기
     (async () => {
       try {
         const data = await listCategories();
-        // 최상위 카테고리만 노출
-        const topLevel = data.filter((c) => c.parentId == null);
+        const topLevel = data.filter((c) => c.parentId == null && c.type !== 'RECIPE');
         setCategories(topLevel);
 
-        // 고정 카테고리가 있으면 그걸로, 없으면 첫 번째
         if (fixedCategoryId && topLevel.some((c) => c.id === fixedCategoryId)) {
           setCategoryId(fixedCategoryId);
         } else {
@@ -48,32 +49,24 @@ export default function BoardNewPage() {
     })();
   }, [fixedCategoryId]);
 
-  const typeLabelMap: Record<CategoryType, string> = {
-    VEGAN: '비건',
-    CARNIVORE: '잡식',
-    RECIPE: '레시피',
-    FREE: '자유',
-    QA: 'Q&A',
-  };
-
-  const renderCategoryLabel = (c: Category) => {
-    return typeLabelMap[c.type] ?? c.name ?? `카테고리 ${c.id}`;
-  };
-
   const onTitle = (e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
   const onContent = (e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value);
 
   const onSubmit = async () => {
-    if (!title.trim() || !content.trim()) return alert('제목과 본문을 입력하세요.');
-    if (title.trim().length < 5) return alert('제목은 5자 이상 입력해주세요.');
-    if (content.trim().length < 10) return alert('본문은 10자 이상 입력해주세요.');
-    if (!categoryId) return alert('카테고리를 선택하세요.');
+    const t = title.trim();
+    const c = content.trim();
+    if (!t || !c) return show('제목과 본문을 입력해주세요.', { type: 'error' });
+    if (t.length < 5) return show('제목은 5자 이상 입력해주세요.', { type: 'error' });
+    if (t.length > 100) return show('제목은 100자 이하로 입력해주세요.', { type: 'error' });
+    if (c.length < 10) return show('본문은 10자 이상 입력해주세요.', { type: 'error' });
+    if (c.length > 10000) return show('본문은 10000자 이하로 입력해주세요.', { type: 'error' });
+    if (!categoryId) return show('카테고리를 선택해주세요.', { type: 'error' });
     setLoading(true);
     try {
-      await createPost({ title, content, categoryId, isRecipe });
-      // 고정 카테고리에서 왔다면 해당 게시판 목록으로, 아니면 전체 글로 이동
+      await createMutation.mutateAsync({ title: t, content: c, categoryId });
       const board = fixedCategoryId ?? undefined;
       const to = board ? `/boards?categoryId=${board}` : '/boards';
+      show('글이 등록되었습니다.', { type: 'success' });
       nav(to);
     } catch (err: unknown) {
       let msg: string = '작성에 실패했습니다.';
@@ -88,7 +81,7 @@ export default function BoardNewPage() {
       } else if (err instanceof Error) {
         msg = err.message;
       }
-      alert(msg);
+      show(msg, { type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -116,16 +109,10 @@ export default function BoardNewPage() {
         >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
-              {renderCategoryLabel(c)}
+              {c.name ?? `카테고리 ${c.id}`}
             </option>
           ))}
         </select>
-      </label>
-
-      {/* 레시피 여부 */}
-      <label className="inline-flex items-center gap-2">
-        <input type="checkbox" checked={isRecipe} onChange={(e) => setIsRecipe(e.target.checked)} />
-        레시피 글
       </label>
 
       <div className="flex gap-2">
