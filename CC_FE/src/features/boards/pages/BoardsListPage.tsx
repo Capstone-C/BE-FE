@@ -1,8 +1,10 @@
 import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
 import { usePosts } from '@/features/boards/hooks/usePosts';
 import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
 import { PostCard } from '@/features/boards/components/PostCard';
+import { listCategories, type Category } from '@/apis/categories.api';
 
 export default function BoardsListPage() {
   const [sp, setSp] = useSearchParams();
@@ -30,11 +32,37 @@ export default function BoardsListPage() {
 
   const title = isMyPosts ? '내가 작성한 글' : boardId ? '게시판 글 목록' : '전체 글';
 
+  const [categories, setCategories] = useState<Category[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const list = await listCategories();
+        if (!alive) return;
+        setCategories(list);
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const isRecipeCategory = useMemo(() => {
+    if (!boardId) return false;
+    if (!categories) return false;
+    const cid = Number(boardId);
+    const found = categories.find((c) => c.id === cid);
+    return found?.type === 'RECIPE';
+  }, [boardId, categories]);
+
   if (isLoading) return <div className="p-6">목록 불러오는 중…</div>;
   if (isError || !data) return <div className="p-6">오류가 발생했습니다.</div>;
 
-  const newPostHref = boardId ? `/boards/new?categoryId=${boardId}` : '/boards/new';
-  const newPostState = boardId ? { fromCategoryId: Number(boardId) } : undefined;
+  const newPostHref = isRecipeCategory ? '/recipes/new' : '/boards/new';
+  const newPostState = !isRecipeCategory && boardId ? { fromCategoryId: Number(boardId) } : undefined;
 
   return (
     <Container className="py-6 space-y-4">

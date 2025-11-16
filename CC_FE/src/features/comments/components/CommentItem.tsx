@@ -1,5 +1,6 @@
 // CommentItem.tsx
 import { useState, memo } from 'react';
+import { Link } from 'react-router-dom';
 import type { Comment } from '@/types/comment';
 import CommentForm from './CommentForm';
 import { useDeleteComment } from '../hooks/useCommentMutations';
@@ -16,11 +17,18 @@ function CommentItemImpl({ c, postId }: Props) {
   // 서버가 내려준 이름(있으면 우선), 없으면 memberId로 로컬 폴백
   const { inlineName, memberId } = extractAuthorRef(c);
   const authorName = getDisplayName(memberId, inlineName);
+  const authorNode = memberId ? (
+    <Link to={`/members/${memberId}`} className="hover:underline">
+      {authorName}
+    </Link>
+  ) : (
+    <span>{authorName}</span>
+  );
 
   return (
     <li className="border-b py-3">
       <div className="text-sm text-gray-600">
-        {authorName} · {formatDateYMDKorean(c.createdAt)}
+        {authorNode} · {formatDateYMDKorean(c.createdAt)}
       </div>
 
       {!editOpen ? (

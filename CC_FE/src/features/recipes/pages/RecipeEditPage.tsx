@@ -4,146 +4,20 @@ import { usePost } from '@/features/boards/hooks/usePosts';
 import { updatePost, type UpsertPostDto } from '@/apis/boards.api';
 import { useToast } from '@/contexts/ToastContext';
 import type { Post } from '@/types/post';
+import { IngredientsEditor } from '@/features/recipes/components/IngredientsEditor';
+import StepsEditor from '@/features/recipes/components/StepsEditor';
 
-// 재사용: IngredientsEditor와 StepsEditor는 Create 페이지와 유사하지만 여기서는 내부에서 정의
-function IngredientsEditor({
-  ingredients,
-  setIngredients,
-}: {
-  ingredients: { name: string; amount?: string }[];
-  setIngredients: (v: { name: string; amount?: string }[]) => void;
-}) {
-  const move = (idx: number, dir: -1 | 1) => {
-    const j = idx + dir;
-    if (j < 0 || j >= ingredients.length) return;
-    const next = ingredients.slice();
-    const current = next[idx];
-    const target = next[j];
-    if (!current || !target) return;
-    next[idx] = target;
-    next[j] = current;
-    setIngredients(next);
-  };
-  const remove = (idx: number) => setIngredients(ingredients.filter((_, i) => i !== idx));
-  const add = () => setIngredients([...ingredients, { name: '', amount: '' }]);
-  const edit = (idx: number, field: 'name' | 'amount', val: string) => {
-    const next = ingredients.slice();
-    const prev = next[idx];
-    if (!prev) return;
-    next[idx] = {
-      name: field === 'name' ? val : prev.name,
-      amount: field === 'amount' ? val : prev.amount,
-    };
-    setIngredients(next);
-  };
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold">재료</h3>
-        <button type="button" onClick={add} className="border px-2 py-1 rounded">
-          + 재료 추가
-        </button>
-      </div>
-      {ingredients.map((ing, i) => (
-        <div key={i} className="grid grid-cols-12 gap-2 items-center">
-          <input
-            value={ing.name}
-            onChange={(e) => edit(i, 'name', e.target.value)}
-            placeholder="재료명"
-            className="border rounded p-2 col-span-5"
-          />
-          <input
-            value={ing.amount ?? ''}
-            onChange={(e) => edit(i, 'amount', e.target.value)}
-            placeholder="양 (예: 300g, 1개)"
-            className="border rounded p-2 col-span-5"
-          />
-          <div className="col-span-2 flex gap-1">
-            <button type="button" onClick={() => move(i, -1)} className="border px-2 py-1 rounded">
-              ↑
-            </button>
-            <button type="button" onClick={() => move(i, 1)} className="border px-2 py-1 rounded">
-              ↓
-            </button>
-            <button type="button" onClick={() => remove(i)} className="border px-2 py-1 rounded text-red-600">
-              - 삭제
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function StepsEditor({
-  steps,
-  setSteps,
-}: {
-  steps: { description: string; imageUrl?: string }[];
-  setSteps: (s: { description: string; imageUrl?: string }[]) => void;
-}) {
-  const move = (idx: number, dir: -1 | 1) => {
-    const j = idx + dir;
-    if (j < 0 || j >= steps.length) return;
-    const next = steps.slice();
-    const current = next[idx];
-    const target = next[j];
-    if (!current || !target) return;
-    next[idx] = target;
-    next[j] = current;
-    setSteps(next);
-  };
-  const remove = (idx: number) => setSteps(steps.filter((_, i) => i !== idx));
-  const add = () => setSteps([...steps, { description: '', imageUrl: '' }]);
-  const edit = (idx: number, field: 'description' | 'imageUrl', val: string) => {
-    const next = steps.slice();
-    const prev = next[idx];
-    if (!prev) return;
-    next[idx] = {
-      description: field === 'description' ? val : prev.description,
-      imageUrl: field === 'imageUrl' ? val : prev.imageUrl,
-    };
-    setSteps(next);
-  };
-  return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <h3 className="font-semibold">조리 순서</h3>
-        <button type="button" onClick={add} className="border px-2 py-1 rounded">
-          + 단계 추가
-        </button>
-      </div>
-      {steps.map((s, i) => (
-        <div key={i} className="border rounded p-2 space-y-2">
-          <div className="text-sm text-gray-600">STEP {i + 1}</div>
-          <textarea
-            value={s.description}
-            onChange={(e) => edit(i, 'description', e.target.value)}
-            placeholder="단계 설명"
-            className="w-full border rounded p-2 h-24"
-          />
-          <input
-            value={s.imageUrl ?? ''}
-            onChange={(e) => edit(i, 'imageUrl', e.target.value)}
-            placeholder="과정 이미지 URL (선택)"
-            className="w-full border rounded p-2"
-          />
-          <div className="flex gap-2">
-            <button type="button" onClick={() => move(i, -1)} className="border px-2 py-1 rounded">
-              ↑
-            </button>
-            <button type="button" onClick={() => move(i, 1)} className="border px-2 py-1 rounded">
-              ↓
-            </button>
-            <button type="button" onClick={() => remove(i)} className="border px-2 py-1 rounded text-red-600">
-              - 삭제
-            </button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
+const allowedDiet = [
+  'VEGAN',
+  'VEGETARIAN',
+  'KETO',
+  'PALEO',
+  'MEDITERRANEAN',
+  'LOW_CARB',
+  'HIGH_PROTEIN',
+  'GENERAL',
+] as const;
+const allowedDiff = ['VERY_LOW', 'LOW', 'MEDIUM', 'HIGH', 'VERY_HIGH'] as const;
 
 // 아주 단순한 HTML -> 요약/단계 추출 (정확한 round-trip은 어려우므로 보조용)
 function extractFromContentHtml(content: string) {
@@ -205,8 +79,13 @@ export default function RecipeEditPage() {
   const [cookTimeInMinutes, setCookTime] = useState<number | ''>('');
   const [servings, setServings] = useState<number | ''>('');
   const [difficulty, setDifficulty] = useState<string>('');
-  const [ingredients, setIngredients] = useState<{ name: string; amount?: string }[]>([{ name: '', amount: '' }]);
+  const [ingredients, setIngredients] = useState<
+    { name: string; amount?: string; quantity?: number | null; unit?: string | null }[]
+  >([{ name: '', amount: '', quantity: null, unit: null }]);
   const [steps, setSteps] = useState<{ description: string; imageUrl?: string }[]>([{ description: '', imageUrl: '' }]);
+  const [thumbnail, setThumbnail] = useState('');
+  const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED'>('PUBLISHED');
+  const [categoryName, setCategoryName] = useState('');
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -214,11 +93,7 @@ export default function RecipeEditPage() {
   useEffect(() => {
     if (!data) return;
     const post = data as Post;
-    if (!post.isRecipe) {
-      // 레시피가 아닌 경우 게시글 상세로 돌려보냄
-      nav(`/boards/${id}`);
-      return;
-    }
+    // 레시피 여부는 라우트로 분리되었으므로 별도 isRecipe 플래그 검사는 수행하지 않음
     setTitle(post.title ?? '');
     // 요약/단계 추출
     const extracted = extractFromContentHtml(post.content ?? '');
@@ -228,16 +103,23 @@ export default function RecipeEditPage() {
     setCookTime(post.cookTimeInMinutes ?? '');
     setServings(post.servings ?? '');
     setDifficulty((post.difficulty as string) ?? '');
-    // thumbnail은 현재 content 내 img로만 알 수 있으므로, 별도 필드가 생기면 여기서 매핑
+    setStatus((post.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED') === 'DRAFT' ? 'DRAFT' : 'PUBLISHED');
+    setCategoryName(post.categoryName ?? `카테고리 #${post.categoryId}`);
+    // thumbnail은 현재 content 내 img 첫 번째를 추출(임시)
+    const firstImg = /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(post.content ?? '')?.[1];
+    if (firstImg) setThumbnail(firstImg);
+    // ingredients는 별도 필드로 분리되어 있으므로, 기존 포스트 데이터에서 직접 매핑
     if (post.ingredients && post.ingredients.length) {
       setIngredients(
         post.ingredients.map((ing) => ({
           name: ing.name,
-          amount: ing.unit ? `${ing.quantity ?? ''}${ing.unit}` : ing.quantity != null ? String(ing.quantity) : '',
+          quantity: ing.quantity ?? null,
+          unit: ing.unit ?? null,
+          amount: ing.memo ?? '',
         })),
       );
     } else {
-      setIngredients([{ name: '', amount: '' }]);
+      setIngredients([{ name: '', amount: '', quantity: null, unit: null }]);
     }
   }, [data, id, nav]);
 
@@ -247,13 +129,22 @@ export default function RecipeEditPage() {
       const t = title.trim();
       if (!t) e.title = '레시피 제목을 입력해주세요.';
       else if (t.length < 5) e.title = '제목은 5자 이상 입력해주세요.';
-      else if (t.length > 50) e.title = '제목은 50자 이하로 입력해주세요.';
+      else if (t.length > 100) e.title = '제목은 100자 이하로 입력해주세요.';
 
       if (!ingredients.length || !ingredients.some((i) => i.name.trim()))
         e.ingredients = '재료를 최소 1개 이상 입력해주세요.';
+      else if (ingredients.some((i) => i.quantity != null && i.quantity! < 0))
+        e.ingredients = '재료 수량은 음수가 될 수 없습니다.';
       if (!steps.length || !steps.some((s) => s.description.trim()))
         e.steps = '조리 단계를 최소 1개 이상 입력해주세요.';
       if (summary.length > 100) e.summary = '요약은 100자 이하로 입력해주세요.';
+
+      const plainTextLen = (summary + ' ' + steps.map((s) => s.description).join(' '))
+        .replace(/<[^>]+>/g, '')
+        .replace(/\s+/g, ' ')
+        .trim().length;
+      if (plainTextLen < 10)
+        e.steps = e.steps ? e.steps + ' 본문은 10자 이상 입력해주세요.' : '본문은 10자 이상 입력해주세요.';
 
       setErrors(e);
       return Object.keys(e).length === 0;
@@ -284,18 +175,21 @@ export default function RecipeEditPage() {
         title: title.trim(),
         content,
         categoryId: data?.categoryId ?? 0,
-        isRecipe: true,
-        status: 'PUBLISHED',
-        dietType: (dietType || undefined) as any,
+        status,
+        dietType: isDietType(dietType) ? dietType : undefined,
         cookTimeInMinutes: typeof cookTimeInMinutes === 'number' ? cookTimeInMinutes : undefined,
         servings: typeof servings === 'number' ? servings : undefined,
-        difficulty: (difficulty || undefined) as any,
+        difficulty: isDifficulty(difficulty) ? difficulty : undefined,
         ingredients: ingredients
           .filter((i) => i.name.trim())
           .map((i) => ({
             name: i.name.trim(),
-            memo: i.amount?.trim() ?? undefined,
+            quantity: i.quantity != null ? i.quantity : undefined,
+            unit: i.unit ?? undefined,
+            memo: i.amount?.trim() || undefined,
           })),
+        isRecipe: true,
+        thumbnailUrl: thumbnail || undefined,
       };
 
       await updatePost(id, dto);
@@ -305,7 +199,7 @@ export default function RecipeEditPage() {
       const status = err?.response?.status as number | undefined;
       const message = err?.response?.data?.message as string | undefined;
       if (status === 401) {
-        alert('로그인이 필요한 서비스입니다.');
+        show('로그인이 필요한 서비스입니다.', { type: 'error' });
         nav('/login');
         return;
       }
@@ -340,7 +234,7 @@ export default function RecipeEditPage() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="border p-2 w-full"
-            maxLength={50}
+            maxLength={100}
           />
           {errors.title && <p className="text-sm text-red-600 mt-1">{errors.title}</p>}
         </label>
@@ -354,15 +248,41 @@ export default function RecipeEditPage() {
           />
           {errors.summary && <p className="text-sm text-red-600 mt-1">{errors.summary}</p>}
         </label>
+        <label className="block">
+          <div className="text-sm font-medium">대표 이미지 URL (선택)</div>
+          <input
+            value={thumbnail}
+            onChange={(e) => setThumbnail(e.target.value)}
+            placeholder="https://..."
+            className="border p-2 w-full"
+          />
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          <label className="block">
+            <div className="text-sm font-medium">상태</div>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value as 'DRAFT' | 'PUBLISHED')}
+              className="border p-2 w-full"
+            >
+              <option value="DRAFT">임시 저장</option>
+              <option value="PUBLISHED">발행</option>
+            </select>
+          </label>
+          <label className="block col-span-2">
+            <div className="text-sm font-medium">카테고리</div>
+            <input value={categoryName} disabled className="border p-2 w-full bg-gray-100" />
+          </label>
+        </div>
       </section>
 
-      <section>
-        <IngredientsEditor ingredients={ingredients} setIngredients={setIngredients} />
+      <section className="space-y-2">
+        <IngredientsEditor items={ingredients as any} onChange={setIngredients as any} />
         {errors.ingredients && <p className="text-sm text-red-600 mt-1">{errors.ingredients}</p>}
       </section>
 
-      <section>
-        <StepsEditor steps={steps} setSteps={setSteps} />
+      <section className="space-y-2">
+        <StepsEditor steps={steps} onChange={setSteps} />
         {errors.steps && <p className="text-sm text-red-600 mt-1">{errors.steps}</p>}
       </section>
 
@@ -428,4 +348,11 @@ export default function RecipeEditPage() {
       </div>
     </div>
   );
+}
+
+function isDietType(v: string): v is (typeof allowedDiet)[number] {
+  return (allowedDiet as readonly string[]).includes(v);
+}
+function isDifficulty(v: string): v is (typeof allowedDiff)[number] {
+  return (allowedDiff as readonly string[]).includes(v);
 }

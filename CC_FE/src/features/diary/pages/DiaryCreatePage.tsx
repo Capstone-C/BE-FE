@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
 
@@ -13,6 +13,7 @@ const MEAL_OPTIONS: { value: MealType; label: string }[] = [
 export default function DiaryCreatePage() {
   const { date } = useParams();
   const navigate = useNavigate();
+  const location = useLocation() as { state?: { recipeId?: number } };
   const qc = useQueryClient();
 
   const [form, setForm] = useState<CreateDiaryRequest>({
@@ -28,6 +29,12 @@ export default function DiaryCreatePage() {
     if (date) setForm((f) => ({ ...f, date }));
   }, [date]);
 
+  useEffect(() => {
+    if (location.state?.recipeId) {
+      setForm((f) => ({ ...f, recipeId: location.state?.recipeId }));
+    }
+  }, [location.state?.recipeId]);
+
   const { mutateAsync, isPending } = useMutation({
     mutationFn: createDiary,
     onSuccess: async () => {
@@ -42,7 +49,7 @@ export default function DiaryCreatePage() {
 
   const onClose = () => navigate(`/diary/${form.date}`);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => {
       const next = { ...prev };
@@ -65,7 +72,7 @@ export default function DiaryCreatePage() {
     };
   }, [form.mealType, form.content]);
 
-  const onSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     try {
