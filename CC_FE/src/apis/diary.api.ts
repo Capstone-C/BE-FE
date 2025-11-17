@@ -50,7 +50,9 @@ export const getMonthlyDiary = async (year: number, month: number): Promise<Mont
 };
 
 export const getDiaryByDate = async (date: string): Promise<DiaryEntryResponse[]> => {
-  const { data } = await authClient.get<DiaryEntryResponse[]>(`/api/v1/diary/${date}`);
+  const { data } = await authClient.get<DiaryEntryResponse[]>('/api/v1/diary/daily', {
+    params: { date },
+  });
   return data;
 };
 
