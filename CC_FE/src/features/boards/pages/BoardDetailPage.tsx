@@ -10,6 +10,11 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import { useToggleLikeMutation, useDeletePostMutation } from '@/features/boards/hooks/usePostMutations';
+import {
+  useBlockMemberMutation,
+  useUnblockMemberMutation,
+  useBlockedMembers,
+} from '@/features/members/hooks/useMemberBlocks';
 
 export default function BoardDetailPage() {
   const { postId } = useParams();
@@ -22,6 +27,9 @@ export default function BoardDetailPage() {
   const { show } = useToast();
   const likeMutation = useToggleLikeMutation();
   const deleteMutation = useDeletePostMutation();
+  const blockMutation = useBlockMemberMutation();
+  const unblockMutation = useUnblockMemberMutation();
+  const { data: blockedMembers } = useBlockedMembers();
 
   const { inlineName, memberId } = extractAuthorRef(data);
   const authorName = getDisplayName(memberId, inlineName);
@@ -142,6 +150,27 @@ export default function BoardDetailPage() {
       ? { fromCategoryId: Number(sp.get('categoryId')) }
       : undefined;
 
+  const isAuthorBlocked = memberId != null && blockedMembers?.some((b) => b.blockedId === memberId);
+  const authorBlockedAndHidden = isAuthorBlocked && user && user.id !== memberId;
+
+  const onToggleBlockAuthor = async () => {
+    if (!memberId) return;
+    try {
+      if (isAuthorBlocked) {
+        if (!confirm('작성자 차단을 해제하시겠습니까?')) return;
+        await unblockMutation.mutateAsync(memberId);
+        show('작성자 차단이 해제되었습니다.', { type: 'success' });
+      } else {
+        if (!confirm('이 작성자를 차단하시겠습니까?')) return;
+        await blockMutation.mutateAsync(memberId);
+        show('작성자가 차단되었습니다.', { type: 'success' });
+      }
+    } catch (e: any) {
+      const message = e?.response?.data?.message as string | undefined;
+      show(message ?? '차단 처리 중 오류가 발생했습니다.', { type: 'error' });
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       {/* 상단 카테고리/뒤로가기 */}
@@ -216,6 +245,15 @@ export default function BoardDetailPage() {
           수정
         </Link>
         <button onClick={onDelete}>삭제</button>
+        {memberId && user && user.id !== memberId && (
+          <button
+            onClick={onToggleBlockAuthor}
+            disabled={blockMutation.isPending || unblockMutation.isPending}
+            className={`border px-3 py-1 rounded text-sm ${isAuthorBlocked ? 'bg-red-600 text-white' : ''} disabled:opacity-50`}
+          >
+            {isAuthorBlocked ? '작성자 차단 해제' : '작성자 차단'}
+          </button>
+        )}
       </div>
 
       {/* 재료 섹션 */}
@@ -240,15 +278,36 @@ export default function BoardDetailPage() {
       )}
 
       {/* 조리 순서(본문) 섹션 */}
-      <section className="mt-6 space-y-2">
-        {isRecipePost && <h2 className="text-xl font-semibold">조리 순서</h2>}
-        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: safeHtml }} />
-      </section>
+      {!authorBlockedAndHidden && (
+        <section className="mt-6 space-y-2">
+          {isRecipePost && <h2 className="text-xl font-semibold">조리 순서</h2>}
+          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+        </section>
+      )}
+      {authorBlockedAndHidden && (
+        <div className="mt-6 p-6 bg-gray-100 rounded text-sm text-gray-600 space-y-3">
+          <p>이 작성자는 차단되어 본문이 숨겨졌습니다.</p>
+          <button
+            onClick={onToggleBlockAuthor}
+            disabled={blockMutation.isPending || unblockMutation.isPending}
+            className="px-3 py-1 rounded bg-red-600 text-white text-xs disabled:opacity-50"
+          >
+            차단 해제하고 보기
+          </button>
+        </div>
+      )}
 
       {/* 댓글 섹션 */}
-      <section className="mt-6">
-        <CommentList postId={id} />
-      </section>
+      {!authorBlockedAndHidden && (
+        <section className="mt-6">
+          <CommentList postId={id} />
+        </section>
+      )}
+      {authorBlockedAndHidden && (
+        <div className="mt-6 p-4 bg-gray-50 border rounded text-xs text-gray-500">
+          차단된 작성자의 글이므로 댓글도 숨겨졌습니다.
+        </div>
+      )}
 
       {/* 냉장고 비교 모달 */}
       {compareOpen && compareResult && (

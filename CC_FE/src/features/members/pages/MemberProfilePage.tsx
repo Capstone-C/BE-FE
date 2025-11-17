@@ -3,6 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getMember, type Member } from '@/apis/members';
 import { getMe } from '@/apis/auth';
 import { formatDateYMDKorean } from '@/utils/date';
+import {
+  useBlockMemberMutation,
+  useUnblockMemberMutation,
+  useBlockedMembers,
+} from '@/features/members/hooks/useMemberBlocks';
+import { useToast } from '@/contexts/ToastContext';
+import type { BlockedMember } from '@/apis/memberBlocks';
 
 /**
  * 통합 프로필 페이지
@@ -14,18 +21,11 @@ export default function MemberProfilePage() {
   const location = useLocation();
   const hasParam = typeof memberId === 'string' && memberId.length > 0;
 
-  // 내 정보(로그인 여부 판단). 실패해도 공개 프로필 열람은 계속 진행
-  const {
-    data: me,
-    isLoading: meLoading,
-    isError: meError,
-  } = useQuery({
-    queryKey: ['me'],
-    queryFn: getMe,
-    retry: 1,
-  });
-
-  // 타겟 회원 정보: 파라미터가 있을 때만 조회 (/members/:memberId)
+  // Hooks (must be at top, no conditional returns before these)
+  const blockMutation = useBlockMemberMutation();
+  const unblockMutation = useUnblockMemberMutation();
+  // blocked list는 로그인 상태(me 존재)일 때만 요청
+  const { data: me, isLoading: meLoading, isError: meError } = useQuery({ queryKey: ['me'], queryFn: getMe, retry: 1 });
   const targetId = hasParam ? Number(memberId) : undefined;
   const {
     data: member,
@@ -37,40 +37,55 @@ export default function MemberProfilePage() {
     enabled: typeof targetId === 'number' && Number.isFinite(targetId) && targetId > 0,
     retry: 1,
   });
-
-  // 경로 판별: /mypage 인지 여부
+  const { data: blockedList } = useBlockedMembers(!!me);
+  const { show } = useToast();
   const isMyPageRoute = location.pathname.startsWith('/mypage');
 
-  // /mypage 인데 로그인 실패하거나 meError인 경우: 보호된 라우트에서 이미 막히겠지만 방어적으로 처리
-  if (isMyPageRoute) {
-    if (meLoading) return <div className="p-8 text-center">프로필 정보를 불러오는 중입니다...</div>;
-    if (meError || !me) return <div className="p-8 text-center text-red-600">로그인이 필요합니다.</div>;
-  }
+  const invalidId = hasParam && (!targetId || Number.isNaN(targetId) || targetId <= 0);
 
-  // 파라미터가 있는 경우 잘못된 id 검사
-  if (hasParam) {
-    if (!targetId || Number.isNaN(targetId) || targetId <= 0) {
-      return <div className="p-8 text-center">잘못된 회원 ID 입니다.</div>;
-    }
-  }
-
-  // 공개 프로필 로딩/에러 처리 (/members/:id 전용)
-  if (hasParam) {
-    if (memberLoading) return <div className="p-8 text-center">프로필 정보를 불러오는 중입니다...</div>;
-    if (memberError || !member)
-      return <div className="p-8 text-center text-red-600">회원 정보를 찾을 수 없거나 오류가 발생했습니다.</div>;
-  }
-
-  // 표시할 대상 결정
-  const viewingSelf = isMyPageRoute || (!!me && !!member && me.id === member.id);
+  const viewingSelf = isMyPageRoute || (!!me && !!member && me.id === member?.id);
   const effectiveMember: Partial<Member> & { id?: number; nickname?: string; name?: string } = viewingSelf
-    ? (me as any) // me는 MemberProfileResponse(넓은 타입)일 가능성 있음
+    ? (me as any)
     : (member as any);
 
-  if (!effectiveMember || !effectiveMember.id) {
-    // 이 경우는 이론상 발생하지 않지만 안전장치
-    return <div className="p-8 text-center">프로필을 불러올 수 없습니다.</div>;
-  }
+  const isBlocked =
+    !viewingSelf &&
+    !!effectiveMember?.id &&
+    blockedList?.some((b: BlockedMember) => b.blockedId === effectiveMember.id);
+
+  const onBlockToggle = async () => {
+    if (!effectiveMember?.id) return;
+    try {
+      if (isBlocked) {
+        if (!confirm('차단을 해제하시겠습니까?')) return;
+        await unblockMutation.mutateAsync(effectiveMember.id);
+        show('차단이 해제되었습니다.', { type: 'success' });
+      } else {
+        if (!confirm('이 회원을 차단하시겠습니까?')) return;
+        await blockMutation.mutateAsync(effectiveMember.id);
+        show('회원이 차단되었습니다.', { type: 'success' });
+      }
+    } catch (e: any) {
+      const status = e?.response?.status as number | undefined;
+      const message = e?.response?.data?.message as string | undefined;
+      show(message ?? (status === 400 ? '요청을 처리할 수 없습니다.' : '차단 처리 중 오류가 발생했습니다.'), {
+        type: 'error',
+      });
+    }
+  };
+
+  // 최종 렌더링 분기 (hook 뒤에서 처리)
+  if (invalidId) return <div className="p-8 text-center">잘못된 회원 ID 입니다.</div>;
+
+  if (isMyPageRoute && meLoading) return <div className="p-8 text-center">프로필 정보를 불러오는 중입니다...</div>;
+  if (isMyPageRoute && (meError || !me))
+    return <div className="p-8 text-center text-red-600">로그인이 필요합니다.</div>;
+
+  if (hasParam && memberLoading) return <div className="p-8 text-center">프로필 정보를 불러오는 중입니다...</div>;
+  if (hasParam && (memberError || !member))
+    return <div className="p-8 text-center text-red-600">회원 정보를 찾을 수 없거나 오류가 발생했습니다.</div>;
+
+  if (!effectiveMember?.id) return <div className="p-8 text-center">프로필을 불러올 수 없습니다.</div>;
 
   const displayName = effectiveMember.nickname ?? effectiveMember.name ?? `작성자 #${effectiveMember.id}`;
   const profileImageUrl = viewingSelf && (effectiveMember as any).profile ? (effectiveMember as any).profile : null;
@@ -144,6 +159,23 @@ export default function MemberProfilePage() {
           <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
             회원탈퇴
           </Link>
+          <Link
+            to="/mypage/blocked"
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+          >
+            차단된 사용자 관리
+          </Link>
+        </div>
+      )}
+      {!viewingSelf && (
+        <div className="mt-6 flex flex-wrap gap-4">
+          <button
+            onClick={onBlockToggle}
+            disabled={blockMutation.isPending || unblockMutation.isPending}
+            className={`px-6 py-2 rounded-lg text-white text-sm ${isBlocked ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-800 hover:bg-gray-900'} disabled:opacity-50`}
+          >
+            {isBlocked ? '차단 해제' : '차단하기'}
+          </button>
         </div>
       )}
     </div>
