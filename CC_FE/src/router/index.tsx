@@ -18,6 +18,7 @@ import WithdrawPage from '@/features/members/pages/WithdrawPage';
 import MyPostsPage from '@/features/members/pages/MyPostsPage';
 import MyCommentsPage from '@/features/members/pages/MyCommentsPage';
 import MemberProfilePage from '@/features/members/pages/MemberProfilePage';
+import BlockedMembersPage from '@/features/members/pages/BlockedMembersPage';
 
 // Boards
 import BoardsListPage from '@/features/boards/pages/BoardsListPage';
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
           { path: 'mypage/password', element: <ChangePasswordPage /> },
           { path: 'mypage/posts', element: <MyPostsPage /> },
           { path: 'mypage/comments', element: <MyCommentsPage /> },
+          { path: 'mypage/blocked', element: <BlockedMembersPage /> },
 
           // Auth-required boards
           { path: 'boards/new', element: <BoardNewPage /> },

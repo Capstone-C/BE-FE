@@ -5,6 +5,8 @@ import Container from '@/components/ui/Container';
 import Button from '@/components/ui/Button';
 import { PostCard } from '@/features/boards/components/PostCard';
 import { listCategories, type Category } from '@/apis/categories.api';
+import { useBlockedMembers } from '@/features/members/hooks/useMemberBlocks';
+import { extractAuthorRef } from '@/utils/author';
 
 export default function BoardsListPage() {
   const [sp, setSp] = useSearchParams();
@@ -27,6 +29,8 @@ export default function BoardsListPage() {
     authorId: authorId ? Number(authorId) : undefined,
     searchType,
   });
+
+  const { data: blocked } = useBlockedMembers();
 
   const isMyPosts = location.pathname.startsWith('/mypage/posts') || !!authorId;
 
@@ -64,6 +68,12 @@ export default function BoardsListPage() {
   const newPostHref = isRecipeCategory ? '/recipes/new' : '/boards/new';
   const newPostState = !isRecipeCategory && boardId ? { fromCategoryId: Number(boardId) } : undefined;
 
+  const blockedIds = blocked?.map((b) => b.blockedId) ?? [];
+  const visiblePosts = data.content.filter((p) => {
+    const { memberId } = extractAuthorRef(p as any);
+    return !(memberId && blockedIds.includes(memberId));
+  });
+
   return (
     <Container className="py-6 space-y-4">
       <div className="flex gap-3 items-center justify-between">
@@ -76,7 +86,7 @@ export default function BoardsListPage() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {data.content.map((p) => (
+        {visiblePosts.map((p) => (
           <PostCard key={p.id} post={p} boardId={boardId} />
         ))}
       </div>
