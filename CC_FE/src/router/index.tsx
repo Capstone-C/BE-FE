@@ -17,6 +17,7 @@ import ProfileEditPage from '@/features/members/pages/ProfileEditPage';
 import WithdrawPage from '@/features/members/pages/WithdrawPage';
 import MyPostsPage from '@/features/members/pages/MyPostsPage';
 import MyCommentsPage from '@/features/members/pages/MyCommentsPage';
+import MemberProfilePage from '@/features/members/pages/MemberProfilePage';
 
 // Boards
 import BoardsListPage from '@/features/boards/pages/BoardsListPage';
