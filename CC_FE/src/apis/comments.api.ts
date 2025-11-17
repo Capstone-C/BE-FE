@@ -1,5 +1,5 @@
 import { authClient, publicClient } from '@/apis/client';
-import type { Comment, CreateCommentDto, UpdateCommentDto } from '@/types/comment';
+import type { Comment, CreateCommentDto, UpdateCommentDto, AuthorComment } from '@/types/comment';
 
 export async function getComments(postId: number) {
   const { data } = await publicClient.get<Comment[]>(`/api/v1/posts/${postId}/comments`);
@@ -18,4 +18,12 @@ export async function updateComment(postId: number, commentId: number, dto: Upda
 
 export async function deleteComment(postId: number, commentId: number) {
   await authClient.delete(`/api/v1/posts/${postId}/comments/${commentId}`);
+}
+
+// 작성자 기준 댓글 목록 조회
+export async function getCommentsByAuthor(authorId: number) {
+  const { data } = await authClient.get<AuthorComment[]>('/api/v1/comments', {
+    params: { authorId },
+  });
+  return data;
 }

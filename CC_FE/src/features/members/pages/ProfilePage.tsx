@@ -56,6 +56,9 @@ export default function ProfilePage() {
         <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
           회원 탈퇴
         </Link>
+        <Link to="/mypage/comments" className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+          내가 쓴 댓글
+        </Link>
       </div>
     </div>
   );

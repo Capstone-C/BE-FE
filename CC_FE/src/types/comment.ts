@@ -1,7 +1,7 @@
 export interface Comment {
   id: number;
   postId: number;
-  parentId?: number | null;  // null이면 루트 댓글
+  parentId?: number | null; // null이면 루트 댓글
   content: string;
   memberId: number;
 
@@ -21,4 +21,13 @@ export interface CreateCommentDto {
 
 export interface UpdateCommentDto {
   content: string;
+}
+
+// 작성자 기준 댓글 목록 조회 응답 아이템 (GET /api/v1/comments?authorId=)
+export interface AuthorComment {
+  commentId: number;
+  content: string;
+  createdAt: string; // ISO date-time string
+  postId: number;
+  postTitle: string;
 }
