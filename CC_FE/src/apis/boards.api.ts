@@ -3,18 +3,35 @@ import { authClient, publicClient } from '@/apis/client';
 import type { Page } from '@/types/pagination';
 import type { Post } from '@/types/post';
 
+// 게시글 상태
+export type UpsertPostStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+
+// 다이어트 타입
+export type DietType =
+  | 'VEGAN'
+  | 'VEGETARIAN'
+  | 'KETO'
+  | 'PALEO'
+  | 'MEDITERRANEAN'
+  | 'LOW_CARB'
+  | 'HIGH_PROTEIN'
+  | 'GENERAL';
+
+// 난이도
+export type Difficulty = 'VERY_HIGH' | 'HIGH' | 'MEDIUM' | 'LOW' | 'VERY_LOW';
+
 // 서버 요구 스키마에 맞춰 정규화할 DTO
 export type UpsertPostDto = {
   title: string;
   content: string;
   categoryId: number | string; // select 값이 string일 수 있음
-  isRecipe: boolean | number | 'Y' | 'N';
-  status?: 'DRAFT' | 'PUBLISHED' | string; // 스웨거 예시: 'DRAFT'
+  status?: UpsertPostStatus; // 서버 제약 대응
+  isRecipe?: boolean; // 실제 서버 NotNull 요구
   // --- 레시피 확장 필드 (선택) ---
-  dietType?: 'VEGAN' | 'VEGETARIAN' | 'KETO' | 'PALEO' | 'MEDITERRANEAN' | 'LOW_CARB' | 'HIGH_PROTEIN' | 'GENERAL';
+  dietType?: DietType;
   cookTimeInMinutes?: number | null;
   servings?: number | null;
-  difficulty?: 'VERY_HIGH' | 'HIGH' | 'MEDIUM' | 'LOW' | 'VERY_LOW';
+  difficulty?: Difficulty;
   ingredients?: Array<{
     name: string;
     quantity?: number | null;
@@ -22,48 +39,44 @@ export type UpsertPostDto = {
     memo?: string | null;
     expirationDate?: string | null; // ISO 문자열
   }>;
+  // --- 확장(예정) 대표 이미지 URL ---
+  thumbnailUrl?: string | null; // BE 미지원시 무시
 };
+
+function assertValidCategory(id: unknown): number {
+  const n = typeof id === 'string' ? Number(id) : id;
+  if (typeof n !== 'number' || !Number.isFinite(n) || n <= 0) {
+    throw new Error('유효한 카테고리 ID가 필요합니다.');
+  }
+  return n;
+}
 
 // 서버에 보낼 실제 payload를 안전하게 변환
 function toPayload(dto: UpsertPostDto) {
-  // categoryId 숫자 강제
-  const categoryId = typeof dto.categoryId === 'string' ? Number(dto.categoryId) : dto.categoryId;
-
-  // isRecipe → boolean 강제(서버 스웨거가 boolean이므로)
-  const isRecipeValue = dto.isRecipe;
-  const isRecipe =
-    typeof isRecipeValue === 'boolean'
-      ? isRecipeValue
-      : typeof isRecipeValue === 'number'
-        ? isRecipeValue !== 0
-        : String(isRecipeValue).toUpperCase() === 'Y';
-
-  // status 기본값 보강
-  const status = (dto.status ?? 'DRAFT') as string;
-
+  const categoryId = assertValidCategory(dto.categoryId);
+  const status: UpsertPostStatus = dto.status ?? 'DRAFT';
   const payload: Record<string, unknown> = {
     title: (dto.title ?? '').trim(),
     content: dto.content ?? '',
-    categoryId: Number.isFinite(categoryId as number) ? Number(categoryId) : 0,
-    isRecipe,
+    categoryId,
     status,
+    isRecipe: dto.isRecipe === true, // 명시적 boolean
   };
 
-  // 레시피 확장 필드 조건부 포함
   if (dto.dietType) payload.dietType = dto.dietType;
   if (dto.cookTimeInMinutes != null) payload.cookTimeInMinutes = Number(dto.cookTimeInMinutes);
   if (dto.servings != null) payload.servings = Number(dto.servings);
   if (dto.difficulty) payload.difficulty = dto.difficulty;
   if (dto.ingredients && dto.ingredients.length > 0) {
     payload.ingredients = dto.ingredients.map((ing) => ({
-      name: ing.name,
+      name: ing.name.trim(),
       quantity: ing.quantity != null ? Number(ing.quantity) : undefined,
       unit: ing.unit ?? undefined,
       memo: ing.memo ?? undefined,
       expirationDate: ing.expirationDate ?? undefined,
     }));
   }
-
+  // thumbnailUrl은 현재 BE 미지원시 전송하지 않음
   return payload;
 }
 

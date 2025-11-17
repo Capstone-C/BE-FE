@@ -3,12 +3,9 @@ import axios from 'axios';
 import { useEffect, useState, type ChangeEvent } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { usePost } from '@/features/boards/hooks/usePosts';
-import { updatePost } from '@/apis/boards.api';
-
-function toBool(v: unknown): boolean {
-  // 서버가 0/1, "1"/"0", true/false 등 어떤 형태로 와도 안전하게 변환
-  return v === true || v === 1 || v === '1';
-}
+import { listCategories, type Category } from '@/apis/categories.api';
+import { useToast } from '@/contexts/ToastContext';
+import { useUpdatePostMutation } from '@/features/boards/hooks/usePostMutations';
 
 export default function BoardEditPage() {
   const { postId } = useParams();
@@ -16,35 +13,54 @@ export default function BoardEditPage() {
   const nav = useNavigate();
   const [sp] = useSearchParams();
   const location = useLocation() as { state?: { fromCategoryId?: number } };
+  const { show } = useToast();
+  const updateMutation = useUpdatePostMutation();
 
   const { data, isLoading } = usePost(id);
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [categoryId, setCategoryId] = useState<number>(1);
-  const [isRecipe, setIsRecipe] = useState<boolean>(false);
   const [saving, setSaving] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const datas = await listCategories();
+        const topLevel = datas.filter((c) => c.parentId == null && c.type !== 'RECIPE');
+        setCategories(topLevel);
+      } catch (e) {
+        console.error('카테고리를 불러오지 못했습니다.', e);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (!data) return;
     setTitle(data.title ?? '');
     setContent(data.content ?? '');
     setCategoryId(data.categoryId ?? 1);
-    setIsRecipe(toBool(data.isRecipe));
   }, [data]);
 
   const onTitle = (e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
   const onContent = (e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value);
 
   const onSave = async () => {
-    if (!title.trim() || !content.trim()) return alert('제목과 본문을 입력하세요.');
+    const t = title.trim();
+    const c = content.trim();
+    if (!t || !c) return show('제목과 본문을 입력해주세요.', { type: 'error' });
+    if (t.length < 5) return show('제목은 5자 이상 입력해주세요.', { type: 'error' });
+    if (t.length > 100) return show('제목은 100자 이하로 입력해주세요.', { type: 'error' });
+    if (c.length < 10) return show('본문은 10자 이상 입력해주세요.', { type: 'error' });
+    if (c.length > 10000) return show('본문은 10000자 이하로 입력해주세요.', { type: 'error' });
     setSaving(true);
     try {
-      await updatePost(id, { title, content, categoryId, isRecipe });
-      // 쿼리 우선, 없으면 state에서 카테고리 복구
+      await updateMutation.mutateAsync({ id, dto: { title: t, content: c, categoryId } });
       const cat =
         sp.get('categoryId') ??
         (Number.isFinite(location.state?.fromCategoryId) ? String(location.state?.fromCategoryId) : undefined);
+      show('글이 수정되었습니다.', { type: 'success' });
       nav(cat ? `/boards/${id}?categoryId=${cat}` : `/boards/${id}`);
     } catch (err: unknown) {
       let msg = '수정에 실패했습니다.';
@@ -52,7 +68,7 @@ export default function BoardEditPage() {
         const d = err.response?.data as { message?: string; error?: string } | undefined;
         msg = d?.message ?? d?.error ?? err.message ?? msg;
       } else if (err instanceof Error) msg = err.message;
-      alert(msg);
+      show(msg, { type: 'error' });
     } finally {
       setSaving(false);
     }
@@ -71,14 +87,12 @@ export default function BoardEditPage() {
       <label className="block">
         <span className="mr-2">카테고리</span>
         <select className="border p-2" value={categoryId} onChange={(e) => setCategoryId(Number(e.target.value))}>
-          <option value={1}>카테고리 1</option>
-          <option value={2}>카테고리 2</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name ?? `카테고리 ${c.id}`}
+            </option>
+          ))}
         </select>
-      </label>
-
-      <label className="inline-flex items-center gap-2">
-        <input type="checkbox" checked={isRecipe} onChange={(e) => setIsRecipe(e.target.checked)} />
-        레시피 글
       </label>
 
       <div className="flex gap-2">

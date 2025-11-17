@@ -35,7 +35,7 @@ import CommunityPage from '@/features/community/pages/CommunityPage';
 
 // Refrigerator
 import RefrigeratorPage from '@/features/refrigerator/pages/RefrigeratorPage';
-import ReceiptScanPage from '../features/refrigerator/pages/ReceiptScanPage';
+import ReceiptScanPage from '@/features/refrigerator/pages/ReceiptScanPage';
 
 // Recipes
 import RecipeCreatePage from '@/features/recipes/pages/RecipeCreatePage';
@@ -58,6 +58,7 @@ const router = createBrowserRouter([
       { path: 'boards', element: <BoardsListPage /> },
       { path: 'boards/:postId', element: <BoardDetailPage /> },
       { path: 'community', element: <CommunityPage /> },
+      { path: 'members/:memberId', element: <MemberProfilePage /> },
 
       // Diary
       { path: 'diary', element: <DiaryCalendarPage /> },

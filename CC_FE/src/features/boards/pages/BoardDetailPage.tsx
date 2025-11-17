@@ -1,12 +1,7 @@
 // src/features/boards/pages/BoardDetailPage.tsx
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePost } from '@/features/boards/hooks/usePosts';
-import {
-  deletePost,
-  toggleLike,
-  compareRecipeWithRefrigerator,
-  type RecipeRefrigeratorComparison,
-} from '@/apis/boards.api';
+import { compareRecipeWithRefrigerator, type RecipeRefrigeratorComparison } from '@/apis/boards.api';
 import CommentList from '@/features/comments/components/CommentList';
 import { formatDateYMDKorean } from '@/utils/date';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
@@ -14,6 +9,7 @@ import DOMPurify from 'dompurify';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
+import { useToggleLikeMutation, useDeletePostMutation } from '@/features/boards/hooks/usePostMutations';
 
 export default function BoardDetailPage() {
   const { postId } = useParams();
@@ -24,9 +20,18 @@ export default function BoardDetailPage() {
   const { data, isLoading, isError } = usePost(id);
   const { user } = useAuth();
   const { show } = useToast();
+  const likeMutation = useToggleLikeMutation();
+  const deleteMutation = useDeletePostMutation();
 
   const { inlineName, memberId } = extractAuthorRef(data);
   const authorName = getDisplayName(memberId, inlineName);
+  const authorNode = memberId ? (
+    <Link to={`/members/${memberId}`} className="hover:underline">
+      {authorName}
+    </Link>
+  ) : (
+    <span>{authorName}</span>
+  );
 
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
@@ -39,17 +44,20 @@ export default function BoardDetailPage() {
   if (isLoading) return <div className="p-6">불러오는 중…</div>;
   if (isError || !data) return <div className="p-6">글을 찾을 수 없거나 오류가 발생했습니다.</div>;
 
-  const isRecipePost = (data as unknown as { isRecipe?: boolean }).isRecipe === true;
+  const isRecipePost = (data as any).isRecipe === true;
 
   const safeHtml = DOMPurify.sanitize(data.content ?? '');
 
   const onDelete = async () => {
-    const confirmMsg =
-      '정말로 이 레시피를 삭제하시겠습니까?\n삭제된 레시피와 관련된 모든 댓글, 추천 정보가 함께 사라지며, 이 작업은 복구할 수 없습니다.';
+    const confirmMsg = isRecipePost
+      ? '정말로 이 레시피를 삭제하시겠습니까?\n삭제된 레시피와 관련된 모든 댓글, 추천 정보가 함께 사라지며, 이 작업은 복구할 수 없습니다.'
+      : '정말로 이 글을 삭제하시겠습니까? 삭제된 글과 관련된 댓글/추천 정보도 함께 사라지며 복구할 수 없습니다.';
     if (!confirm(confirmMsg)) return;
     try {
-      await deletePost(id);
-      show('레시피가 성공적으로 삭제되었습니다.', { type: 'success' });
+      await deleteMutation.mutateAsync(id);
+      show(isRecipePost ? '레시피가 성공적으로 삭제되었습니다.' : '글이 성공적으로 삭제되었습니다.', {
+        type: 'success',
+      });
       const to = isRecipePost
         ? '/boards'
         : sp.get('categoryId')
@@ -60,7 +68,7 @@ export default function BoardDetailPage() {
       const status = e?.response?.status as number | undefined;
       const message = e?.response?.data?.message as string | undefined;
       if (status === 401) {
-        alert('로그인이 필요한 서비스입니다.');
+        show('로그인이 필요한 서비스입니다.', { type: 'error' });
         nav('/login');
         return;
       }
@@ -69,7 +77,7 @@ export default function BoardDetailPage() {
         return;
       }
       if (status === 404) {
-        show(message ?? '이미 삭제된 레시피입니다.', { type: 'error' });
+        show(message ?? (isRecipePost ? '이미 삭제된 레시피입니다.' : '이미 삭제된 글입니다.'), { type: 'error' });
         nav('/boards');
         return;
       }
@@ -79,11 +87,11 @@ export default function BoardDetailPage() {
 
   const onToggleLike = async () => {
     try {
-      const res = await toggleLike(id);
+      const res = await likeMutation.mutateAsync(id);
       setLiked(res.liked);
       setLikeCount(res.likeCount);
-    } catch (err) {
-      alert('로그인이 필요한 기능입니다.');
+    } catch {
+      show('로그인이 필요한 기능입니다.', { type: 'error' });
       nav('/login');
     }
   };
@@ -94,8 +102,8 @@ export default function BoardDetailPage() {
       const res = await compareRecipeWithRefrigerator(id);
       setCompareResult(res);
       setCompareOpen(true);
-    } catch (err) {
-      alert('냉장고 재료 비교를 위해서는 로그인이 필요합니다.');
+    } catch {
+      show('냉장고 재료 비교를 위해서는 로그인이 필요합니다.', { type: 'error' });
       nav('/login');
     } finally {
       setCompareLoading(false);
@@ -105,9 +113,9 @@ export default function BoardDetailPage() {
   const onShare = async () => {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      alert('현재 레시피 링크가 클립보드에 복사되었습니다.');
+      show('현재 레시피 링크가 클립보드에 복사되었습니다.', { type: 'success' });
     } catch {
-      alert('클립보드 복사에 실패했습니다. 주소창의 URL을 직접 복사해주세요.');
+      show('클립보드 복사에 실패했습니다. 주소창의 URL을 직접 복사해주세요.', { type: 'error' });
     }
   };
 
@@ -128,7 +136,11 @@ export default function BoardDetailPage() {
     : sp.get('categoryId')
       ? `/boards/${id}/edit?categoryId=${sp.get('categoryId')}`
       : `/boards/${id}/edit`;
-  const editState = sp.get('categoryId') ? { fromCategoryId: Number(sp.get('categoryId')) } : undefined;
+  const editState = isRecipePost
+    ? undefined
+    : sp.get('categoryId')
+      ? { fromCategoryId: Number(sp.get('categoryId')) }
+      : undefined;
 
   return (
     <div className="p-6 space-y-4">
@@ -147,7 +159,7 @@ export default function BoardDetailPage() {
         <section className="space-y-3">
           <h1 className="text-2xl font-bold">{data.title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-            <span>작성자: {authorName ?? '익명'}</span>
+            <span>작성자: {authorNode}</span>
             <span>· {formatDateYMDKorean(data.createdAt)}</span>
             {data.updatedAt ? <span>· 수정 {formatDateYMDKorean(data.updatedAt)}</span> : null}
             <span>· 조회 {data.viewCount}</span>
@@ -166,7 +178,7 @@ export default function BoardDetailPage() {
         <>
           <h1 className="text-2xl font-bold">{data.title}</h1>
           <div className="text-sm text-gray-600 flex flex-wrap gap-2">
-            <span>{authorName ?? '익명'}</span>
+            {authorNode}
             <span>· {formatDateYMDKorean(data.createdAt)}</span>
             {data.updatedAt ? <span>· 수정 {formatDateYMDKorean(data.updatedAt)}</span> : null}
             <span>· 조회 {data.viewCount}</span>

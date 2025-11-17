@@ -1,7 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { getMe } from '@/apis/auth';
-import { Link } from 'react-router-dom';
-import { formatDateYMDKorean } from '@/utils/date';
+import MemberProfilePage from './MemberProfilePage';
 
 export default function ProfilePage() {
   const {
