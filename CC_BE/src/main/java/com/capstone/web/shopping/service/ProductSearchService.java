@@ -1,5 +1,6 @@
 package com.capstone.web.shopping.service;
 
+import com.capstone.web.shopping.client.NaverShoppingApiClient;
 import com.capstone.web.shopping.domain.ProductDocument;
 import com.capstone.web.shopping.dto.ProductSearchRequest;
 import com.capstone.web.shopping.repository.ProductSearchRepository;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 /**
  * 상품 검색 서비스
  * SHOP-01: 통합 쇼핑몰 상품 검색 기능
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Service;
 public class ProductSearchService {
 
     private final ProductSearchRepository productSearchRepository;
+    private final NaverShoppingApiClient naverShoppingApiClient;
+    private final ProductIndexingService productIndexingService;
 
     /**
      * 상품 검색
@@ -60,27 +65,51 @@ public class ProductSearchService {
      */
     private Page<ProductDocument> searchByKeyword(ProductSearchRequest request, Pageable pageable) {
         String keyword = request.getKeyword();
+        Page<ProductDocument> results;
 
         // 가격 범위 필터가 있는 경우
         if (request.getMinPrice() != null || request.getMaxPrice() != null) {
-            // 현재는 키워드 검색만 지원, 결과를 메모리에서 필터링
-            return productSearchRepository.findByNameContaining(keyword, pageable);
+            results = productSearchRepository.findByNameContaining(keyword, pageable);
         }
-
         // 쇼핑몰 타입 필터
-        if (request.getMallType() != null && !request.getMallType().isBlank()) {
-            // 현재는 키워드 검색만 지원
-            return productSearchRepository.findByNameContaining(keyword, pageable);
+        else if (request.getMallType() != null && !request.getMallType().isBlank()) {
+            results = productSearchRepository.findByNameContaining(keyword, pageable);
         }
-
         // 카테고리 필터
-        if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            // 현재는 키워드 검색만 지원
-            return productSearchRepository.findByNameContaining(keyword, pageable);
+        else if (request.getCategory() != null && !request.getCategory().isBlank()) {
+            results = productSearchRepository.findByNameContaining(keyword, pageable);
+        }
+        // 키워드만 있는 경우
+        else {
+            results = productSearchRepository.findByNameContaining(keyword, pageable);
         }
 
-        // 키워드만 있는 경우
-        return productSearchRepository.findByNameContaining(keyword, pageable);
+        // 검색 결과가 없고 첫 페이지인 경우, 외부 API에서 실시간 검색 시도 (Fallback)
+        if (results.isEmpty() && pageable.getPageNumber() == 0) {
+            log.info("No products found in Elasticsearch. Trying on-demand fetch from mall APIs (keyword: {})", keyword);
+            
+            if (naverShoppingApiClient.isHealthy()) {
+                List<ProductDocument> fetchedProducts = naverShoppingApiClient.searchProducts(keyword, 100);
+                
+                if (!fetchedProducts.isEmpty()) {
+                    // Elasticsearch에 저장
+                    productIndexingService.bulkIndexProducts(fetchedProducts);
+                    
+                    // 현재 페이지에 맞는 결과 반환
+                    int start = (int) pageable.getOffset();
+                    int end = Math.min((start + pageable.getPageSize()), fetchedProducts.size());
+                    
+                    if (start <= fetchedProducts.size()) {
+                        List<ProductDocument> pagedList = fetchedProducts.subList(start, end);
+                        return new org.springframework.data.domain.PageImpl<>(pagedList, pageable, fetchedProducts.size());
+                    }
+                }
+            } else {
+                log.warn("No healthy shopping mall clients available. Check API credentials.");
+            }
+        }
+
+        return results;
     }
 
     /**
