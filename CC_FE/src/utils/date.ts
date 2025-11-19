@@ -34,3 +34,12 @@ export const formatDateYMDKorean = (value: string | number | Date) => {
   const d = toDate(value);
   return `${d.getFullYear()}년 ${String(d.getMonth() + 1).padStart(2, '0')}월 ${String(d.getDate()).padStart(2, '0')}일`;
 };
+
+export const toYmd = (d: Date | null): string | undefined => {
+  if (!d) return undefined;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+

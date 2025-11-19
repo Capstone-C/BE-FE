@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -16,8 +17,9 @@ import { useToast } from '@/contexts/ToastContext';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
-import { formatDateYMDKorean } from '@/utils/date';
+import { formatDateYMDKorean, toYmd } from '@/utils/date';
 import { Link } from 'react-router-dom';
+import { COMMON_UNITS } from '@/constants/units';
 
 function formatDDay(days: number | null): string {
   if (days === null || days === undefined) return '—';
@@ -38,13 +40,7 @@ function dDayTextColor(item: RefrigeratorItem): string {
   return 'text-gray-700';
 }
 
-const toYmd = (d: Date | null): string | undefined => {
-  if (!d) return undefined;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+
 
 export default function RefrigeratorPage() {
   const [sortBy, setSortBy] = useState<'expirationDate' | 'name' | 'createdAt'>('expirationDate');
@@ -60,7 +56,6 @@ export default function RefrigeratorPage() {
   const [unitValue, setUnitValue] = useState('');
   const [addExpirationDate, setAddExpirationDate] = useState<Date | null>(null);
   const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
-  const COMMON_UNITS = ['개', 'g', 'kg', 'ml', 'L', '포기', '팩', '봉', '캔'];
 
   // Edit form state
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
@@ -302,6 +297,12 @@ export default function RefrigeratorPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/refrigerator/recommendations"
+            className="px-4 py-2 rounded bg-purple-600 text-white text-sm hover:bg-purple-700"
+          >
+            레시피 추천 보기
+          </Link>
           <button
             onClick={() => setShowAddForm((v) => !v)}
             className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"

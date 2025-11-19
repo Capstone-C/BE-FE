@@ -23,6 +23,9 @@ export function HeaderNav() {
             <Link to="/community" className="text-sm text-gray-700 hover:text-blue-600">
               커뮤니티
             </Link>
+            <Link to="/shopping" className="text-sm text-gray-700 hover:text-blue-600">
+              쇼핑
+            </Link>
             {user && (
               <>
                 <Link to="/diary" className="text-sm text-gray-700 hover:text-blue-600">
