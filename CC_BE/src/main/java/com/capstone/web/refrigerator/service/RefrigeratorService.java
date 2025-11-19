@@ -2,6 +2,9 @@ package com.capstone.web.refrigerator.service;
 
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
+import com.capstone.web.posts.domain.PostIngredient;
+import com.capstone.web.posts.domain.Posts;
+import com.capstone.web.posts.repository.PostsRepository;
 import com.capstone.web.recipe.domain.Recipe;
 import com.capstone.web.recipe.domain.RecipeIngredient;
 import com.capstone.web.recipe.repository.RecipeRepository;
@@ -14,6 +17,9 @@ import com.capstone.web.refrigerator.exception.UnauthorizedItemAccessException;
 import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +50,7 @@ public class RefrigeratorService {
     private final RefrigeratorItemRepository refrigeratorItemRepository;
     private final MemberRepository memberRepository;
     private final RecipeRepository recipeRepository;
+    private final PostsRepository postsRepository; // (추가)
 
     // REF-04 의존성
     private final GeminiService geminiService;
@@ -214,7 +221,7 @@ public class RefrigeratorService {
 
     /**
      * REF-07: 보유 재료 기반 레시피 추천
-     * 냉장고에 있는 재료와 레시피 재료를 매칭하여 추천
+     * 냉장고에 있는 재료와 레시피(Posts) 재료를 매칭하여 추천
      */
     public RecommendationDto.RecommendationResponse getRecommendations(Long memberId, Integer limit) {
         // 1단계: 사용자의 냉장고 재료 조회
@@ -225,9 +232,10 @@ public class RefrigeratorService {
 
         log.info("냉장고 재료 조회: memberId={}, 보유 재료 수={}", memberId, myIngredientNames.size());
 
-        // 2단계: 모든 레시피 조회 (재료 포함)
-        List<Recipe> allRecipes = recipeRepository.findAllWithIngredients();
-        log.info("전체 레시피 조회 완료: 레시피 수={}", allRecipes.size());
+        // 2단계: 모든 레시피(Posts) 조회 (재료 포함)
+        // (수정) RecipeRepository -> PostsRepository (isRecipe=true)
+        List<Posts> allRecipes = postsRepository.findAllByIsRecipeTrue();
+        log.info("전체 레시피(Posts) 조회 완료: 레시피 수={}", allRecipes.size());
 
         // 3단계: 각 레시피별 매칭률 계산
         List<RecommendationDto.RecommendedRecipe> recommendations = allRecipes.stream()
@@ -246,10 +254,10 @@ public class RefrigeratorService {
     }
 
     /**
-     * 레시피와 보유 재료의 매칭률 계산
+     * 레시피(Posts)와 보유 재료의 매칭률 계산
      */
-    private RecommendationDto.RecommendedRecipe calculateMatchRate(Recipe recipe, List<String> myIngredientNames) {
-        List<RecipeIngredient> recipeIngredients = recipe.getIngredients();
+    private RecommendationDto.RecommendedRecipe calculateMatchRate(Posts recipe, List<String> myIngredientNames) {
+        List<PostIngredient> recipeIngredients = recipe.getIngredients();
 
         if (recipeIngredients.isEmpty()) {
             // 재료가 없는 레시피는 매칭률 0
@@ -258,7 +266,7 @@ public class RefrigeratorService {
 
         // 매칭된 재료 찾기 (대소문자 무시, 부분 일치)
         List<String> matchedIngredients = new ArrayList<>();
-        for (RecipeIngredient recipeIngredient : recipeIngredients) {
+        for (PostIngredient recipeIngredient : recipeIngredients) {
             String recipeName = recipeIngredient.getName().toLowerCase().trim();
 
             for (String myIngredient : myIngredientNames) {
@@ -279,32 +287,35 @@ public class RefrigeratorService {
     }
 
     /**
-     * RecommendedRecipe DTO 생성
+     * RecommendedRecipe DTO 생성 (Posts 기반)
      */
     private RecommendationDto.RecommendedRecipe buildRecommendedRecipe(
-            Recipe recipe,
+            Posts recipe,
             double matchRate,
             List<String> matchedIngredients,
-            List<RecipeIngredient> recipeIngredients) {
+            List<PostIngredient> recipeIngredients) {
 
         // 부족한 재료 찾기
         List<RecommendationDto.MissingIngredient> missingIngredients = recipeIngredients.stream()
                 .filter(ri -> !matchedIngredients.contains(ri.getName()))
                 .map(ri -> RecommendationDto.MissingIngredient.builder()
                         .name(ri.getName())
-                        .amount(ri.getAmount())
-                        .isRequired(ri.getIsRequired())
+                        .amount(ri.getQuantity() != null ? ri.getQuantity() + (ri.getUnit() != null ? ri.getUnit() : "") : "")
+                        .isRequired(true) // Posts에는 필수 여부 필드가 없으므로 기본 true 처리 (또는 로직 개선 필요)
                         .build())
                 .collect(Collectors.toList());
 
+        // HTML 본문에서 첫 번째 이미지 추출
+        String imageUrl = extractFirstImage(recipe.getContent());
+
         return RecommendationDto.RecommendedRecipe.builder()
                 .recipeId(recipe.getId())
-                .recipeName(recipe.getName())
-                .description(recipe.getDescription())
-                .cookTime(recipe.getCookTime())
+                .recipeName(recipe.getTitle())
+                .description(null) // Posts에는 description 필드가 없음 (content가 본문)
+                .cookTime(recipe.getCookTimeInMinutes())
                 .servings(recipe.getServings())
                 .difficulty(recipe.getDifficulty() != null ? recipe.getDifficulty().name() : null)
-                .imageUrl(recipe.getImageUrl())
+                .imageUrl(imageUrl)
                 .matchRate(Math.round(matchRate * 10) / 10.0) // 소수점 1자리
                 .matchedIngredients(matchedIngredients)
                 .missingIngredients(missingIngredients)
@@ -314,14 +325,29 @@ public class RefrigeratorService {
     }
 
     /**
+     * HTML 컨텐츠에서 첫 번째 이미지 URL 추출
+     */
+    private String extractFirstImage(String htmlContent) {
+        if (htmlContent == null || htmlContent.isBlank()) {
+            return null;
+        }
+        Document doc = Jsoup.parse(htmlContent);
+        Element img = doc.selectFirst("img");
+        return img != null ? img.attr("src") : null;
+    }
+
+    /**
      * REF-08: 레시피 재료 차감 미리보기
      * 실제로 차감하지 않고 차감 가능 여부만 확인
      */
     public DeductionDto.DeductPreviewResponse previewDeduction(Long memberId, Long recipeId) {
-        // 1단계: 레시피 조회
-        Recipe recipe = recipeRepository.findByIdWithIngredients(recipeId);
-        if (recipe == null) {
-            throw new IllegalArgumentException("레시피를 찾을 수 없습니다: " + recipeId);
+        // 1단계: 레시피(Posts) 조회
+        // (수정) RecipeRepository -> PostsRepository
+        Posts recipe = postsRepository.findById(recipeId)
+                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다: " + recipeId));
+
+        if (!recipe.isRecipe()) {
+            throw new IllegalArgumentException("해당 게시글은 레시피가 아닙니다: " + recipeId);
         }
 
         // 2단계: 사용자 냉장고 재료 조회
@@ -332,13 +358,14 @@ public class RefrigeratorService {
         List<String> warnings = new ArrayList<>();
         boolean canProceed = true;
 
-        for (RecipeIngredient recipeIngredient : recipe.getIngredients()) {
+        for (PostIngredient recipeIngredient : recipe.getIngredients()) {
             DeductionDto.IngredientDeductionStatus status =
                     checkIngredientStatus(recipeIngredient, myItems);
             statusList.add(status);
 
             // 필수 재료인데 OK가 아니면 진행 불가
-            if (recipeIngredient.getIsRequired() && status.getStatus() != DeductionDto.DeductionStatus.OK) {
+            // (Posts에는 필수 여부가 없으므로 모든 재료를 필수로 가정하거나, 별도 로직 필요. 여기선 일단 모두 필수로 처리)
+            if (status.getStatus() != DeductionDto.DeductionStatus.OK) {
                 canProceed = false;
                 warnings.add(status.getMessage());
             }
@@ -349,7 +376,7 @@ public class RefrigeratorService {
 
         return DeductionDto.DeductPreviewResponse.builder()
                 .recipeId(recipeId)
-                .recipeName(recipe.getName())
+                .recipeName(recipe.getTitle())
                 .ingredients(statusList)
                 .canProceed(canProceed)
                 .warnings(warnings)
@@ -370,8 +397,9 @@ public class RefrigeratorService {
             throw new IllegalStateException("필수 재료가 부족합니다. warnings: " + preview.getWarnings());
         }
 
-        // 3단계: 레시피 조회
-        Recipe recipe = recipeRepository.findByIdWithIngredients(request.getRecipeId());
+        // 3단계: 레시피(Posts) 조회
+        Posts recipe = postsRepository.findById(request.getRecipeId())
+                .orElseThrow(() -> new IllegalArgumentException("레시피를 찾을 수 없습니다: " + request.getRecipeId()));
 
         // 4단계: 사용자 냉장고 재료 조회
         List<RefrigeratorItem> myItems = refrigeratorItemRepository.findByMemberId(memberId);
@@ -380,7 +408,7 @@ public class RefrigeratorService {
         List<DeductionDto.DeductedIngredient> deductedList = new ArrayList<>();
         List<String> failedList = new ArrayList<>();
 
-        for (RecipeIngredient recipeIngredient : recipe.getIngredients()) {
+        for (PostIngredient recipeIngredient : recipe.getIngredients()) {
             try {
                 RefrigeratorItem item = findMatchingItem(recipeIngredient.getName(), myItems);
 
@@ -412,7 +440,7 @@ public class RefrigeratorService {
 
         return DeductionDto.DeductResponse.builder()
                 .recipeId(request.getRecipeId())
-                .recipeName(recipe.getName())
+                .recipeName(recipe.getTitle())
                 .successCount(deductedList.size())
                 .failedCount(failedList.size())
                 .deductedIngredients(deductedList)
@@ -421,22 +449,27 @@ public class RefrigeratorService {
     }
 
     /**
-     * 재료 상태 확인 (OK/INSUFFICIENT/NOT_FOUND)
+     * 재료 상태 확인 (OK/INSUFFICIENT/NOT_FOUND) - PostIngredient 버전
      */
     private DeductionDto.IngredientDeductionStatus checkIngredientStatus(
-            RecipeIngredient recipeIngredient,
+            PostIngredient recipeIngredient,
             List<RefrigeratorItem> myItems) {
 
         RefrigeratorItem item = findMatchingItem(recipeIngredient.getName(), myItems);
 
+        // PostIngredient에는 amount(String) 대신 quantity(Integer) + unit(String)이 있음
+        // requiredAmount 문자열 생성
+        String requiredAmount = (recipeIngredient.getQuantity() != null ? recipeIngredient.getQuantity() : "") +
+                (recipeIngredient.getUnit() != null ? recipeIngredient.getUnit() : "");
+
         if (item == null) {
             return DeductionDto.IngredientDeductionStatus.builder()
                     .name(recipeIngredient.getName())
-                    .requiredAmount(recipeIngredient.getAmount())
+                    .requiredAmount(requiredAmount)
                     .currentAmount(null)
                     .currentQuantity(0)
                     .status(DeductionDto.DeductionStatus.NOT_FOUND)
-                    .isRequired(recipeIngredient.getIsRequired())
+                    .isRequired(true) // Posts는 기본 true
                     .message(recipeIngredient.getName() + " 없음")
                     .build();
         }
@@ -445,22 +478,22 @@ public class RefrigeratorService {
         if (item.getQuantity() == null || item.getQuantity() <= 0) {
             return DeductionDto.IngredientDeductionStatus.builder()
                     .name(recipeIngredient.getName())
-                    .requiredAmount(recipeIngredient.getAmount())
+                    .requiredAmount(requiredAmount)
                     .currentAmount(item.getQuantity() + (item.getUnit() != null ? item.getUnit() : ""))
                     .currentQuantity(item.getQuantity())
                     .status(DeductionDto.DeductionStatus.INSUFFICIENT)
-                    .isRequired(recipeIngredient.getIsRequired())
+                    .isRequired(true)
                     .message(recipeIngredient.getName() + " 부족 (수량: 0)")
                     .build();
         }
 
         return DeductionDto.IngredientDeductionStatus.builder()
                 .name(recipeIngredient.getName())
-                .requiredAmount(recipeIngredient.getAmount())
+                .requiredAmount(requiredAmount)
                 .currentAmount(item.getQuantity() + (item.getUnit() != null ? item.getUnit() : ""))
                 .currentQuantity(item.getQuantity())
                 .status(DeductionDto.DeductionStatus.OK)
-                .isRequired(recipeIngredient.getIsRequired())
+                .isRequired(true)
                 .message("충분")
                 .build();
     }

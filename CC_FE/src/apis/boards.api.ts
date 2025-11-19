@@ -21,13 +21,15 @@ export type DietType =
 export type Difficulty = 'VERY_HIGH' | 'HIGH' | 'MEDIUM' | 'LOW' | 'VERY_LOW';
 
 // 서버 요구 스키마에 맞춰 정규화할 DTO
+
 export type UpsertPostDto = {
   title: string;
   content: string;
-  categoryId: number | string; // select 값이 string일 수 있음
-  status?: UpsertPostStatus; // 서버 제약 대응
-  isRecipe?: boolean; // 실제 서버 NotNull 요구
-  // --- 레시피 확장 필드 (선택) ---
+  categoryId: number | string;
+  status?: UpsertPostStatus;
+  isRecipe?: boolean;
+
+  // 레시피 확장 필드
   dietType?: DietType;
   cookTimeInMinutes?: number | null;
   servings?: number | null;
@@ -37,10 +39,10 @@ export type UpsertPostDto = {
     quantity?: number | null;
     unit?: string | null;
     memo?: string | null;
-    expirationDate?: string | null; // ISO 문자열
+    expirationDate?: string | null;
   }>;
-  // --- 확장(예정) 대표 이미지 URL ---
-  thumbnailUrl?: string | null; // BE 미지원시 무시
+
+  thumbnailUrl?: string | null;
 };
 
 function assertValidCategory(id: unknown): number {
