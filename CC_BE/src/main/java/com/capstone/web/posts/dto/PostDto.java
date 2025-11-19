@@ -90,7 +90,7 @@ public class PostDto {
         private final LocalDateTime updatedAt;
         private final Posts.TruthValue selected;
         private final Posts.TruthValue file;
-        private final boolean isRecipe;
+        private final Boolean isRecipe;
         private final Boolean likedByMe;
 
         // --- (추가) 레시피 기본 정보 ---

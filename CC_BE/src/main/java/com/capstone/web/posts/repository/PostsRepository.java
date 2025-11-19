@@ -13,7 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional; // (추가)
+import java.util.Optional;
 
 @Repository
 public interface PostsRepository extends JpaRepository<Posts, Long>, JpaSpecificationExecutor<Posts> {
@@ -37,4 +37,8 @@ public interface PostsRepository extends JpaRepository<Posts, Long>, JpaSpecific
     long countByCategory_IdAndCreatedAtBetween(Long categoryId, LocalDateTime start, LocalDateTime end);
 
     Posts findTop1ByCategory_IdOrderByCreatedAtDesc(Long categoryId);
+
+    // --- (추가) 레시피 추천용: 모든 레시피 조회 ---
+    @EntityGraph(value = "Posts.withIngredients")
+    List<Posts> findAllByIsRecipeTrue();
 }
