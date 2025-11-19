@@ -12,6 +12,8 @@ import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import { ko } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
+import { toYmd } from '@/utils/date';
+import { UNIT_OPTIONS } from '@/constants/units';
 
 // Client-side image compression helper (canvas-based)
 async function compressImage(file: File, maxBytes = 5 * 1024 * 1024): Promise<File> {
@@ -52,13 +54,7 @@ async function compressImage(file: File, maxBytes = 5 * 1024 * 1024): Promise<Fi
   return compressed.size < file.size ? compressed : file;
 }
 
-const toYmd = (d: Date | null): string | undefined => {
-  if (!d) return undefined;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-};
+
 
 interface EditableItem {
   id: string; // local id
@@ -83,7 +79,7 @@ function newBlankItem(idx: number): EditableItem {
   };
 }
 
-const UNIT_OPTIONS = ['', '개', '팩', '봉', '병', '캔', '컵', '박스', 'g', 'kg', 'ml', 'L', '포', '묶음'];
+
 
 export default function ReceiptScanPage() {
   const { show: showToast } = useToast();

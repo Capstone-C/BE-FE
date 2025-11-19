@@ -38,10 +38,14 @@ import CommunityPage from '@/features/community/pages/CommunityPage';
 // Refrigerator
 import RefrigeratorPage from '@/features/refrigerator/pages/RefrigeratorPage';
 import ReceiptScanPage from '@/features/refrigerator/pages/ReceiptScanPage';
+import RecommendationsPage from '@/features/refrigerator/pages/RecommendationsPage';
 
 // Recipes
 import RecipeCreatePage from '@/features/recipes/pages/RecipeCreatePage';
 import RecipeEditPage from '@/features/recipes/pages/RecipeEditPage';
+
+// Shopping
+import ShoppingPage from '@/features/shopping/pages/ShoppingPage';
 
 const router = createBrowserRouter([
   {
@@ -61,6 +65,9 @@ const router = createBrowserRouter([
       { path: 'boards/:postId', element: <BoardDetailPage /> },
       { path: 'community', element: <CommunityPage /> },
       { path: 'members/:memberId', element: <MemberProfilePage /> },
+
+      // Shopping
+      { path: 'shopping', element: <ShoppingPage /> },
 
       // Diary
       { path: 'diary', element: <DiaryCalendarPage /> },
@@ -87,6 +94,7 @@ const router = createBrowserRouter([
           // 냉장고 페이지
           { path: 'refrigerator', element: <RefrigeratorPage /> },
           { path: 'refrigerator/receipt-scan', element: <ReceiptScanPage /> },
+          { path: 'refrigerator/recommendations', element: <RecommendationsPage /> },
 
           // 레시피
           { path: 'recipes/new', element: <RecipeCreatePage /> },

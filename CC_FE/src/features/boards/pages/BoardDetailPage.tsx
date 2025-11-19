@@ -15,6 +15,8 @@ import {
   useUnblockMemberMutation,
   useBlockedMembers,
 } from '@/features/members/hooks/useMemberBlocks';
+import { getDeductPreview, postDeduct } from '@/apis/refrigerator.api';
+import type { DeductPreviewResponse, DeductResponse } from '@/types/refrigerator';
 
 export default function BoardDetailPage() {
   const { postId } = useParams();
@@ -47,6 +49,12 @@ export default function BoardDetailPage() {
   const [compareOpen, setCompareOpen] = useState(false);
   const [compareResult, setCompareResult] = useState<RecipeRefrigeratorComparison | null>(null);
   const [compareLoading, setCompareLoading] = useState(false);
+
+  const [deductPreview, setDeductPreview] = useState<DeductPreviewResponse | null>(null);
+  const [deductOpen, setDeductOpen] = useState(false);
+  const [deductLoading, setDeductLoading] = useState(false);
+  const [deductExecuting, setDeductExecuting] = useState(false);
+  const [ignoreWarnings, setIgnoreWarnings] = useState(false);
 
   if (Number.isNaN(id)) return <div className="p-6">잘못된 글 ID입니다.</div>;
   if (isLoading) return <div className="p-6">불러오는 중…</div>;
@@ -171,6 +179,48 @@ export default function BoardDetailPage() {
     }
   };
 
+  const onOpenDeductPreview = async () => {
+    if (!isRecipePost) return;
+    try {
+      setDeductLoading(true);
+      const preview = await getDeductPreview(id);
+      setDeductPreview(preview);
+      setDeductOpen(true);
+    } catch (e: any) {
+      const status = e?.response?.status as number | undefined;
+      if (status === 401) {
+        show('로그인이 필요한 기능입니다.', { type: 'error' });
+        nav('/login');
+        return;
+      }
+      show(e?.response?.data?.message ?? '재료 차감 미리보기 로딩 중 오류가 발생했습니다.', { type: 'error' });
+    } finally {
+      setDeductLoading(false);
+    }
+  };
+
+  const executeDeduction = async () => {
+    if (!deductPreview) return;
+    try {
+      setDeductExecuting(true);
+      const res: DeductResponse = await postDeduct({ recipeId: deductPreview.recipeId, ignoreWarnings });
+      show(`재료 차감 완료: 성공 ${res.successCount}개 / 실패 ${res.failedCount}개`, { type: 'success' });
+      // 낙관적 업데이트: ingredients 섹션의 수량 감소 (실제 실패 제외 단순화)
+      // 구현 단순화를 위해 전체 새로고침 권장 가능성: 현재는 별도 refetch API 없음
+      setDeductOpen(false);
+    } catch (e: any) {
+      const status = e?.response?.status as number | undefined;
+      if (status === 401) {
+        show('로그인이 필요한 기능입니다.', { type: 'error' });
+        nav('/login');
+        return;
+      }
+      show(e?.response?.data?.message ?? '재료 차감 중 오류가 발생했습니다.', { type: 'error' });
+    } finally {
+      setDeductExecuting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4">
       {/* 상단 카테고리/뒤로가기 */}
@@ -238,6 +288,13 @@ export default function BoardDetailPage() {
               className="border px-3 py-1 rounded bg-amber-600 text-white disabled:opacity-50"
             >
               {compareLoading ? '비교 중…' : '내 냉장고와 재료 비교'}
+            </button>
+            <button
+              onClick={onOpenDeductPreview}
+              disabled={!user || deductLoading}
+              className="border px-3 py-1 rounded bg-purple-600 text-white disabled:opacity-50"
+            >
+              {deductLoading ? '미리보기…' : '재료 차감'}
             </button>
           </>
         )}
@@ -338,6 +395,109 @@ export default function BoardDetailPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 재료 차감 미리보기 모달 */}
+      {deductOpen && deductPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeductOpen(false)} />
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b px-5 py-3">
+              <h2 className="text-lg font-semibold">재료 차감 미리보기</h2>
+              <button className="px-3 py-1 border rounded" onClick={() => setDeductOpen(false)}>
+                닫기
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto space-y-4 text-sm">
+              <p>
+                레시피: <span className="font-semibold">{deductPreview.recipeName}</span>
+              </p>
+              {!deductPreview.canProceed && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                  <p className="text-amber-800">필수 재료가 부족하여 기본적으로 차감이 불가능합니다.</p>
+                  <p className="text-amber-700 mt-1 text-xs">경고를 무시하고 진행하려면 아래 옵션을 선택하세요.</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <table className="w-full text-xs border">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border px-2 py-1 text-left">재료</th>
+                      <th className="border px-2 py-1 text-left">필요량</th>
+                      <th className="border px-2 py-1 text-left">현재</th>
+                      <th className="border px-2 py-1 text-left">상태</th>
+                      <th className="border px-2 py-1 text-left">메시지</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deductPreview.ingredients.map((ing) => (
+                      <tr key={ing.name} className="hover:bg-gray-50">
+                        <td className="border px-2 py-1">
+                          {ing.name}
+                          {ing.isRequired ? (
+                            <span className="ml-1 text-red-600">*</span>
+                          ) : (
+                            <span className="ml-1 text-gray-400">(선택)</span>
+                          )}
+                        </td>
+                        <td className="border px-2 py-1">{ing.requiredAmount ?? '—'}</td>
+                        <td className="border px-2 py-1">{ing.currentAmount ?? '없음'}</td>
+                        <td className="border px-2 py-1">
+                          <span
+                            className={
+                              ing.status === 'OK'
+                                ? 'text-green-600'
+                                : ing.status === 'INSUFFICIENT'
+                                  ? 'text-amber-600'
+                                  : 'text-red-600'
+                            }
+                          >
+                            {ing.status}
+                          </span>
+                        </td>
+                        <td className="border px-2 py-1 text-gray-600">{ing.message ?? ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {deductPreview.warnings.length > 0 && (
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-sm">경고</h3>
+                  <ul className="list-disc list-inside text-xs text-amber-700">
+                    {deductPreview.warnings.map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              <div className="flex items-center gap-2 text-xs">
+                <input
+                  id="ignoreWarnings"
+                  type="checkbox"
+                  checked={ignoreWarnings}
+                  onChange={(e) => setIgnoreWarnings(e.target.checked)}
+                  className="cursor-pointer"
+                />
+                <label htmlFor="ignoreWarnings" className="cursor-pointer">
+                  경고를 무시하고 강제 실행
+                </label>
+              </div>
+            </div>
+            <div className="border-t px-5 py-3 flex justify-end gap-3">
+              <button onClick={() => setDeductOpen(false)} className="px-3 py-1 border rounded text-sm">
+                취소
+              </button>
+              <button
+                onClick={executeDeduction}
+                disabled={deductExecuting || (!deductPreview.canProceed && !ignoreWarnings)}
+                className="px-4 py-1 rounded text-sm bg-purple-600 text-white disabled:opacity-50"
+              >
+                {deductExecuting ? '차감 중…' : '재료 차감 실행'}
+              </button>
             </div>
           </div>
         </div>

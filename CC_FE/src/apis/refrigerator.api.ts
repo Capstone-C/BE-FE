@@ -8,6 +8,10 @@ import type {
   BulkCreateRequest,
   BulkCreateResponse,
   ScanPurchaseHistoryResponse,
+  RecommendationResponse,
+  DeductPreviewResponse,
+  DeductRequest,
+  DeductResponse,
 } from '@/types/refrigerator';
 
 // 목록 조회 (현재 백엔드: /api/v1/refrigerator/items) - sortBy: expirationDate | name | createdAt
@@ -62,5 +66,34 @@ export async function scanPurchaseHistory(imageFile: File) {
       headers: { 'Content-Type': 'multipart/form-data' },
     },
   );
+  return data;
+}
+
+// 추천 레시피 목록 (REF-07)
+export async function getRecommendations(limit: number = 10) {
+  const safeLimit = limit <= 0 || limit > 50 ? 10 : limit;
+  const { data } = await authClient.get<RecommendationResponse>('/api/v1/refrigerator/recommendations', {
+    params: { limit: safeLimit },
+  });
+  return data;
+}
+
+// 재료 차감 미리보기 (REF-08)
+export async function getDeductPreview(recipeId: number) {
+  const { data } = await authClient.get<DeductPreviewResponse>('/api/v1/refrigerator/deduct-preview', {
+    params: { recipeId },
+  });
+  return data;
+}
+
+// 재료 차감 실행 (REF-08)
+export async function postDeduct(payload: DeductRequest) {
+  const body: DeductRequest = {
+    recipeId: payload.recipeId,
+    ignoreWarnings: payload.ignoreWarnings ?? false,
+  };
+  const { data } = await authClient.post<DeductResponse>('/api/v1/refrigerator/deduct', body, {
+    headers: { 'Content-Type': 'application/json' },
+  });
   return data;
 }
