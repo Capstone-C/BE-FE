@@ -38,14 +38,14 @@
 
 ### Backend
 
-| 항목              | 선택                | 비고                           |
-|-----------------|-------------------|------------------------------|
-| Language        | Java 17           |                              |
-| Framework       | Spring Boot 3.5.6 | build.gradle 기준              |
-| Persistence     | Spring Data JPA   |                              |
-| DB (Prod)       | MySQL 8.0         | Docker compose 사용            |
-| DB (Test)       | H2 Database       | In-memory, MySQL 호환 모드      |
-| Search Engine   | Elasticsearch     | 상품 검색/인덱싱 (Docker compose) |
+| 항목            | 선택                | 비고                         |
+|---------------|-------------------|----------------------------|
+| Language      | Java 17           |                            |
+| Framework     | Spring Boot 3.5.6 | build.gradle 기준            |
+| Persistence   | Spring Data JPA   |                            |
+| DB (Prod)     | MySQL 8.0         | Docker compose 사용          |
+| DB (Test)     | H2 Database       | In-memory, MySQL 호환 모드     |
+| Search Engine | Elasticsearch     | 상품 검색/인덱싱 (Docker compose) |
 
 ## 3-1. 개발 환경 (Docker Compose)
 
@@ -108,11 +108,13 @@ export NAVER_CLIENT_SECRET="your-client-secret"    # 네이버 개발자 센터�
 ```
 
 **API 키 발급**:
+
 1. [네이버 개발자 센터](https://developers.naver.com/apps/#/register) 접속
 2. 애플리케이션 등록 → 검색 API 선택
 3. Client ID와 Client Secret 발급
 
 **동작 요약**:
+
 1. 카테고리별로 네이버 쇼핑 API를 호출하여 상품 데이터 수집
 2. Elasticsearch에 인덱싱하여 빠른 검색 제공
 3. 실시간 가격, 이미지, 상품 정보 제공
@@ -234,6 +236,61 @@ docker compose down
 # 컨테이너와 함께 데이터 볼륨(DB 데이터 등)까지 모두 삭제합니다.
 docker compose down -v
 ```
+
+---
+
+## Elasticsearch 사용 가이드
+
+본 프로젝트의 쇼핑몰 상품 검색은 Elasticsearch(ES)를 통해 동작합니다. 아래는 코드 기준 구성요소와 실제 사용법입니다.
+
+- 핵심 구성요소
+    - 문서 모델: `CC_BE/src/main/java/com/capstone/web/shopping/domain/ProductDocument.java`
+        - 인덱스: `products`
+        - 설정/매핑 파일: `CC_BE/src/main/resources/elasticsearch/product-settings.json`, `product-mappings.json` (한국어 형태소 분석기
+          nori 사용)
+    - 저장소(Repository): `ProductSearchRepository` (Spring Data Elasticsearch)
+    - 인덱싱 서비스: `ProductIndexingService` (단건/벌크/업서트/재색인 지원)
+    - 수집기(네이버 API): `NaverShoppingApiClient` → `ProductCollectorScheduler`(매일 03:00 벌크 인덱싱)
+    - 검색 서비스/컨트롤러: `ProductSearchService` / `ProductSearchController`
+
+- 실행 전제
+    - Docker Compose가 ES를 함께 기동합니다: 프로젝트 루트 `compose.yaml`
+        - ES 이미지: 8.x, nori 플러그인 설치(`elasticsearch/Dockerfile`)
+        - 보안 비활성화(xpack.security=false), 단일 노드
+    - 백엔드는 `SPRING_ELASTICSEARCH_URIS`(compose에서 설정됨)를 통해 ES에 연결합니다.
+    - 네이버 쇼핑 연동을 쓰려면 환경변수 `NAVER_CLIENT_ID`, `NAVER_CLIENT_SECRET` 필요(없으면 수집은 스킵되고 검색만 가능합니다).
+
+- 데이터 인덱싱 방법
+    1) 자동(스케줄러)
+        - 매일 03:00에 `ProductCollectorScheduler`가 모든 카테고리 키워드로 네이버 API 호출 →
+          `ProductIndexingService.bulkIndexProducts(...)`로 일괄 저장.
+    2) 수동(개발자)
+        - 서비스 코드에서 `ProductIndexingService.indexProduct(...)` 또는 `bulkIndexProducts(...)`/`upsertProduct(...)` 호출.
+        - 문서 ID는 `ProductDocument.generateId(mallType, externalProductId)` 사용 권장(중복 방지, 멱등성 확보).
+    3) 재색인
+        - `ProductIndexingService.reindexAll(list)`는 기존 문서 전체 삭제 후 새로 벌크 인덱싱합니다(주의).
+
+- 검색 API 사용법(HTTP)
+    - 엔드포인트: `GET /api/v1/shopping/search`
+    - 파라미터(`ProductSearchRequest`)
+        - `keyword`: 상품명 full-text 검색(nori 분석)
+        - `mallType`: 필터(NAVER 등)
+        - `category`: 필터(예: BEVERAGES)
+        - `minPrice`, `maxPrice`: 가격 범위(현재 기본 Repository 조합으로 단순 처리, 복합 필터는 커스텀 DSL 확장 권장)
+        - `sortBy`: `price_asc`, `price_desc`, `latest`(기본)
+        - `page`, `size`: 페이징(0-based)
+    - 응답: `ProductSearchResponse`(상품 리스트, totalCount, page 정보)
+
+- 자주 겪는 이슈와 해결
+    - ES 플러그인 오류: nori 미설치 시 인덱스 생성 실패 → compose의 ES 이미지(`elasticsearch/Dockerfile`)가 nori 설치를 수행함을 확인.
+    - ES 연결 실패: 백엔드 환경변수 `SPRING_ELASTICSEARCH_URIS` 또는 `ELASTICSEARCH_URIS` 확인.
+    - 날짜 매핑: `LocalDateTime` ↔ 매핑 포맷(`yyyy-MM-dd'T'HH:mm:ss`) 일치함.
+    - 일괄 삭제 성능: `deleteProductsByMallType`는 문서 단건 삭제 반복 → 대량 시 Delete By Query로 전환 권장.
+
+- 확장 제안(선택)
+    - 복합 검색: `ElasticsearchOperations`로 Query DSL 작성(키워드 + 카테고리 + 가격 범위 동시 필터, score 기반 정렬).
+    - 집계: mallType, category 기준 terms aggregation 후 `ProductSearchResponse.aggregations`에 포함.
+    - 수동 수집 트리거: 관리용 REST 엔드포인트에서 `ProductCollectorScheduler.collectProductsManually()` 호출.
 
 ---
 
