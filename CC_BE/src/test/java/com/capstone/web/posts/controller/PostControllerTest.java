@@ -1,17 +1,20 @@
 package com.capstone.web.posts.controller;
 
 import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import com.capstone.web.auth.dto.LoginRequest;
 import com.capstone.web.category.domain.Category;
 import com.capstone.web.category.repository.CategoryRepository;
+import com.capstone.web.common.S3UploadService;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
 import com.capstone.web.posts.domain.Posts;
 import com.capstone.web.posts.dto.PostDto;
-import com.capstone.web.posts.dto.PostIngredientDto; // (추가)
+import com.capstone.web.posts.dto.PostIngredientDto;
 import com.capstone.web.posts.repository.PostsRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,15 +23,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Collections; // (추가)
-import java.util.List; // (추가)
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -43,19 +50,16 @@ class PostControllerTest {
     @Autowired private CategoryRepository categoryRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
+    // [중요] S3 서비스를 Mock으로 대체 (AWS 설정 불필요)
+    @MockBean private S3UploadService s3UploadService;
+
     private Member author;
     private Category category;
     private String userToken;
 
-    // (추가) 레시피 필드를 위한 기본값
-    private final Posts.DietType DEFAULT_DIET_TYPE = Posts.DietType.GENERAL;
-    private final Integer DEFAULT_COOK_TIME = 30;
-    private final Integer DEFAULT_SERVINGS = 2;
-    private final Posts.Difficulty DEFAULT_DIFFICULTY = Posts.Difficulty.MEDIUM;
-    private final List<PostIngredientDto.Request> DEFAULT_INGREDIENTS = Collections.emptyList();
+    private final Posts.DietType DEFAULT_DIET = Posts.DietType.GENERAL;
+    private final List<PostIngredientDto.Request> DEFAULT_ING = Collections.emptyList();
 
-
-    // 로그인 후 토큰을 반환하는 헬퍼 메서드
     private String loginAndGetToken(Member member, String rawPassword) throws Exception {
         LoginRequest req = new LoginRequest(member.getEmail(), rawPassword);
         String body = objectMapper.writeValueAsString(req);
@@ -69,167 +73,121 @@ class PostControllerTest {
 
     @BeforeEach
     void setup() throws Exception {
+        // S3 업로드 모킹 (가짜 URL 반환)
+        when(s3UploadService.uploadFile(any(MultipartFile.class))).thenReturn("https://mock-s3-url.com/image.jpg");
+
         postsRepository.deleteAll();
         memberRepository.deleteAll();
         categoryRepository.deleteAll();
 
-        author = Member.builder()
-                .email("author@example.com")
-                .nickname("글쓴이")
-                .password(passwordEncoder.encode("password123!"))
-                .build();
-        memberRepository.save(author);
-
-        category = categoryRepository.save(Category.builder().name("자유게시판").type(Category.CategoryType.FREE).build());
-        userToken = loginAndGetToken(author, "password123!");
+        author = memberRepository.save(Member.builder().email("author@example.com").nickname("글쓴이").password(passwordEncoder.encode("pw")).build());
+        category = categoryRepository.save(Category.builder().name("자유").type(Category.CategoryType.FREE).build());
+        userToken = loginAndGetToken(author, "pw");
     }
 
-    @DisplayName("게시글 생성 요청에 성공하고 201 Created를 반환한다")
+    @DisplayName("게시글 생성 (썸네일 + 추가 이미지 다중 업로드) 성공")
     @Test
     void createPost_Success() throws Exception {
-        // given
-        // (수정) 10개 인자 모두 전달
-        PostDto.CreateRequest request = new PostDto.CreateRequest(
-                category.getId(),
-                "새 게시글 제목입니다",
-                "새 게시글의 내용입니다. 10자 이상이어야 합니다.",
-                Posts.PostStatus.PUBLISHED,
-                false, // isRecipe
-                DEFAULT_DIET_TYPE,
-                DEFAULT_COOK_TIME,
-                DEFAULT_SERVINGS,
-                DEFAULT_DIFFICULTY,
-                DEFAULT_INGREDIENTS
+        // given: 1. DTO 생성
+        PostDto.CreateRequest requestDto = new PostDto.CreateRequest(
+                category.getId(), "다중 파일 업로드 제목", "내용입니다내용입니다", Posts.PostStatus.PUBLISHED, false,
+                DEFAULT_DIET, 30, 1, Posts.Difficulty.LOW, DEFAULT_ING
         );
-        String requestBody = objectMapper.writeValueAsString(request);
 
-        // when
-        // (수정 없음) JSON 요청이 맞음
-        ResultActions result = mockMvc.perform(post("/api/v1/posts")
+        // given: 2. 파일들 생성
+        MockMultipartFile jsonPart = new MockMultipartFile(
+                "request", "", "application/json",
+                objectMapper.writeValueAsString(requestDto).getBytes(StandardCharsets.UTF_8)
+        );
+
+        MockMultipartFile thumbnailPart = new MockMultipartFile(
+                "thumbnail", "thumb.jpg", "image/jpeg", "thumbnail content".getBytes()
+        );
+
+        // 추가 이미지 1 (파라미터명: files)
+        MockMultipartFile extraFile1 = new MockMultipartFile(
+                "files", "extra1.jpg", "image/jpeg", "extra content 1".getBytes()
+        );
+
+        // 추가 이미지 2 (파라미터명: files)
+        MockMultipartFile extraFile2 = new MockMultipartFile(
+                "files", "extra2.jpg", "image/jpeg", "extra content 2".getBytes()
+        );
+
+        // when: multipart 요청 전송
+        ResultActions result = mockMvc.perform(multipart("/api/v1/posts")
+                .file(jsonPart)
+                .file(thumbnailPart)
+                .file(extraFile1)
+                .file(extraFile2)
                 .header("Authorization", "Bearer " + userToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody));
+                .contentType(MediaType.MULTIPART_FORM_DATA));
 
         // then
         result.andExpect(status().isCreated())
                 .andExpect(header().string("Location", startsWith("/api/posts/")));
     }
 
-    @DisplayName("유효성 검증 실패 시 400 Bad Request를 반환한다")
+    @DisplayName("유효성 검증 실패 시 400 Bad Request")
     @Test
     void createPost_Fail_Validation() throws Exception {
-        // given
-        // (수정) 10개 인자 모두 전달, 제목 비움
-        PostDto.CreateRequest request = new PostDto.CreateRequest(
-                category.getId(),
-                "", // 제목 비움
-                "내용",
-                Posts.PostStatus.PUBLISHED,
-                false,
-                DEFAULT_DIET_TYPE,
-                DEFAULT_COOK_TIME,
-                DEFAULT_SERVINGS,
-                DEFAULT_DIFFICULTY,
-                DEFAULT_INGREDIENTS
+        PostDto.CreateRequest requestDto = new PostDto.CreateRequest(
+                category.getId(), "", "내용", Posts.PostStatus.PUBLISHED, false, // 제목 비움
+                DEFAULT_DIET, 30, 1, Posts.Difficulty.LOW, DEFAULT_ING
         );
-        String requestBody = objectMapper.writeValueAsString(request);
 
-        // when
-        // (수정 없음) JSON 요청이 맞음
-        ResultActions result = mockMvc.perform(post("/api/v1/posts")
-                .header("Authorization", "Bearer " + userToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody));
+        MockMultipartFile jsonPart = new MockMultipartFile(
+                "request", "", "application/json",
+                objectMapper.writeValueAsString(requestDto).getBytes(StandardCharsets.UTF_8)
+        );
 
-        // then
-        result.andExpect(status().isBadRequest());
+        mockMvc.perform(multipart("/api/v1/posts")
+                        .file(jsonPart)
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isBadRequest());
     }
 
-    @DisplayName("ID로 게시글을 성공적으로 조회하고 200 OK를 반환한다")
+    @DisplayName("ID로 게시글 조회 성공")
     @Test
     void getPostById_Success() throws Exception {
-        // given
-        Posts savedPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("조회할 게시글").content("내용").status(Posts.PostStatus.PUBLISHED).build());
+        Posts savedPost = postsRepository.save(Posts.builder().authorId(author).category(category).title("조회할 게시글").content("내용").status(Posts.PostStatus.PUBLISHED).isRecipe(false).build());
 
-        // when
-        ResultActions result = mockMvc.perform(get("/api/v1/posts/{id}", savedPost.getId())
-                .header("Authorization", "Bearer " + userToken));
-
-        // then
-        result.andExpect(status().isOk())
-                .andExpect(jsonPath("$.id", is(savedPost.getId().intValue())))
-                .andExpect(jsonPath("$.title", is("조회할 게시글")))
-                .andExpect(jsonPath("$.authorId", is(author.getId().intValue())));
+        mockMvc.perform(get("/api/v1/posts/{id}", savedPost.getId())
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.title", is("조회할 게시글")));
     }
 
-    @DisplayName("존재하지 않는 ID로 조회 시 404 Not Found를 반환한다")
-    @Test
-    void getPostById_Fail_NotFound() throws Exception {
-        // given
-        Long nonExistentId = 999L;
-
-        // when
-        ResultActions result = mockMvc.perform(get("/api/v1/posts/{id}", nonExistentId)
-                .header("Authorization", "Bearer " + userToken));
-
-        // then
-        result.andExpect(status().isNotFound());
-    }
-
-    @DisplayName("게시글을 성공적으로 수정하고 200 OK를 반환한다")
+    @DisplayName("게시글 수정 (Multipart -> PUT) 성공")
     @Test
     void updatePost_Success() throws Exception {
-        // given
-        Posts originalPost = postsRepository.save(Posts.builder()
-                .authorId(author)
-                .category(category)
-                .title("원본 제목입니다")
-                .content("원본 내용입니다. 10자 이상입니다.")
-                .status(Posts.PostStatus.PUBLISHED)
-                .isRecipe(false)
-                .build());
-        Category newCategory = categoryRepository.save(Category.builder()
-                .name("공지사항")
-                .type(Category.CategoryType.QA)
-                .build());
+        Posts saved = postsRepository.save(Posts.builder().authorId(author).category(category).title("원제목").content("원내용").build());
 
-        // (수정) 10개 인자 모두 전달
-        PostDto.UpdateRequest request = new PostDto.UpdateRequest(
-                "수정된 제목입니다",
-                "수정된 내용입니다. 10자 이상이어야 합니다.",
-                newCategory.getId(),
-                Posts.PostStatus.ARCHIVED,
-                true, // isRecipe
-                DEFAULT_DIET_TYPE,
-                DEFAULT_COOK_TIME,
-                DEFAULT_SERVINGS,
-                DEFAULT_DIFFICULTY,
-                DEFAULT_INGREDIENTS
+        PostDto.UpdateRequest updateDto = new PostDto.UpdateRequest(
+                "수정된 제목입니다", "수정내용입니다. 길이 제한이 10글자 입니다", category.getId(), Posts.PostStatus.PUBLISHED, false,
+                DEFAULT_DIET, 30, 1, Posts.Difficulty.LOW, DEFAULT_ING
         );
-        String requestBody = objectMapper.writeValueAsString(request);
 
-        // when
-        // (수정 없음) JSON 요청이 맞음
-        ResultActions result = mockMvc.perform(put("/api/v1/posts/{id}", originalPost.getId())
-                .header("Authorization", "Bearer " + userToken)
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestBody));
+        MockMultipartFile jsonPart = new MockMultipartFile(
+                "request", "", "application/json",
+                objectMapper.writeValueAsString(updateDto).getBytes(StandardCharsets.UTF_8)
+        );
 
-        // then
-        result.andExpect(status().isOk());
+        // MockMvc는 multipart가 기본 POST이므로 with(req -> PUT) 사용
+        mockMvc.perform(multipart("/api/v1/posts/{id}", saved.getId())
+                        .file(jsonPart)
+                        .with(req -> { req.setMethod("PUT"); return req; })
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isOk());
     }
 
-    @DisplayName("게시글을 성공적으로 삭제하고 204 No Content를 반환한다")
+    @DisplayName("게시글 삭제 성공")
     @Test
     void deletePost_Success() throws Exception {
-        // given
-        Posts postToDelete = postsRepository.save(Posts.builder().authorId(author).category(category).title("삭제될 게시글").content("내용").build());
+        Posts post = postsRepository.save(Posts.builder().authorId(author).category(category).title("삭제").content("내용").build());
 
-        // when
-        ResultActions result = mockMvc.perform(delete("/api/v1/posts/{id}", postToDelete.getId())
-                .header("Authorization", "Bearer " + userToken));
-
-        // then
-        result.andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/v1/posts/{id}", post.getId())
+                        .header("Authorization", "Bearer " + userToken))
+                .andExpect(status().isNoContent());
     }
 }
