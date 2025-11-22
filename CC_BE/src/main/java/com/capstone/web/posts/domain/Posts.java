@@ -1,6 +1,7 @@
 package com.capstone.web.posts.domain;
 
 import com.capstone.web.category.domain.Category;
+import com.capstone.web.media.domain.Media; // (추가) Media 엔티티 임포트
 import com.capstone.web.member.domain.Member;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -14,9 +15,14 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional; // (추가)
 
+// (추가) Media도 N+1 문제 없이 가져오기 위한 EntityGraph
 @NamedEntityGraph(name = "Posts.withIngredients", attributeNodes = {
         @NamedAttributeNode("ingredients")
+})
+@NamedEntityGraph(name = "Posts.withMedia", attributeNodes = {
+        @NamedAttributeNode("media")
 })
 @Entity
 @Getter
@@ -99,6 +105,10 @@ public class Posts {
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostIngredient> ingredients = new ArrayList<>();
 
+    // (추가) Media와의 일대다 관계 설정
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Media> media = new ArrayList<>();
+
     @Builder
     public Posts(Member authorId, Category category, String title, String content, PostStatus status, boolean isRecipe,
                  DietType dietType, Integer cookTimeInMinutes, Integer servings, Difficulty difficulty) {
@@ -127,6 +137,20 @@ public class Posts {
         this.difficulty = difficulty;
     }
 
+    // (추가) Media 연관관계 편의 메서드
+    public void addMedia(Media mediaItem) {
+        this.media.add(mediaItem);
+        mediaItem.setPost(this);
+    }
+
+    // (추가) 썸네일 URL(순서 0번)을 가져오는 헬퍼 메서드
+    public Optional<String> getThumbnailUrl() {
+        return this.media.stream()
+                .filter(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0)
+                .map(Media::getUrl)
+                .findFirst();
+    }
+
     public void increaseViewCount() {
         this.viewCount = this.viewCount + 1;
     }
@@ -139,26 +163,25 @@ public class Posts {
         this.likeCount = Math.max(0, this.likeCount - 1);
     }
 
-    // --- (수정) Enum 정의 ---
+    // --- Enum 정의 ---
     public enum DietType {
-        VEGAN,        // 비건
-        VEGETARIAN,   // 락토/오보 등 채식 위주
-        KETO,         // 키토제닉
-        PALEO,        // 팔레오식
-        MEDITERRANEAN, // 지중해식
-        LOW_CARB,     // 저탄수화물
-        HIGH_PROTEIN, // 고단백
-        GENERAL       // 일반식
+        VEGAN,
+        VEGETARIAN,
+        KETO,
+        PALEO,
+        MEDITERRANEAN,
+        LOW_CARB,
+        HIGH_PROTEIN,
+        GENERAL
     }
 
     public enum Difficulty {
-        VERY_HIGH, // 매우 어려움
-        HIGH,      // 어려움
-        MEDIUM,    // 중간
-        LOW,       // 쉬움
-        VERY_LOW   // 매우 쉬움
+        VERY_HIGH,
+        HIGH,
+        MEDIUM,
+        LOW,
+        VERY_LOW
     }
-    // ----------------------
 
     public enum PostStatus {
         DRAFT, PUBLISHED, ARCHIVED

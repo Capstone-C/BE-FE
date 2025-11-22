@@ -3,16 +3,19 @@ package com.capstone.web.posts.controller;
 import com.capstone.web.auth.jwt.JwtAuthenticationFilter.MemberPrincipal;
 import com.capstone.web.posts.dto.PostDto;
 import com.capstone.web.posts.dto.PostListRequest;
-import com.capstone.web.posts.dto.PostComparisonDto; // (추가)
+import com.capstone.web.posts.dto.PostComparisonDto;
 import com.capstone.web.posts.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/posts")
@@ -21,15 +24,37 @@ public class PostController {
 
     private final PostService postService;
 
-    @PostMapping
-    public ResponseEntity<Void> createPost(
-            @AuthenticationPrincipal MemberPrincipal userPrincipal, // (수정) 인증 정보 받기
+    // ==========================================
+    //  1. 게시글 생성 (Create)
+    // ==========================================
+
+    // [옵션 A] JSON만 보낼 때 (기존 방식 유지 - 이미지 없음)
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> createPostJson(
+            @AuthenticationPrincipal MemberPrincipal userPrincipal,
             @Valid @RequestBody PostDto.CreateRequest request
     ) {
-        // (수정) 토큰에서 추출한 사용자 ID(userPrincipal.id())를 서비스로 전달
-        Long postId = postService.createPost(userPrincipal.id(), request);
+        // 이미지 파일 자리에 null 전달
+        Long postId = postService.createPost(userPrincipal.id(), request, null, null);
         return ResponseEntity.created(URI.create("/api/posts/" + postId)).build();
     }
+
+    // [옵션 B] 파일과 함께 보낼 때 (신규 방식 - multipart/form-data)
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> createPostMultipart(
+            @AuthenticationPrincipal MemberPrincipal userPrincipal,
+            @Valid @RequestPart("request") PostDto.CreateRequest request,
+            @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnailFile,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files // (추가) 다중 파일
+    ) {
+        // 실제 이미지 파일 전달
+        Long postId = postService.createPost(userPrincipal.id(), request, thumbnailFile, files);
+        return ResponseEntity.created(URI.create("/api/posts/" + postId)).build();
+    }
+
+    // ==========================================
+    //  2. 게시글 조회 (Read)
+    // ==========================================
 
     @GetMapping("/{id}")
     public ResponseEntity<PostDto.Response> getPost(
@@ -62,23 +87,43 @@ public class PostController {
         return ResponseEntity.ok(postService.list(req));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<Void> updatePost(
+    // ==========================================
+    //  3. 게시글 수정 (Update)
+    // ==========================================
+
+    // [옵션 A] JSON만 보낼 때 (기존 방식)
+    @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Void> updatePostJson(
             @PathVariable Long id,
-            @AuthenticationPrincipal MemberPrincipal userPrincipal, // (수정) 인증 정보 받기
+            @AuthenticationPrincipal MemberPrincipal userPrincipal,
             @Valid @RequestBody PostDto.UpdateRequest request
     ) {
-        // (수정) 토큰에서 추출한 사용자 ID(userPrincipal.id())를 서비스로 전달
-        postService.updatePost(id, userPrincipal.id(), request);
+        postService.updatePost(id, userPrincipal.id(), request, null, null);
         return ResponseEntity.ok().build();
     }
+
+    // [옵션 B] 파일과 함께 보낼 때 (신규 방식)
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> updatePostMultipart(
+            @PathVariable Long id,
+            @AuthenticationPrincipal MemberPrincipal userPrincipal,
+            @Valid @RequestPart("request") PostDto.UpdateRequest request,
+            @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnailFile,
+            @RequestPart(value = "files", required = false) List<MultipartFile> files // (추가) 다중 파일
+    ) {
+        postService.updatePost(id, userPrincipal.id(), request, thumbnailFile, files);
+        return ResponseEntity.ok().build();
+    }
+
+    // ==========================================
+    //  4. 기타 기능 (Delete, Like, Compare)
+    // ==========================================
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(
             @PathVariable Long id,
-            @AuthenticationPrincipal MemberPrincipal userPrincipal // (수정) 인증 정보 받기
+            @AuthenticationPrincipal MemberPrincipal userPrincipal
     ) {
-        // (수정) 토큰에서 추출한 사용자 ID(userPrincipal.id())를 서비스로 전달
         postService.deletePost(id, userPrincipal.id());
         return ResponseEntity.noContent().build();
     }
@@ -92,14 +137,11 @@ public class PostController {
         return ResponseEntity.ok(result);
     }
 
-    // --- (신규) 내 냉장고와 재료 비교 API ---
     @GetMapping("/{postId}/compare-refrigerator")
     public ResponseEntity<PostComparisonDto.Response> compareWithRefrigerator(
             @PathVariable Long postId,
             @AuthenticationPrincipal MemberPrincipal userPrincipal
     ) {
-        // (주의) userPrincipal이 null일 경우(비로그인) NullPointerException 발생.
-        // Spring Security에서 이 엔드포인트는 인증이 필수(permitAll이 아님)여야 합니다.
         PostComparisonDto.Response response = postService.compareWithRefrigerator(postId, userPrincipal.id());
         return ResponseEntity.ok(response);
     }
