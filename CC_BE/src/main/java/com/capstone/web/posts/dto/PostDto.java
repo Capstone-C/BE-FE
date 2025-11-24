@@ -35,6 +35,9 @@ public class PostDto {
         @NotNull(message = "레시피 여부는 필수입니다.")
         private Boolean isRecipe;
 
+        // 썸네일 URL (프론트에서 이미지 업로드 후 받은 URL)
+        private String thumbnailUrl;
+
         // --- 레시피 기본 정보 ---
         private Posts.DietType dietType;
         private Integer cookTimeInMinutes;
@@ -63,6 +66,9 @@ public class PostDto {
         private Posts.PostStatus status;
         @NotNull(message = "레시피 여부는 필수입니다.")
         private Boolean isRecipe;
+
+        // [추가] 썸네일 URL
+        private String thumbnailUrl;
 
         // --- 레시피 기본 정보 ---
         private Posts.DietType dietType;

@@ -28,6 +28,15 @@ spring:
     multipart:
       max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
       max-request-size: ${UPLOAD_MAX_REQUEST_SIZE:10MB}
+  cloud:
+    aws:
+      s3:
+        bucket: ${AWS_S3_BUCKET} # 버킷 이름
+      region:
+        static: ${AWS_REGION}      # 리전 (예: 서울은 ap-northeast-2)
+      credentials:
+        access-key: ${AWS_ACCESS_KEY_ID}          # IAM 액세스 키
+        secret-key: ${AWS_SECRET_ACCESS_KEY}      # IAM 시크릿 키
 
 server:
   port: ${SERVER_PORT:8080}
