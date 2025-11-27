@@ -78,6 +78,10 @@ function toPayload(dto: UpsertPostDto) {
       expirationDate: ing.expirationDate ?? undefined,
     }));
   }
+  // [수정] 주석 제거 및 매핑 추가
+  if (dto.thumbnailUrl) {
+    payload.thumbnailUrl = dto.thumbnailUrl;
+  }
   // thumbnailUrl은 현재 BE 미지원시 전송하지 않음
   return payload;
 }

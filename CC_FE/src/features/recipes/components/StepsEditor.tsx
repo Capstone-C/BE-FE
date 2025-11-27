@@ -1,5 +1,6 @@
 // src/features/recipes/components/StepsEditor.tsx
 import type { RecipeStep } from '@/features/recipes/utils/recipeContent';
+import ImageUploader from '@/components/ui/ImageUploader';
 
 export function StepsEditor({
   steps,
@@ -91,16 +92,13 @@ export function StepsEditor({
                   placeholder={`STEP ${i + 1} 설명을 입력해주세요.`}
                   className="w-full border rounded px-3 py-2 h-24 resize-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 />
-                <div>
-                  <input
-                    value={s.imageUrl ?? ''}
-                    onChange={(e) => edit(i, { imageUrl: e.target.value })}
-                    placeholder="이미지 URL (예: https://example.com/image.jpg)"
-                    className="w-full border rounded px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                <div className="w-40 flex-shrink-0">
+                  <ImageUploader
+                    value={s.imageUrl}
+                    onChange={(url) => edit(i, { imageUrl: url })}
+                    placeholder="단계 사진"
+                    className="h-32" // ImageUploader 내부 높이 조절 필요 시 className으로 전달하거나 스타일 조정
                   />
-                  <p className="text-xs text-gray-400 mt-1">
-                    * 이미지는 URL 형태로 입력해주세요. (추후 업로드 기능 지원 예정)
-                  </p>
                 </div>
               </div>
 

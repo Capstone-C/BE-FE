@@ -6,6 +6,7 @@ import { StepsEditor } from '@/features/recipes/components/StepsEditor';
 import { serializeRecipeContent, type RecipeStep } from '@/features/recipes/utils/recipeContent';
 import { listCategories } from '@/apis/categories.api';
 import type { UpsertPostDto, DietType, Difficulty, UpsertPostStatus } from '@/apis/boards.api';
+import ImageUploader from '@/components/ui/ImageUploader';
 
 export type RecipeFormProps = {
     initialData?: Partial<UpsertPostDto> & {
@@ -211,15 +212,14 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                 </div>
 
                 <div className="space-y-1">
-                    <label className="block text-sm font-medium text-gray-700">대표 이미지 URL (선택)</label>
-                    <input
-                        value={thumbnail}
-                        onChange={(e) => setThumbnail(e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-                        placeholder="https://..."
-                    />
+                  <label className="block text-sm font-medium text-gray-700">대표 이미지 (선택)</label>
+                  <ImageUploader
+                    value={thumbnail}
+                    onChange={setThumbnail}
+                    placeholder="대표 이미지 업로드"
+                  />
                 </div>
-            </section>
+              </section>
 
             <hr />
 

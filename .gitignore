@@ -66,11 +66,22 @@ yarn-error.log*
 pnpm-debug.log*
 
 # ==========================================
-# Environment & Secrets
+# Environment & Secrets (중요 수정됨)
 # ==========================================
 .env
 .env*.local
+
+# Local & Secret Configuration Files
+application-local.yml
+application-secret.yml
 application-local.properties
+application-secret.properties
+
+# Path specific ignores (혹시 모를 실수 방지)
+src/main/resources/application-local.yml
+src/main/resources/application-secret.yml
+src/main/resources/application-local.properties
+
 secrets.local.*
 
 # ==========================================
@@ -99,7 +110,6 @@ junit-report.xml
 .cache/
 .tmp/
 .tmp/**
-
 
 # Terraform
 .terraform/

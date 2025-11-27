@@ -28,6 +28,9 @@ export type Post = {
   /** 레시피 여부 (백엔드에서 제공) */
   isRecipe?: boolean;
 
+  // 썸네일 이미지 URL
+  thumbnailUrl?: string | null;
+
   /** 레시피 관련 확장 필드 */
   dietType?: 'VEGAN' | 'VEGETARIAN' | 'KETO' | 'PALEO' | 'MEDITERRANEAN' | 'LOW_CARB' | 'HIGH_PROTEIN' | 'GENERAL';
   cookTimeInMinutes?: number | null;

@@ -88,20 +88,17 @@ public class PostService {
                 .difficulty(request.getDifficulty())
                 .build();
 
-        // 1. 썸네일 업로드 (OrderNum = 0)
+        // [수정] 1. 썸네일 처리 (파일 업로드 우선, 없으면 URL 사용)
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             try {
                 String thumbnailUrl = s3UploadService.uploadFile(thumbnailFile);
-                Media thumbnailMedia = Media.builder()
-                        .ownerType(Media.OwnerType.post)
-                        .mediaType(Media.MediaType.image)
-                        .url(thumbnailUrl)
-                        .orderNum(0)
-                        .build();
-                post.addMedia(thumbnailMedia);
+                addThumbnailMedia(post, thumbnailUrl);
             } catch (IOException e) {
                 throw new RuntimeException("썸네일 업로드 실패", e);
             }
+        } else if (request.getThumbnailUrl() != null && !request.getThumbnailUrl().isBlank()) {
+            // [추가] 프론트엔드에서 보낸 URL로 썸네일 설정
+            addThumbnailMedia(post, request.getThumbnailUrl());
         }
 
         // 2. 추가 이미지 업로드 (OrderNum = 1 부터 시작)
@@ -145,6 +142,17 @@ public class PostService {
         return savedPost.getId();
     }
 
+    // [추가] 썸네일 Media 생성 헬퍼 메서드
+    private void addThumbnailMedia(Posts post, String url) {
+        Media thumbnailMedia = Media.builder()
+                .ownerType(Media.OwnerType.post)
+                .mediaType(Media.MediaType.image)
+                .url(url)
+                .orderNum(0) // 썸네일은 0번
+                .build();
+        post.addMedia(thumbnailMedia);
+    }
+
     @Transactional
     public PostDto.Response getPostById(Long id) {
         Posts post = postsNextPage(id);
@@ -180,20 +188,23 @@ public class PostService {
         Category category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new CategoryNotFoundException("카테고리를 찾을 수 없습니다. ID: " + request.getCategoryId()));
 
-        // 1. 썸네일 업데이트
+        // [수정] 1. 썸네일 업데이트
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
+            // 새 파일이 있으면 기존 썸네일 제거 후 새 파일 업로드
+            post.getMedia().removeIf(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0);
             try {
-                post.getMedia().removeIf(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0);
                 String newThumbnailUrl = s3UploadService.uploadFile(thumbnailFile);
-                Media newThumbnailMedia = Media.builder()
-                        .ownerType(Media.OwnerType.post)
-                        .mediaType(Media.MediaType.image)
-                        .url(newThumbnailUrl)
-                        .orderNum(0)
-                        .build();
-                post.addMedia(newThumbnailMedia);
+                addThumbnailMedia(post, newThumbnailUrl);
             } catch (IOException e) {
                 throw new RuntimeException("썸네일 업로드 실패", e);
+            }
+        } else if (request.getThumbnailUrl() != null) {
+            // [추가] URL이 전달된 경우 (빈 문자열이면 삭제, 값이 있으면 업데이트)
+            // 기존 썸네일 제거
+            post.getMedia().removeIf(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0);
+
+            if (!request.getThumbnailUrl().isBlank()) {
+                addThumbnailMedia(post, request.getThumbnailUrl());
             }
         }
 
