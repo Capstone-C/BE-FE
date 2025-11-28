@@ -29,7 +29,7 @@ public class PostDto {
         @Size(min = 5, max = 100, message = "제목은 5자 이상 100자 이하로 입력해주세요.")
         private String title;
         @NotBlank(message = "내용은 비워둘 수 없습니다.")
-        @Size(min = 10, max = 10000, message = "내용은 10자 이상 10000자 이하로 입력해주세요.")
+        @Size(min = 10, max = 200000, message = "내용은 10자 이상 200000자 이하로 입력해주세요.")
         private String content;
         private Posts.PostStatus status;
         @NotNull(message = "레시피 여부는 필수입니다.")
@@ -58,7 +58,7 @@ public class PostDto {
         @Size(min = 5, max = 100, message = "제목은 5자 이상 100자 이하로 입력해주세요.")
         private String title;
         @NotBlank(message = "내용은 비워둘 수 없습니다.")
-        @Size(min = 10, max = 10000, message = "내용은 10자 이상 10000자 이하로 입력해주세요.")
+        @Size(min = 10, max = 200000, message = "내용은 10자 이상 200000자 이하로 입력해주세요.")
         private String content;
         @NotNull(message = "카테고리 ID는 필수입니다.")
         private Long categoryId;
