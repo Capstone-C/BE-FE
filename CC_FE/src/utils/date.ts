@@ -43,3 +43,16 @@ export const toYmd = (d: Date | null): string | undefined => {
   return `${y}-${m}-${day}`;
 };
 
+export const formatDateYMDKoreanWithTime = (value: string | number | Date) => {
+  // YYYY년 MM월 DD일 HH:MM 형식 (초까지 필요하면 formatKST 사용)
+  const d = toDate(value);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return `${y}년 ${m}월 ${day}일 ${hh}:${mm}`;
+};
+
+// 별칭: 화면에서 분 단위까지 표기할 때 권장
+export const formatYMDHMKorean = formatDateYMDKoreanWithTime;
