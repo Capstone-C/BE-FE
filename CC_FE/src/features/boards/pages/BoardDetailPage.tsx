@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { usePost } from '@/features/boards/hooks/usePosts';
 import { compareRecipeWithRefrigerator, type RecipeRefrigeratorComparison } from '@/apis/boards.api';
 import CommentList from '@/features/comments/components/CommentList';
-import { formatDateYMDKorean } from '@/utils/date';
+import { formatYMDHMKorean } from '@/utils/date';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import DOMPurify from 'dompurify';
 import { useState } from 'react';
@@ -239,8 +239,8 @@ export default function BoardDetailPage() {
           <h1 className="text-2xl font-bold">{data.title}</h1>
           <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
             <span>작성자: {authorNode}</span>
-            <span>· {formatDateYMDKorean(data.createdAt)}</span>
-            {data.updatedAt ? <span>· 수정 {formatDateYMDKorean(data.updatedAt)}</span> : null}
+            <span>· {formatYMDHMKorean(data.createdAt)}</span>
+            {data.updatedAt ? <span>· 수정 {formatYMDHMKorean(data.updatedAt)}</span> : null}
             <span>· 조회 {data.viewCount}</span>
             <span>· 추천 {currentLikeCount}</span>
             {data.dietType && <span>· 식단 타입: {data.dietType}</span>}
@@ -258,8 +258,8 @@ export default function BoardDetailPage() {
           <h1 className="text-2xl font-bold">{data.title}</h1>
           <div className="text-sm text-gray-600 flex flex-wrap gap-2">
             {authorNode}
-            <span>· {formatDateYMDKorean(data.createdAt)}</span>
-            {data.updatedAt ? <span>· 수정 {formatDateYMDKorean(data.updatedAt)}</span> : null}
+            <span>· {formatYMDHMKorean(data.createdAt)}</span>
+            {data.updatedAt ? <span>· 수정 {formatYMDHMKorean(data.updatedAt)}</span> : null}
             <span>· 조회 {data.viewCount}</span>
             <span>· 추천 {currentLikeCount}</span>
           </div>
