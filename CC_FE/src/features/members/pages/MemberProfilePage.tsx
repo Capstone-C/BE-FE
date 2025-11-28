@@ -134,7 +134,7 @@ export default function MemberProfilePage() {
       {/* 활동 보기 버튼 (공개/본인 공통) */}
       <div className="mt-6 flex flex-wrap gap-4">
         <Link
-          to={`/boards?searchType=AUTHOR&keyword=${encodeURIComponent(displayName)}`}
+          to={viewingSelf ? '/mypage/posts' : `/boards?authorId=${encodeURIComponent(String(effectiveMember.id))}`}
           className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
         >
           {viewingSelf ? '내가 작성한 글 보기' : '이 회원이 작성한 글 보기'}
