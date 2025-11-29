@@ -8,6 +8,7 @@ import {
   updateDiary,
   type UpdateDiaryRequest,
 } from '@/apis/diary.api';
+import ImageUploader from '@/components/ui/ImageUploader';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -67,15 +68,18 @@ export default function DiaryEditPage() {
       const next = { ...prev } as UpdateDiaryRequest;
       if (name === 'recipeId') {
         next.recipeId = value === '' ? undefined : Number(value);
-      } else if (name === 'imageUrl') {
-        next.imageUrl = value;
       } else if (name === 'content') {
         next.content = value;
       } else if (name === 'mealType') {
         next.mealType = value as MealType;
       }
+      // imageUrl handled by separate function
       return next;
     });
+  };
+
+  const handleImageChange = (url: string) => {
+    setForm((prev) => ({ ...prev, imageUrl: url }));
   };
 
   const validate = useMemo(() => {
@@ -131,7 +135,7 @@ export default function DiaryEditPage() {
 
         <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto">
           <div>
-            <label className="block text.sm font-medium mb-1">식사 타입</label>
+            <label className="block text-sm font-medium mb-1">식사 타입</label>
             <select
               name="mealType"
               value={form.mealType}
@@ -160,13 +164,11 @@ export default function DiaryEditPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">이미지 URL (선택)</label>
-            <input
-              type="url"
-              name="imageUrl"
-              value={form.imageUrl ?? ''}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+            <label className="block text-sm font-medium mb-1">사진 (선택)</label>
+            <ImageUploader
+              value={form.imageUrl}
+              onChange={handleImageChange}
+              placeholder="식단 사진 업로드"
             />
           </div>
 
