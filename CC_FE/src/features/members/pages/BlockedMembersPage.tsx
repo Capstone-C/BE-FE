@@ -1,6 +1,7 @@
 // src/features/members/pages/BlockedMembersPage.tsx
 import { useBlockedMembers, useUnblockMemberMutation } from '@/features/members/hooks/useMemberBlocks';
 import { useToast } from '@/contexts/ToastContext';
+import { formatKST } from '@/utils/date'; // 추가: KST 포맷 활용
 
 export default function BlockedMembersPage() {
   const { data, isLoading, isError, refetch } = useBlockedMembers();
@@ -30,20 +31,23 @@ export default function BlockedMembersPage() {
         <div className="text-gray-600">차단한 사용자가 없습니다.</div>
       ) : (
         <ul className="space-y-3">
-          {data.map((b: any) => (
-            <li key={b.id} className="flex items-center justify-between border rounded p-3 bg-white">
-              <div className="space-y-1 text-sm">
-                <p className="font-medium">{b.blockedEmail ?? `회원 #${b.blockedId}`}</p>
-                <p className="text-gray-500">차단일: {new Date(b.createdAt).toLocaleString()}</p>
-              </div>
-              <button
-                onClick={() => onUnblock(b.blockedId)}
-                className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
-              >
-                차단 해제
-              </button>
-            </li>
-          ))}
+          {data.map((b: any) => {
+            const createdDisplay = b.createdAt ? formatKST(b.createdAt) : '알 수 없음';
+            return (
+              <li key={b.id} className="flex items-center justify-between border rounded p-3 bg-white">
+                <div className="space-y-1 text-sm">
+                  <p className="font-medium">{b.blockedEmail ?? `회원 #${b.blockedId}`}</p>
+                  <p className="text-gray-500">차단일: {createdDisplay}</p>
+                </div>
+                <button
+                  onClick={() => onUnblock(b.blockedId)}
+                  className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+                >
+                  차단 해제
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

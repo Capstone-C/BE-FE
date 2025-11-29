@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -29,85 +28,67 @@ import java.util.Optional; // (추가)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Posts {
 
+    @Column(name = "comment_count", nullable = false)
+    @ColumnDefault("0")
+    private final int commentCount = 0;
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<PostIngredient> ingredients = new ArrayList<>();
+    // (추가) Media와의 일대다 관계 설정
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private final List<Media> media = new ArrayList<>();
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id", nullable = false)
     private Member authorId;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
-
     @Column(name = "title", nullable = false, length = 255)
     private String title;
-
     @Lob
     @Column(name = "content", nullable = false, columnDefinition = "LONGTEXT")
     private String content;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     @ColumnDefault("'DRAFT'")
     private PostStatus status;
-
     @Column(name = "view_count", nullable = false)
     @ColumnDefault("0")
     private int viewCount = 0;
-
     @Column(name = "like_count", nullable = false)
     @ColumnDefault("0")
     private int likeCount = 0;
-
-    @Column(name = "comment_count", nullable = false)
-    @ColumnDefault("0")
-    private final int commentCount = 0;
-
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
+    // NOTE: updatedAt은 조회(viewCount 증가)나 좋아요 수 변경 등 단순 메트릭 수정 시 갱신되지 않도록 @UpdateTimestamp를 제거하고 수동 갱신 방식 적용.
+    // 실질적인 본문/메타데이터 변경(update 메서드 호출)시에만 markUpdated()로 변경 시간을 기록한다.
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "selected")
     @ColumnDefault("'FALSE'")
     private TruthValue selected;
-
     @Enumerated(EnumType.STRING)
     @Column(name = "file")
     @ColumnDefault("'FALSE'")
     private TruthValue file;
-
     @Column(name = "is_recipe", nullable = false)
     private boolean isRecipe;
-
     // --- 레시피 기본 정보 ---
     @Enumerated(EnumType.STRING)
     @Column(name = "diet_type")
     private DietType dietType; // 식단 타입
-
     @Column(name = "cook_time_in_minutes")
     private Integer cookTimeInMinutes; // 조리 시간(분)
-
+    // ----------------------------
     @Column(name = "servings")
     private Integer servings; // 분량(인분)
-
     @Enumerated(EnumType.STRING)
     @Column(name = "difficulty")
     private Difficulty difficulty; // 난이도
-    // ----------------------------
-
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PostIngredient> ingredients = new ArrayList<>();
-
-    // (추가) Media와의 일대다 관계 설정
-    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Media> media = new ArrayList<>();
 
     @Builder
     public Posts(Member authorId, Category category, String title, String content, PostStatus status, boolean isRecipe,
@@ -124,6 +105,18 @@ public class Posts {
         this.difficulty = difficulty;
     }
 
+    @PrePersist
+    protected void onPersist() {
+        // 최초 생성 시 updatedAt 초기화 (생성 시각과 동일하게 설정)
+        if (this.updatedAt == null) {
+            this.updatedAt = LocalDateTime.now();
+        }
+    }
+
+    private void markUpdated() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
     public void update(String title, String content, PostStatus status, Category category, boolean isRecipe,
                        DietType dietType, Integer cookTimeInMinutes, Integer servings, Difficulty difficulty) {
         this.title = title;
@@ -135,6 +128,8 @@ public class Posts {
         this.cookTimeInMinutes = cookTimeInMinutes;
         this.servings = servings;
         this.difficulty = difficulty;
+        // 실제 내용/메타데이터 변경 시에만 수정일을 갱신
+        markUpdated();
     }
 
     // (추가) Media 연관관계 편의 메서드

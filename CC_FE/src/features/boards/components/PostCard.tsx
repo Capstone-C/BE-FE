@@ -3,7 +3,7 @@ import type { Post } from '@/types/post';
 import { Card, CardContent, CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
-import { formatDateYMDKorean } from '@/utils/date';
+import { formatYMDHMKorean } from '@/utils/date';
 
 export function PostCard({ post, boardId }: { post: Post; boardId?: string | null }) {
   const { inlineName, memberId } = extractAuthorRef(post);
@@ -43,19 +43,14 @@ export function PostCard({ post, boardId }: { post: Post; boardId?: string | nul
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <span className="font-medium text-gray-900">{authorNode}</span>
             <span className="text-gray-300">|</span>
-            <span>{formatDateYMDKorean(post.createdAt)}</span>
+            <span>{formatYMDHMKorean(post.createdAt)}</span>
+            {post.updatedAt ? <span>· 수정 {formatYMDHMKorean(post.updatedAt)}</span> : null}
           </div>
 
           <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
-            <span className="flex items-center gap-1">
-              👁️ {post.viewCount}
-            </span>
-            <span className="flex items-center gap-1">
-              👍 {post.likeCount}
-            </span>
-            <span className="flex items-center gap-1">
-              💬 {post.commentCount}
-            </span>
+            <span className="flex items-center gap-1">👁️ {post.viewCount}</span>
+            <span className="flex items-center gap-1">👍 {post.likeCount}</span>
+            <span className="flex items-center gap-1">💬 {post.commentCount}</span>
           </div>
         </CardContent>
       </div>
