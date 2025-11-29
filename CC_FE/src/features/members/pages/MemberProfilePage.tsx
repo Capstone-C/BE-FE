@@ -169,6 +169,9 @@ export default function MemberProfilePage() {
           >
             차단된 사용자 관리
           </Link>
+          <Link to="/mypage/scraps" className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
+            내 스크랩북
+          </Link>
         </div>
       )}
       {!viewingSelf && (

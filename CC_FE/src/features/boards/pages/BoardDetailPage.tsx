@@ -17,6 +17,7 @@ import {
 } from '@/features/members/hooks/useMemberBlocks';
 import { getDeductPreview, postDeduct } from '@/apis/refrigerator.api';
 import type { DeductPreviewResponse, DeductResponse } from '@/types/refrigerator';
+import { toggleScrap as toggleScrapApi } from '@/apis/scraps.api';
 
 export default function BoardDetailPage() {
   const { postId } = useParams();
@@ -106,6 +107,16 @@ export default function BoardDetailPage() {
       const res = await likeMutation.mutateAsync(id);
       setLiked(res.liked);
       setLikeCount(res.likeCount);
+    } catch {
+      show('로그인이 필요한 기능입니다.', { type: 'error' });
+      nav('/login');
+    }
+  };
+
+  const onToggleScrap = async () => {
+    try {
+      const res = await toggleScrapApi(id);
+      show(res.scrapped ? '스크랩북에 추가했습니다.' : '스크랩북에서 삭제했습니다.', { type: 'success' });
     } catch {
       show('로그인이 필요한 기능입니다.', { type: 'error' });
       nav('/login');
@@ -276,6 +287,9 @@ export default function BoardDetailPage() {
         </button>
         {isRecipePost && (
           <>
+            <button onClick={onToggleScrap} className="border px-3 py-1 rounded">
+              스크랩
+            </button>
             <button onClick={onShare} className="border px-3 py-1 rounded">
               공유하기
             </button>
