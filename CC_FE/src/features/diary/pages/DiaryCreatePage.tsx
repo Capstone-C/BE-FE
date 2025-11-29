@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from '
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
+import ImageUploader from '@/components/ui/ImageUploader';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -57,9 +58,13 @@ export default function DiaryCreatePage() {
       else if (name === 'date') next.date = value;
       else if (name === 'mealType') next.mealType = value as MealType;
       else if (name === 'content') next.content = value;
-      else if (name === 'imageUrl') next.imageUrl = value;
+      // imageUrl change is handled separately
       return next;
     });
+  };
+
+  const handleImageChange = (url: string) => {
+    setForm((prev) => ({ ...prev, imageUrl: url }));
   };
 
   const validate = useMemo(() => {
@@ -150,16 +155,12 @@ export default function DiaryCreatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">이미지 URL (선택)</label>
-            <input
-              type="url"
-              name="imageUrl"
-              value={form.imageUrl ?? ''}
-              onChange={handleChange}
-              placeholder="https://..."
-              className="w-full border rounded px-3 py-2"
+            <label className="block text-sm font-medium mb-1">사진 (선택)</label>
+            <ImageUploader
+              value={form.imageUrl}
+              onChange={handleImageChange}
+              placeholder="식단 사진 업로드"
             />
-            <p className="text-xs text-gray-500 mt-1">현재 버전은 URL 입력을 지원합니다. 파일 업로드는 추후 확장.</p>
           </div>
 
           <div>
