@@ -3,6 +3,7 @@ package com.capstone.web.shopping.repository;
 import com.capstone.web.shopping.domain.ProductDocument;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.elasticsearch.annotations.Query;
 import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 import org.springframework.stereotype.Repository;
 
@@ -41,8 +42,10 @@ public interface ProductSearchRepository extends ElasticsearchRepository<Product
     Page<ProductDocument> findByCategoryAndMallType(String category, String mallType, Pageable pageable);
 
     /**
-     * 상품명으로 검색 (Full-text search)
+     * 상품명으로 검색 (Full-text search with Nori analyzer)
+     * match 쿼리를 사용하여 한글 형태소 분석 적용
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}]}}")
     Page<ProductDocument> findByNameContaining(String name, Pageable pageable);
 
     /**
@@ -58,22 +61,26 @@ public interface ProductSearchRepository extends ElasticsearchRepository<Product
     /**
      * 복합 검색: 키워드 + 카테고리 (Elasticsearch nori 형태소 분석 사용)
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}, {\"term\": {\"category\": \"?1\"}}]}}")
     Page<ProductDocument> findByNameContainingAndCategory(String name, String category, Pageable pageable);
 
     /**
      * 복합 검색: 키워드 + 쇼핑몰 타입
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}, {\"term\": {\"mallType\": \"?1\"}}]}}")
     Page<ProductDocument> findByNameContainingAndMallType(String name, String mallType, Pageable pageable);
 
     /**
      * 복합 검색: 키워드 + 카테고리 + 쇼핑몰 타입
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}, {\"term\": {\"category\": \"?1\"}}, {\"term\": {\"mallType\": \"?2\"}}]}}")
     Page<ProductDocument> findByNameContainingAndCategoryAndMallType(
             String name, String category, String mallType, Pageable pageable);
 
     /**
      * 복합 검색: 키워드 + 가격 범위
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}, {\"range\": {\"price\": {\"gte\": ?1, \"lte\": ?2}}}]}}")
     Page<ProductDocument> findByNameContainingAndPriceBetween(
             String name, Integer minPrice, Integer maxPrice, Pageable pageable);
 
@@ -86,6 +93,7 @@ public interface ProductSearchRepository extends ElasticsearchRepository<Product
     /**
      * 복합 검색: 키워드 + 카테고리 + 가격 범위
      */
+    @Query("{\"bool\": {\"must\": [{\"match\": {\"name\": \"?0\"}}, {\"term\": {\"category\": \"?1\"}}, {\"range\": {\"price\": {\"gte\": ?2, \"lte\": ?3}}}]}}")
     Page<ProductDocument> findByNameContainingAndCategoryAndPriceBetween(
             String name, String category, Integer minPrice, Integer maxPrice, Pageable pageable);
 }
