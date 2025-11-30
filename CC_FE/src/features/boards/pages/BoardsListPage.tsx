@@ -1,112 +1,147 @@
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { usePosts } from '@/features/boards/hooks/usePosts';
-import Container from '@/components/ui/Container';
-import Button from '@/components/ui/Button';
-import { PostCard } from '@/features/boards/components/PostCard';
-import { listCategories, type Category } from '@/apis/categories.api';
+import BoardSidebar from '@/features/boards/components/BoardSidebar';
+import { formatYMDHMKorean } from '@/utils/date';
+import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import { useBlockedMembers } from '@/features/members/hooks/useMemberBlocks';
-import { extractAuthorRef } from '@/utils/author';
 
 export default function BoardsListPage() {
   const [sp, setSp] = useSearchParams();
-  const location = useLocation();
 
   const page = Number(sp.get('page') ?? 1);
   const size = Number(sp.get('size') ?? 20);
   const boardId = sp.get('categoryId');
-  const authorId = sp.get('authorId');
   const searchType = sp.get('searchType') ?? undefined;
   const keyword = sp.get('keyword') ?? undefined;
-  const sortBy = sp.get('sortBy') ?? 'createdAt';
 
   const { data, isLoading, isError } = usePosts({
     page,
     size,
     keyword,
-    sort: sortBy,
+    sort: 'createdAt',
     boardId: boardId ? Number(boardId) : undefined,
-    authorId: authorId ? Number(authorId) : undefined,
     searchType,
   });
 
   const { data: blocked } = useBlockedMembers();
-
-  const isMyPosts = location.pathname.startsWith('/mypage/posts') || !!authorId;
-
-  const title = isMyPosts ? '내가 작성한 글' : boardId ? '게시판 글 목록' : '전체 글';
-
-  const [categories, setCategories] = useState<Category[] | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const list = await listCategories();
-        if (!alive) return;
-        setCategories(list);
-      } catch {
-        // ignore
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
-
-  const isRecipeCategory = useMemo(() => {
-    if (!boardId) return false;
-    if (!categories) return false;
-    const cid = Number(boardId);
-    const found = categories.find((c) => c.id === cid);
-    return found?.type === 'RECIPE';
-  }, [boardId, categories]);
-
-  if (isLoading) return <div className="p-6">목록 불러오는 중…</div>;
-  if (isError || !data) return <div className="p-6">오류가 발생했습니다.</div>;
-
-  const newPostHref = isRecipeCategory ? '/recipes/new' : '/boards/new';
-  const newPostState = !isRecipeCategory && boardId ? { fromCategoryId: Number(boardId) } : undefined;
-
   const blockedIds = blocked?.map((b) => b.blockedId) ?? [];
+
+  if (isLoading) return <div className="max-w-7xl mx-auto p-8 text-center">목록 불러오는 중…</div>;
+  if (isError || !data) return <div className="max-w-7xl mx-auto p-8 text-center text-red-600">오류가 발생했습니다.</div>;
+
   const visiblePosts = data.content.filter((p) => {
     const { memberId } = extractAuthorRef(p as any);
     return !(memberId && blockedIds.includes(memberId));
   });
 
+  // 페이지네이션 핸들러
+  const handlePageChange = (newPage: number) => {
+    const newSp = new URLSearchParams(sp);
+    newSp.set('page', String(newPage));
+    setSp(newSp);
+  };
+
   return (
-    <Container className="py-6 space-y-4">
-      <div className="flex gap-3 items-center justify-between">
-        <h1 className="text-xl font-semibold">{title}</h1>
-        {!isMyPosts && (
-          <Link to={newPostHref} state={newPostState}>
-            <Button>새 글</Button>
-          </Link>
-        )}
-      </div>
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row gap-8">
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {visiblePosts.map((p) => (
-          <PostCard key={p.id} post={p} boardId={boardId} />
-        ))}
-      </div>
+        {/* Sidebar */}
+        <BoardSidebar />
 
-      <div className="flex gap-2 justify-center pt-2">
-        <Button
-          variant="secondary"
-          disabled={page <= 1}
-          onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page - 1) })}
-        >
-          이전
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={page >= data.totalPages}
-          onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page + 1) })}
-        >
-          다음
-        </Button>
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          <div className="mb-6 pb-4 border-b border-gray-200 flex justify-between items-end">
+            <div>
+              <h1 className="text-3xl font-bold leading-tight text-gray-900">
+                {boardId ? '게시판' : '전체 글'}
+              </h1>
+              <p className="mt-2 text-md text-gray-500">
+                다양한 식단 정보를 공유하고 소통해보세요.
+              </p>
+            </div>
+            <Link
+              to="/boards/new"
+              state={boardId ? { fromCategoryId: Number(boardId) } : undefined}
+              className="px-4 py-2 bg-[#4E652F] text-white text-sm font-medium rounded-md hover:bg-[#425528] transition-colors flex-shrink-0"
+            >
+              글쓰기
+            </Link>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {visiblePosts.length > 0 ? (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                    <tr>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">번호</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">글쓴이</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">추천</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">조회</th>
+                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">날짜</th>
+                    </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                    {visiblePosts.map((post) => {
+                      const { inlineName, memberId } = extractAuthorRef(post);
+                      const authorName = getDisplayName(memberId, inlineName);
+                      return (
+                        <tr key={post.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.id}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">
+                            <Link to={`/boards/${post.id}`} className="block hover:text-[#4E652F] font-medium">
+                              {post.title}
+                              {post.commentCount > 0 && (
+                                <span className="ml-2 text-xs font-semibold text-[#71853A]">
+                                                        [{post.commentCount}]
+                                                    </span>
+                              )}
+                            </Link>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{authorName}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.likeCount}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.viewCount}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 text-xs">
+                            {formatYMDHMKorean(post.createdAt).split(' ')[0]} {/* 날짜만 표시 */}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="p-4 flex justify-center items-center space-x-2 border-t">
+                  <button
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page <= 1}
+                    className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    이전
+                  </button>
+                  <span className="text-sm text-gray-600 px-2">
+                        {page} / {data.totalPages}
+                    </span>
+                  <button
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page >= data.totalPages}
+                    className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    다음
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-20 text-gray-500">
+                게시글이 존재하지 않습니다.
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </Container>
+    </div>
   );
 }

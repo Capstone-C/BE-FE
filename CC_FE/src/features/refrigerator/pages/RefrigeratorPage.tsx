@@ -20,27 +20,14 @@ import { ko } from 'date-fns/locale';
 import { formatDateYMDKorean, toYmd } from '@/utils/date';
 import { Link } from 'react-router-dom';
 import { COMMON_UNITS } from '@/constants/units';
+import { PlusIcon, ReceiptIcon, TrashIcon } from '@/components/ui/Icons';
 
 function formatDDay(days: number | null): string {
-  if (days === null || days === undefined) return '—';
-  if (days === 0) return 'D-Day';
-  if (days > 0) return `D-${days}`;
-  return `D+${Math.abs(days)}`;
+  if (days === null || days === undefined) return '';
+  if (days === 0) return '(D-Day)';
+  if (days > 0) return `(D-${days})`;
+  return `(D+${Math.abs(days)})`;
 }
-
-function classForItem(item: RefrigeratorItem): string {
-  if (item.expired) return 'bg-red-50';
-  if (item.expirationSoon) return 'bg-orange-50';
-  return 'bg-white';
-}
-
-function dDayTextColor(item: RefrigeratorItem): string {
-  if (item.expired) return 'text-red-600 font-semibold';
-  if (item.expirationSoon) return 'text-orange-600 font-semibold';
-  return 'text-gray-700';
-}
-
-
 
 export default function RefrigeratorPage() {
   const [sortBy, setSortBy] = useState<'expirationDate' | 'name' | 'createdAt'>('expirationDate');
@@ -53,7 +40,9 @@ export default function RefrigeratorPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const nameInputRef = useRef<HTMLInputElement | null>(null);
   const [nameValue, setNameValue] = useState('');
+  const [quantityValue, setQuantityValue] = useState('');
   const [unitValue, setUnitValue] = useState('');
+  const [memoValue, setMemoValue] = useState('');
   const [addExpirationDate, setAddExpirationDate] = useState<Date | null>(null);
   const [showUnitSuggestions, setShowUnitSuggestions] = useState(false);
 
@@ -61,28 +50,27 @@ export default function RefrigeratorPage() {
   const [editErrors, setEditErrors] = useState<Record<string, string>>({});
   const [editingPrefill, setEditingPrefill] = useState<RefrigeratorItem | null>(null);
   const [editExpirationDate, setEditExpirationDate] = useState<Date | null>(null);
-  // [REF-06] 삭제 확인 모달 / 애니메이션 관련 상태 추가
   const [deleteTarget, setDeleteTarget] = useState<RefrigeratorItem | null>(null);
   const [removingIds, setRemovingIds] = useState<Set<number>>(new Set());
 
-  // Fetch list
+  // [수정] isPending, isError 변수 사용하도록 수정
   const { data, isPending, isError } = useQuery({
     queryKey: ['refrigeratorItems', sortBy],
     queryFn: () => getRefrigeratorItems(sortBy),
   });
 
-  // Focus when add form opens
   useEffect(() => {
     if (showAddForm) {
       setFormErrors({});
       setNameValue('');
+      setQuantityValue('');
       setUnitValue('');
+      setMemoValue('');
       setAddExpirationDate(null);
       window.requestAnimationFrame(() => nameInputRef.current?.focus());
     }
   }, [showAddForm]);
 
-  // Prefetch single item when editing opens
   useEffect(() => {
     if (editingItem) {
       setEditErrors({});
@@ -93,15 +81,8 @@ export default function RefrigeratorPage() {
           setEditingPrefill(fresh);
           setEditExpirationDate(fresh.expirationDate ? new Date(fresh.expirationDate) : null);
         })
-        .catch((error) => {
-          const status = error?.response?.status;
-          if (status === 403) {
-            showToast('권한이 없습니다.', { type: 'error' });
-          } else if (status === 404) {
-            showToast('식재료를 찾을 수 없습니다.', { type: 'error' });
-          } else {
-            showToast('식재료 정보를 불러오지 못했습니다.', { type: 'error' });
-          }
+        .catch(() => {
+          showToast('식재료 정보를 불러오지 못했습니다.', { type: 'error' });
           setEditingItem(null);
         });
     } else {
@@ -113,27 +94,12 @@ export default function RefrigeratorPage() {
   const createMutation = useMutation({
     mutationFn: (payload: CreateRefrigeratorItemRequest) => createRefrigeratorItem(payload),
     onSuccess: () => {
-      showToast('식재료가 추가되었습니다. (동일 이름+소비기한은 수량 합산)', { type: 'success' });
+      showToast('식재료가 추가되었습니다.', { type: 'success' });
       void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
       setShowAddForm(false);
     },
-    onError: (error: any) => {
-      const resp = error?.response;
-      // 중복 409 정책 제거: 서버는 병합 처리하므로 여기서는 검증 오류만 처리
-      if (resp?.data?.code === 'VALIDATION_ERROR') {
-        const fieldErrors: Record<string, string> = {};
-        resp.data.errors?.forEach((fe: any) => {
-          fieldErrors[fe.field] = fe.message;
-        });
-        setFormErrors(fieldErrors);
-        const firstField = Object.keys(fieldErrors)[0];
-        if (firstField) {
-          const el = document.querySelector(`[name="${firstField}"]`) as HTMLElement | null;
-          el?.focus();
-        }
-      } else {
-        showToast('등록 중 오류가 발생했습니다.', { type: 'error' });
-      }
+    onError: () => {
+      showToast('등록 중 오류가 발생했습니다.', { type: 'error' });
     },
   });
 
@@ -145,97 +111,45 @@ export default function RefrigeratorPage() {
       setEditingItem(null);
       showToast('정보가 수정되었습니다.', { type: 'success' });
     },
-    onError: (error: any) => {
-      const resp = error?.response;
-      if (resp?.status === 403) {
-        setEditErrors({ global: '권한이 없습니다.' });
-      } else if (resp?.status === 404) {
-        setEditErrors({ global: '식재료를 찾을 수 없습니다.' });
-      } else if (resp?.data?.code === 'VALIDATION_ERROR') {
-        const fieldErrors: Record<string, string> = {};
-        resp.data.errors?.forEach((fe: any) => {
-          if (fe.field === 'quantity') fieldErrors.quantity = fe.message;
-          if (fe.field === 'unit') fieldErrors.unit = fe.message;
-          if (fe.field === 'expirationDate') fieldErrors.expirationDate = fe.message;
-          if (fe.field === 'memo') fieldErrors.memo = fe.message;
-        });
-        setEditErrors(fieldErrors);
-      } else {
-        setEditErrors({ global: '수정 중 오류가 발생했습니다.' });
-      }
+    onError: () => {
+      setEditErrors({ global: '수정 중 오류가 발생했습니다.' });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteRefrigeratorItem(id),
     onSuccess: (_data, id) => {
-      // 성공 Toast (문구 명확하게)
       showToast('식재료가 삭제되었습니다.', { type: 'success' });
-      // 모달 닫기
       setDeleteTarget(null);
-      // 애니메이션 시작: 해당 행 투명도 0
       setRemovingIds((prev) => new Set([...prev, id]));
-      // 애니메이션 후 목록 새로고침
       setTimeout(() => {
         void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
-        // 제거된 ID 정리 (재사용성 위해)
         setRemovingIds((prev) => {
           const next = new Set(prev);
           next.delete(id);
           return next;
         });
-      }, 320); // 약간 여유를 둔 300ms + α
+      }, 320);
     },
-    onError: (error: any) => {
-      const status = error?.response?.status;
-      if (status === 403) {
-        showToast('삭제 권한이 없습니다.', { type: 'error' });
-      } else if (status === 404) {
-        showToast('이미 삭제된 항목입니다.', { type: 'info' });
-        // 최신 상태 반영
-        void qc.invalidateQueries({ queryKey: ['refrigeratorItems', sortBy] });
-      } else {
-        showToast('삭제 중 오류가 발생했습니다.', { type: 'error' });
-      }
-      // 모달은 닫음 (사용자 실수 방지 목적 달성)
+    onError: () => {
+      showToast('삭제 중 오류가 발생했습니다.', { type: 'error' });
       setDeleteTarget(null);
     },
   });
 
   const handleAddSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setFormErrors({});
-    const form = e.currentTarget;
-    const fd = new FormData(form);
-    const name = String(fd.get('name')).trim();
-    const quantityStr = String(fd.get('quantity')).trim();
-    const unit = String(fd.get('unit')).trim();
-    const memo = String(fd.get('memo')).trim();
-
-    const errors: Record<string, string> = {};
-    if (!name) errors.name = '식재료명을 입력해주세요.';
-    else if (name.length > 50) errors.name = '식재료명은 50자 이하이어야 합니다.';
-    if (quantityStr) {
-      if (!/^\d+$/.test(quantityStr)) errors.quantity = '수량은 숫자로만 입력할 수 있습니다.';
-      else if (Number(quantityStr) < 0) errors.quantity = '수량은 0 이상이어야 합니다.';
-    }
-    if (unit && unit.length > 10) errors.unit = '단위는 10자 이하이어야 합니다.';
-    if (memo && memo.length > 200) errors.memo = '메모는 200자 이하이어야 합니다.';
-
-    if (Object.keys(errors).length) {
-      setFormErrors(errors);
-      const firstField = Object.keys(errors)[0];
-      const el = form.querySelector(`[name="${firstField}"]`) as HTMLElement | null;
-      el?.focus();
+    if(!nameValue.trim()) {
+      setFormErrors({name: '식재료명을 입력해주세요.'});
       return;
     }
 
     const payload: CreateRefrigeratorItemRequest = {
-      name,
-      quantity: quantityStr ? Number(quantityStr) : undefined,
-      unit: unit || undefined,
+      name: nameValue.trim(),
+      quantity: quantityValue ? Number(quantityValue) : undefined,
+      unit: unitValue || undefined,
       expirationDate: toYmd(addExpirationDate),
-      memo: memo || undefined,
+      memo: memoValue || undefined,
     };
     createMutation.mutate(payload);
   };
@@ -243,28 +157,11 @@ export default function RefrigeratorPage() {
   const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingItem) return;
-    setEditErrors({});
     const form = e.currentTarget;
     const fd = new FormData(form);
     const quantityStr = String(fd.get('quantity')).trim();
     const unit = String(fd.get('unit')).trim();
     const memo = String(fd.get('memo')).trim();
-
-    const fieldErrors: Record<string, string> = {};
-    if (quantityStr) {
-      if (!/^\d+$/.test(quantityStr)) fieldErrors.quantity = '수량은 숫자로만 입력할 수 있습니다.';
-      else if (Number(quantityStr) < 0) fieldErrors.quantity = '수량은 0 이상이어야 합니다.';
-    }
-    if (unit && unit.length > 10) fieldErrors.unit = '단위는 10자 이하이어야 합니다.';
-    if (memo && memo.length > 200) fieldErrors.memo = '메모는 200자 이하이어야 합니다.';
-
-    if (Object.keys(fieldErrors).length) {
-      setEditErrors(fieldErrors);
-      const firstField = Object.keys(fieldErrors)[0];
-      const el = form.querySelector(`[name="${firstField}"]`) as HTMLElement | null;
-      el?.focus();
-      return;
-    }
 
     const payload: UpdateRefrigeratorItemRequest = {
       quantity: quantityStr ? Number(quantityStr) : undefined,
@@ -276,151 +173,133 @@ export default function RefrigeratorPage() {
   };
 
   const items: RefrigeratorItem[] = data?.items ?? [];
+  const imminentCount = data?.expiringCount ?? 0;
+  const expiredCount = data?.expiredCount ?? 0;
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-6">내 냉장고</h1>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <label htmlFor="sort" className="text-sm text-gray-600">
-            정렬:
-          </label>
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold leading-tight text-gray-900">내 냉장고</h1>
+      </div>
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div className="flex items-center">
+          <span className="text-gray-700 font-medium mr-2 whitespace-nowrap">정렬:</span>
           <select
-            id="sort"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="border rounded px-2 py-1 text-sm"
+            className="block w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm rounded-md"
           >
             <option value="expirationDate">소비기한 임박순</option>
             <option value="name">이름순</option>
             <option value="createdAt">등록일순</option>
           </select>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/refrigerator/recommendations"
-            className="px-4 py-2 rounded bg-purple-600 text-white text-sm hover:bg-purple-700"
-          >
+
+        <div className="flex space-x-2">
+          <Link to="/refrigerator/recommendations" className="px-4 py-2 bg-white border border-[#4E652F] text-[#4E652F] text-sm font-medium rounded-md hover:bg-[#F0F5E5] transition-colors">
             레시피 추천 보기
           </Link>
           <button
-            onClick={() => setShowAddForm((v) => !v)}
-            className="px-4 py-2 rounded bg-blue-600 text-white text-sm hover:bg-blue-700"
+            onClick={() => setShowAddForm(true)}
+            className="px-4 py-2 bg-[#4E652F] text-white text-sm font-medium rounded-md hover:bg-[#425528] transition-colors flex items-center"
           >
+            <PlusIcon className="w-4 h-4 mr-1"/>
             식재료 추가
           </button>
-          <Link
-            to="/refrigerator/receipt-scan"
-            className="px-4 py-2 rounded bg-green-600 text-white text-sm hover:bg-green-700"
-          >
+          <Link to="/refrigerator/receipt-scan" className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors flex items-center">
+            <ReceiptIcon className="w-4 h-4 mr-1" />
             영수증으로 추가
           </Link>
         </div>
       </div>
 
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-lg rounded shadow p-6">
-            <h2 className="text-lg font-semibold mb-4">식재료 추가</h2>
-            <form onSubmit={handleAddSubmit} className="space-y-4" data-refrigerator-add-form="true">
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center" onClick={() => setShowAddForm(false)}>
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col m-4" onClick={e => e.stopPropagation()}>
+            <header className="flex items-center justify-between p-5 border-b">
+              <h2 className="text-xl font-bold text-gray-800">식재료 추가</h2>
+              <button onClick={() => setShowAddForm(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                ✕
+              </button>
+            </header>
+
+            <form onSubmit={handleAddSubmit} className="p-6 flex-grow overflow-y-auto space-y-6">
               <div>
-                <label className="block text-xs text-gray-600">식재료명 *</label>
+                <label className="block text-sm font-bold text-gray-800 mb-1">식재료명 <span className="text-red-500">*</span></label>
                 <input
-                  name="name"
                   ref={nameInputRef}
                   value={nameValue}
                   onChange={(e) => setNameValue(e.target.value)}
-                  autoFocus
-                  className={`mt-1 w-full border rounded px-2 py-2 text-sm ${formErrors.name ? 'border-red-500' : ''}`}
+                  className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3 ${formErrors.name ? 'border-red-500' : ''}`}
+                  placeholder="예: 계란"
                 />
                 {formErrors.name && <p className="mt-1 text-xs text-red-600">{formErrors.name}</p>}
-                {!formErrors.name && (
-                  <p className="mt-1 text-[10px] text-gray-500">
-                    같은 이름+같은 소비기한(또는 모두 미지정)은 수량이 합산됩니다.
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-gray-500">같은 이름+같은 소비기한은 수량이 합산됩니다.</p>
               </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-600">수량</label>
+                  <label className="block text-sm font-bold text-gray-800 mb-1">수량</label>
                   <input
-                    name="quantity"
                     type="number"
                     min={0}
-                    className={`mt-1 w-full border rounded px-2 py-2 text-sm ${formErrors.quantity ? 'border-red-500' : ''}`}
+                    value={quantityValue}
+                    onChange={(e) => setQuantityValue(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
+                    placeholder="0"
                   />
-                  {formErrors.quantity && <p className="mt-1 text-xs text-red-600">{formErrors.quantity}</p>}
                 </div>
                 <div className="relative">
-                  <label className="block text-xs text-gray-600">단위</label>
+                  <label className="block text-sm font-bold text-gray-800 mb-1">단위</label>
                   <input
-                    name="unit"
                     value={unitValue}
                     onChange={(e) => setUnitValue(e.target.value)}
                     onFocus={() => setShowUnitSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowUnitSuggestions(false), 150)}
-                    className={`mt-1 w-full border rounded px-2 py-2 text-sm ${formErrors.unit ? 'border-red-500' : ''}`}
-                    placeholder="예: 개, g, ml"
-                    autoComplete="off"
+                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
+                    placeholder="예: 개, g"
                   />
                   {showUnitSuggestions && (
                     <ul className="absolute top-full left-0 right-0 bg-white border rounded shadow mt-1 max-h-40 overflow-auto text-xs z-10">
                       {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).map((u) => (
-                        <li
-                          key={u}
-                          className="px-2 py-1 hover:bg-blue-50 cursor-pointer"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            setUnitValue(u);
-                          }}
-                        >
+                        <li key={u} className="px-2 py-1 hover:bg-blue-50 cursor-pointer" onMouseDown={(e) => { e.preventDefault(); setUnitValue(u); }}>
                           {u}
                         </li>
                       ))}
-                      {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).length === 0 && (
-                        <li className="px-2 py-1 text-gray-400">일치하는 제안 없음</li>
-                      )}
                     </ul>
                   )}
-                  {formErrors.unit && <p className="mt-1 text-xs text-red-600">{formErrors.unit}</p>}
                 </div>
               </div>
+
               <div>
-                <label className="block text-xs text-gray-600 mb-1">소비기한</label>
+                <label className="block text-sm font-bold text-gray-800 mb-1">소비기한</label>
                 <DatePicker
                   selected={addExpirationDate}
                   onChange={(d) => setAddExpirationDate(d)}
                   locale={ko}
                   dateFormat="yyyy년 MM월 dd일"
-                  placeholderText="소비기한 선택"
-                  className="w-full border rounded px-2 py-2 text-sm"
+                  placeholderText="선택"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
+                  isClearable
                 />
-                <p className="mt-1 text-xs text-gray-600">
-                  {addExpirationDate ? `선택: ${formatDateYMDKorean(addExpirationDate)}` : '선택된 날짜 없음'}
-                </p>
               </div>
+
               <div>
-                <label className="block text-xs text-gray-600">메모</label>
+                <label className="block text-sm font-bold text-gray-800 mb-1">메모</label>
                 <textarea
-                  name="memo"
-                  rows={3}
-                  className={`mt-1 w-full border rounded px-2 py-2 text-sm resize-none ${formErrors.memo ? 'border-red-500' : ''}`}
+                  value={memoValue}
+                  onChange={(e) => setMemoValue(e.target.value)}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3 h-24 resize-none"
+                  placeholder="메모를 입력하세요"
                 />
-                {formErrors.memo && <p className="mt-1 text-xs text-red-600">{formErrors.memo}</p>}
               </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
-                >
+
+              <div className="pt-4 flex justify-end space-x-3 border-t border-gray-100">
+                <button type="button" onClick={() => setShowAddForm(false)} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
                   취소
                 </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                >
+                <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4E652F] hover:bg-[#425528]">
                   저장
                 </button>
               </div>
@@ -429,109 +308,97 @@ export default function RefrigeratorPage() {
         </div>
       )}
 
-      {isPending && <div className="p-4 text-center text-gray-600">불러오는 중...</div>}
-      {isError && <div className="p-4 text-center text-red-600">목록을 불러오는 중 오류가 발생했습니다.</div>}
-
-      {!isPending && !isError && items.length === 0 && (
-        <div className="bg-white p-8 rounded shadow text-center">
-          <p className="text-lg font-medium mb-2">냉장고가 비어있습니다. 첫 식재료를 추가해보세요!</p>
-        </div>
-      )}
-
-      {items.length > 0 && (
-        <div className="bg-white rounded shadow overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr className="bg-gray-100 text-left">
-                <th className="px-3 py-2">식재료명</th>
-                <th className="px-3 py-2">수량</th>
-                <th className="px-3 py-2">단위</th>
-                <th className="px-3 py-2">소비기한 (D-day)</th>
-                <th className="px-3 py-2">메모</th>
-                <th className="px-3 py-2">관리</th>
+      <div className="bg-white rounded-lg shadow overflow-hidden min-h-[400px]">
+        {/* [수정] 로딩 및 에러 상태 UI 추가 */}
+        {isPending ? (
+          <div className="h-96 flex flex-col items-center justify-center text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4E652F] mb-4"></div>
+            <p className="text-xl text-gray-500 font-medium">불러오는 중...</p>
+          </div>
+        ) : isError ? (
+          <div className="h-96 flex flex-col items-center justify-center text-center">
+            <div className="text-red-500 text-4xl mb-4">⚠️</div>
+            <p className="text-xl text-gray-500 font-medium">식재료를 불러오지 못했습니다.</p>
+            <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">
+              다시 시도
+            </button>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="h-96 flex flex-col items-center justify-center text-center">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <span className="text-4xl">🧺</span>
+            </div>
+            <p className="text-xl text-gray-500 font-medium">냉장고가 비어있습니다.</p>
+            <p className="text-gray-400 mt-1">첫 식재료를 추가해보세요!</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-1/5">식재료명</th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/12">수량</th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/12">단위</th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/4">소비기한 (D-day)</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-1/4">메모</th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/6">관리</th>
               </tr>
-            </thead>
-            <tbody>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
               {items.map((item) => (
-                <tr
-                  key={item.id}
-                  className={`${classForItem(item)} border-t transition-opacity duration-300 ${removingIds.has(item.id) ? 'opacity-0' : 'opacity-100'}`}
-                >
-                  <td className="px-3 py-2 font-medium">{item.name}</td>
-                  <td className="px-3 py-2">{item.quantity}</td>
-                  <td className="px-3 py-2">{item.unit ?? '—'}</td>
-                  <td className={`${dDayTextColor(item)} px-3 py-2`}>
-                    {item.expirationDate
-                      ? `${formatDateYMDKorean(item.expirationDate)} (${formatDDay(item.daysUntilExpiration)})`
-                      : '—'}
+                <tr key={item.id} className={`hover:bg-gray-50 ${removingIds.has(item.id) ? 'opacity-0 transition-opacity duration-300' : ''}`}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-700">{item.quantity}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{item.unit || '—'}</td>
+                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${item.expired ? 'text-red-600 font-bold' : item.expirationSoon ? 'text-orange-600 font-bold' : 'text-gray-700'}`}>
+                    {item.expirationDate ? `${formatDateYMDKorean(item.expirationDate)} ${formatDDay(item.daysUntilExpiration)}` : '—'}
                   </td>
-                  <td className="px-3 py-2 max-w-xs truncate" title={item.memo ?? ''}>
-                    {item.memo ?? '—'}
-                  </td>
-                  <td className="px-3 py-2 flex items-center gap-2">
-                    <button
-                      onClick={() => setEditingItem(item)}
-                      className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                    >
-                      수정
-                    </button>
-                    <button
-                      onClick={() => setDeleteTarget(item)}
-                      className="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1"
-                    >
-                      <span>삭제</span>
-                      <span aria-hidden>🗑️</span>
+                  <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{item.memo || ''}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                    <button onClick={() => setEditingItem(item)} className="text-gray-600 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mr-2 text-xs transition-colors">수정</button>
+                    <button onClick={() => setDeleteTarget(item)} className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-xs transition-colors inline-flex items-center">
+                      삭제 <TrashIcon className="w-3 h-3 ml-1" />
                     </button>
                   </td>
                 </tr>
               ))}
-            </tbody>
-          </table>
-          <div className="p-4 text-xs text-gray-500 flex gap-4">
-            <span>총 {data?.totalCount}개</span>
-            <span>임박 {data?.expiringCount}개</span>
-            <span>지남 {data?.expiredCount}개</span>
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
+      <div className="mt-4 flex space-x-6 text-sm text-gray-600">
+        <p>총 <span className="font-bold text-gray-900">{data?.totalCount ?? 0}</span>개</p>
+        <p>임박 <span className="font-bold text-red-600">{imminentCount}</span>개</p>
+        <p>지남 <span className="font-bold text-gray-500">{expiredCount}</span>개</p>
+      </div>
+
+      {/* Edit Modal */}
       {editingItem && editingPrefill && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-md rounded shadow p-6 space-y-4">
+        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center p-4" onClick={() => setEditingItem(null)}>
+          <div className="bg-white w-full max-w-md rounded shadow p-6 space-y-4" onClick={e => e.stopPropagation()}>
             <h2 className="text-lg font-semibold">식재료 수정</h2>
-            {editErrors.global && <p className="text-xs text-red-600">{editErrors.global}</p>}
             <form onSubmit={handleEditSubmit} className="space-y-3">
+              {/* [수정] 에러 메시지 표시 */}
+              {editErrors.global && (
+                <div className="p-2 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
+                  {editErrors.global}
+                </div>
+              )}
               <div>
                 <label className="block text-xs text-gray-600">식재료명</label>
-                <input
-                  name="name"
-                  disabled
-                  defaultValue={editingPrefill.name}
-                  className="mt-1 w-full border rounded px-2 py-1 text-sm bg-gray-100 cursor-not-allowed"
-                />
-                <p className="mt-1 text-[10px] text-gray-500">
-                  식재료명은 수정할 수 없습니다. 삭제 후 재등록하세요. (동일 정책: 이름+날짜 동일 시 추가 시 수량 합산)
-                </p>
+                <input name="name" disabled defaultValue={editingPrefill.name} className="mt-1 w-full border rounded px-2 py-1 text-sm bg-gray-100 cursor-not-allowed" />
               </div>
-              <div>
-                <label className="block text-xs text-gray-600">수량</label>
-                <input
-                  name="quantity"
-                  type="number"
-                  min={0}
-                  defaultValue={editingPrefill.quantity}
-                  className={`mt-1 w-full border rounded px-2 py-1 text-sm ${editErrors.quantity ? 'border-red-500' : ''}`}
-                />
-                {editErrors.quantity && <p className="mt-1 text-xs text-red-600">{editErrors.quantity}</p>}
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600">단위</label>
-                <input
-                  name="unit"
-                  defaultValue={editingPrefill.unit ?? ''}
-                  className={`mt-1 w-full border rounded px-2 py-1 text-sm ${editErrors.unit ? 'border-red-500' : ''}`}
-                />
-                {editErrors.unit && <p className="mt-1 text-xs text-red-600">{editErrors.unit}</p>}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-600">수량</label>
+                  <input name="quantity" type="number" min={0} defaultValue={editingPrefill.quantity} className="mt-1 w-full border rounded px-2 py-1 text-sm" />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600">단위</label>
+                  <input name="unit" defaultValue={editingPrefill.unit ?? ''} className="mt-1 w-full border rounded px-2 py-1 text-sm" />
+                </div>
               </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">소비기한</label>
@@ -540,69 +407,34 @@ export default function RefrigeratorPage() {
                   onChange={(d) => setEditExpirationDate(d)}
                   locale={ko}
                   dateFormat="yyyy년 MM월 dd일"
-                  placeholderText="소비기한 선택"
-                  className={`w-full border rounded px-2 py-1 text-sm ${editErrors.expirationDate ? 'border-red-500' : ''}`}
+                  placeholderText="선택"
+                  className="w-full border rounded px-2 py-1 text-sm"
                 />
-                <p className="mt-1 text-xs text-gray-600">
-                  {editExpirationDate ? `선택: ${formatDateYMDKorean(editExpirationDate)}` : '선택된 날짜 없음'}
-                </p>
-                {editErrors.expirationDate && <p className="mt-1 text-xs text-red-600">{editErrors.expirationDate}</p>}
               </div>
               <div>
                 <label className="block text-xs text-gray-600">메모</label>
-                <textarea
-                  name="memo"
-                  rows={2}
-                  defaultValue={editingPrefill.memo ?? ''}
-                  className={`mt-1 w-full border rounded px-2 py-1 text-sm ${editErrors.memo ? 'border-red-500' : ''}`}
-                />
-                {editErrors.memo && <p className="mt-1 text-xs text-red-600">{editErrors.memo}</p>}
+                <textarea name="memo" rows={2} defaultValue={editingPrefill.memo ?? ''} className="mt-1 w-full border rounded px-2 py-1 text-sm" />
               </div>
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="submit"
-                  disabled={updateMutation.isPending}
-                  className="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 disabled:opacity-50"
-                >
-                  수정 완료
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingItem(null)}
-                  className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
-                >
-                  닫기
-                </button>
+              <div className="flex gap-2 pt-2 justify-end">
+                <button type="button" onClick={() => setEditingItem(null)} className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300">닫기</button>
+                <button type="submit" className="px-4 py-2 bg-[#4E652F] text-white rounded text-sm hover:bg-[#425528]">수정 완료</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* Delete Modal */}
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-md rounded shadow-lg p-6 space-y-4" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-md rounded shadow-lg p-6 space-y-4">
             <h2 className="text-lg font-semibold">식재료 삭제</h2>
             <p className="text-sm text-gray-700 leading-relaxed">
-              정말로 '<span className="font-semibold">{deleteTarget.name}</span>' 항목을 냉장고에서 삭제하시겠습니까? 이
-              작업은 되돌릴 수 없습니다.
+              정말로 '<span className="font-semibold">{deleteTarget.name}</span>' 항목을 삭제하시겠습니까?
             </p>
             <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={() => deleteMutation.mutate(deleteTarget.id)}
-                disabled={deleteMutation.isPending}
-                className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? '삭제 중...' : '삭제'}
-              </button>
+              <button type="button" onClick={() => setDeleteTarget(null)} className="px-4 py-2 bg-gray-200 rounded text-sm hover:bg-gray-300">취소</button>
+              <button type="button" onClick={() => deleteMutation.mutate(deleteTarget.id)} className="px-4 py-2 bg-red-600 text-white rounded text-sm hover:bg-red-700">삭제</button>
             </div>
           </div>
         </div>

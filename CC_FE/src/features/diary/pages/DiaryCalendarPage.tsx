@@ -47,9 +47,14 @@ export default function DiaryCalendarPage() {
   const handleToday = () => setCursor({ year: today.getFullYear(), month: today.getMonth() + 1 });
 
   const { count, firstDay } = getDaysInMonth(cursor.year, cursor.month);
-  const startWeekday = (firstDay.getDay() + 6) % 7;
+
+  // [수정] 미사용 변수 startWeekday 제거
+  // const startWeekday = (firstDay.getDay() + 6) % 7;
+
   const days: Array<{ date: Date; ymd: string } | null> = [];
-  for (let i = 0; i < startWeekday; i++) days.push(null);
+  // 달력 앞쪽 빈칸 (일요일=0)
+  for (let i = 0; i < firstDay.getDay(); i++) days.push(null);
+
   for (let d = 1; d <= count; d++) {
     const date = new Date(cursor.year, cursor.month - 1, d);
     const ymd = formatYmdLocal(date);
@@ -57,22 +62,21 @@ export default function DiaryCalendarPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">내 식단 다이어리 캘린더</h1>
-
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-lg font-semibold">
-          {cursor.year}년 {cursor.month}월
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-6 gap-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-800">내 식단 다이어리 캘린더</h1>
+          <p className="text-4xl font-extrabold text-[#4E652F] mt-1">{`${cursor.year}년 ${cursor.month}월`}</p>
         </div>
-        <div className="flex gap-2">
-          <button className="px-3 py-1 border rounded" onClick={handlePrev} aria-label="이전 달">
-            {'<'}
+        <div className="flex items-center space-x-2">
+          <button onClick={handlePrev} className="px-3 py-2 rounded-md bg-white border border-gray-300 hover:bg-gray-100 transition-colors" aria-label="이전 달">
+            &lt;
           </button>
-          <button className="px-3 py-1 border rounded" onClick={handleToday}>
+          <button onClick={handleToday} className="px-4 py-2 rounded-md bg-white border border-gray-300 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors">
             오늘
           </button>
-          <button className="px-3 py-1 border rounded" onClick={handleNext} aria-label="다음 달">
-            {'>'}
+          <button onClick={handleNext} className="px-3 py-2 rounded-md bg-white border border-gray-300 hover:bg-gray-100 transition-colors" aria-label="다음 달">
+            &gt;
           </button>
         </div>
       </div>
@@ -82,20 +86,18 @@ export default function DiaryCalendarPage() {
       ) : isError ? (
         <div className="p-6 text-center text-red-600">캘린더 데이터를 불러오지 못했습니다.</div>
       ) : (
-        <>
-          {data && data.dailyEntries.length === 0 && (
-            <div className="mb-2 text-sm text-gray-600">이번 달 첫 식단을 기록해보세요!</div>
-          )}
-          <div className="grid grid-cols-7 gap-2">
-            {['월', '화', '수', '목', '금', '토', '일'].map((w) => (
-              <div key={w} className="text-center text-sm font-medium text-gray-500">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-lg">
+          <div className="grid grid-cols-7 gap-0">
+            {['일', '월', '화', '수', '목', '금', '토'].map((w, i) => (
+              <div key={w} className={`p-2 text-sm text-center font-semibold border-b-2 ${i === 0 ? 'text-red-500' : i === 6 ? 'text-blue-500' : 'text-gray-600'}`}>
                 {w}
               </div>
             ))}
             {days.map((cell, idx) => {
-              if (!cell) return <div key={idx} className="p-2" />;
+              if (!cell) return <div key={`blank-${idx}`} className="p-2 h-24 sm:h-32 border border-gray-100 bg-gray-50" />;
+
               const entry = entriesByDate.get(cell.ymd);
-              const hasAny = entry && (entry.hasBreakfast || entry.hasLunch || entry.hasDinner);
+              const isToday = today.getDate() === cell.date.getDate() && today.getMonth() === cell.date.getMonth() && today.getFullYear() === cell.date.getFullYear();
 
               const onClickDate = () => navigate(`/diary/${cell.ymd}`);
               const onClickAdd = (e: React.MouseEvent) => {
@@ -107,48 +109,37 @@ export default function DiaryCalendarPage() {
                 <div
                   key={cell.ymd}
                   onClick={onClickDate}
-                  className={`border rounded p-2 min-h-24 cursor-pointer hover:bg-gray-50 flex flex-col gap-2 ${hasAny ? 'border-blue-300' : ''}`}
+                  className="p-1.5 h-24 sm:h-32 border border-gray-100 align-top relative group hover:bg-lime-50 transition-colors duration-200 cursor-pointer"
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold">{cell.date.getDate()}</span>
-                    {!hasAny && (
-                      <button
-                        onClick={onClickAdd}
-                        className="text-xs px-1 py-0.5 border rounded hover:bg-gray-100"
-                        aria-label="기록 추가"
-                      >
-                        +
-                      </button>
-                    )}
+                  <div className="flex justify-between items-start">
+                    <span className={`text-sm font-medium ${isToday ? 'bg-[#4E652F] text-white rounded-full flex items-center justify-center w-6 h-6' : 'text-gray-700'}`}>
+                      {cell.date.getDate()}
+                    </span>
+                    <button
+                      onClick={onClickAdd}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white rounded-full p-1 shadow-sm hover:bg-gray-100 text-gray-500 hover:text-[#4E652F]"
+                      aria-label="기록 추가"
+                    >
+                      <span className="text-xs font-bold px-1">+</span>
+                    </button>
                   </div>
 
                   {entry && (
-                    <div className="flex items-center gap-2">
-                      {entry.thumbnailUrl ? (
-                        <img
-                          src={entry.thumbnailUrl}
-                          alt="대표 이미지"
-                          className="w-10 h-10 object-cover rounded"
-                          onError={(e) => (e.currentTarget.style.display = 'none')}
-                        />
-                      ) : null}
-                      <div className="text-lg" aria-label="식사 아이콘">
+                    <div className="mt-1 flex flex-col gap-1 overflow-hidden">
+                      {entry.thumbnailUrl && (
+                        <div className="w-full h-12 overflow-hidden rounded">
+                          <img
+                            src={entry.thumbnailUrl}
+                            alt="대표 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )}
+                      <div className="flex flex-wrap gap-1 text-xs">
                         {entry.hasBreakfast && <span title="아침">☀️</span>}
-                        {entry.hasLunch && (
-                          <span className="ml-1" title="점심">
-                            🌇
-                          </span>
-                        )}
-                        {entry.hasDinner && (
-                          <span className="ml-1" title="저녁">
-                            🌙
-                          </span>
-                        )}
-                        {entry.hasSnack && (
-                          <span className="ml-1" title="간식">
-                            🍪
-                          </span>
-                        )}
+                        {entry.hasLunch && <span title="점심">🌇</span>}
+                        {entry.hasDinner && <span title="저녁">🌙</span>}
+                        {entry.hasSnack && <span title="간식">🍪</span>}
                       </div>
                     </div>
                   )}
@@ -156,7 +147,7 @@ export default function DiaryCalendarPage() {
               );
             })}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
