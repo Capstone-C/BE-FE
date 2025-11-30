@@ -1,22 +1,6 @@
 # version: "3.9"
 
 services:
-  elasticsearch:
-    build:
-      context: ./elasticsearch         # ← 루트 기준
-      dockerfile: Dockerfile
-    container_name: cc_elasticsearch
-    environment:
-      - discovery.type=single-node
-      - xpack.security.enabled=false
-      - ES_JAVA_OPTS=-Xms512m -Xmx512m
-    ports: [ "9200:9200" ]
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s" ]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-
   mysql:
     image: mysql:8.0
     container_name: cc_mysql
@@ -49,8 +33,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      elasticsearch: # ← ES가 healthy 될 때까지 대기
-        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: local
       MYSQL_HOST: mysql
@@ -58,7 +40,9 @@ services:
       MYSQL_DATABASE: ccdb
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
-      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      # JWT Security
+      JWT_SECRET: ${JWT_SECRET:-TeBN3BMojFjhgLW6XqZNKU80egfswI6PcJpc0WtadiXuf1dZUmse6GpPdpg6HHkK}
+      JWT_EXPIRATION_MILLIS: ${JWT_EXPIRATION_MILLIS:-3600000}
       # Gemini Vision API
       GEMINI_API_URL: ${GEMINI_API_URL}
       GEMINI_API_KEY: ${GEMINI_API_KEY}

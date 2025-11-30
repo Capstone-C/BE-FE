@@ -5,6 +5,7 @@ import com.capstone.web.category.exception.CategoryNotFoundException;
 import com.capstone.web.category.repository.CategoryRepository;
 import com.capstone.web.common.S3UploadService;
 import com.capstone.web.media.domain.Media;
+import java.util.Optional;
 import com.capstone.web.media.repository.MediaRepository;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.exception.UserNotFoundException;
@@ -53,7 +54,7 @@ public class PostService {
     private final PostLikeRepository postLikeRepository;
     private final PostIngredientRepository ingredientRepository;
     private final RefrigeratorItemRepository refrigeratorItemRepository;
-    private final S3UploadService s3UploadService;
+    private final Optional<S3UploadService> s3UploadService;
     private final MediaRepository mediaRepository;
 
     private String sanitizeHtml(String html) {
@@ -90,11 +91,15 @@ public class PostService {
 
         // [수정] 1. 썸네일 처리 (파일 업로드 우선, 없으면 URL 사용)
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
-            try {
-                String thumbnailUrl = s3UploadService.uploadFile(thumbnailFile);
-                addThumbnailMedia(post, thumbnailUrl);
-            } catch (IOException e) {
-                throw new RuntimeException("썸네일 업로드 실패", e);
+            if (s3UploadService.isPresent()) {
+                try {
+                    String thumbnailUrl = s3UploadService.get().uploadFile(thumbnailFile);
+                    addThumbnailMedia(post, thumbnailUrl);
+                } catch (IOException e) {
+                    throw new RuntimeException("썸네일 업로드 실패", e);
+                }
+            } else {
+                throw new RuntimeException("S3 서비스가 설정되지 않았습니다.");
             }
         } else if (request.getThumbnailUrl() != null && !request.getThumbnailUrl().isBlank()) {
             // [추가] 프론트엔드에서 보낸 URL로 썸네일 설정
@@ -103,21 +108,25 @@ public class PostService {
 
         // 2. 추가 이미지 업로드 (OrderNum = 1 부터 시작)
         if (files != null && !files.isEmpty()) {
-            int orderNum = 1;
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-                try {
-                    String fileUrl = s3UploadService.uploadFile(file);
-                    Media media = Media.builder()
-                            .ownerType(Media.OwnerType.post)
-                            .mediaType(Media.MediaType.image)
-                            .url(fileUrl)
-                            .orderNum(orderNum++)
-                            .build();
-                    post.addMedia(media);
-                } catch (IOException e) {
-                    throw new RuntimeException("추가 이미지 업로드 실패", e);
+            if (s3UploadService.isPresent()) {
+                int orderNum = 1;
+                for (MultipartFile file : files) {
+                    if (file.isEmpty()) continue;
+                    try {
+                        String fileUrl = s3UploadService.get().uploadFile(file);
+                        Media media = Media.builder()
+                                .ownerType(Media.OwnerType.post)
+                                .mediaType(Media.MediaType.image)
+                                .url(fileUrl)
+                                .orderNum(orderNum++)
+                                .build();
+                        post.addMedia(media);
+                    } catch (IOException e) {
+                        throw new RuntimeException("추가 이미지 업로드 실패", e);
+                    }
                 }
+            } else {
+                throw new RuntimeException("S3 서비스가 설정되지 않았습니다.");
             }
         }
 
@@ -191,12 +200,16 @@ public class PostService {
         // [수정] 1. 썸네일 업데이트
         if (thumbnailFile != null && !thumbnailFile.isEmpty()) {
             // 새 파일이 있으면 기존 썸네일 제거 후 새 파일 업로드
-            post.getMedia().removeIf(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0);
-            try {
-                String newThumbnailUrl = s3UploadService.uploadFile(thumbnailFile);
-                addThumbnailMedia(post, newThumbnailUrl);
-            } catch (IOException e) {
-                throw new RuntimeException("썸네일 업로드 실패", e);
+            if (s3UploadService.isPresent()) {
+                post.getMedia().removeIf(m -> m.getOwnerType() == Media.OwnerType.post && m.getOrderNum() == 0);
+                try {
+                    String newThumbnailUrl = s3UploadService.get().uploadFile(thumbnailFile);
+                    addThumbnailMedia(post, newThumbnailUrl);
+                } catch (IOException e) {
+                    throw new RuntimeException("썸네일 업로드 실패", e);
+                }
+            } else {
+                throw new RuntimeException("S3 서비스가 설정되지 않았습니다.");
             }
         } else if (request.getThumbnailUrl() != null) {
             // [추가] URL이 전달된 경우 (빈 문자열이면 삭제, 값이 있으면 업데이트)
@@ -210,29 +223,33 @@ public class PostService {
 
         // 2. 추가 이미지 업로드 (기존 이미지 유지 후 Append)
         if (files != null && !files.isEmpty()) {
-            // 현재 가장 큰 orderNum 찾기
-            int maxOrderNum = post.getMedia().stream()
-                    .filter(m -> m.getOwnerType() == Media.OwnerType.post)
-                    .mapToInt(Media::getOrderNum)
-                    .max()
-                    .orElse(0); // 없으면 0 (썸네일만 있거나 아무것도 없을 때)
+            if (s3UploadService.isPresent()) {
+                // 현재 가장 큰 orderNum 찾기
+                int maxOrderNum = post.getMedia().stream()
+                        .filter(m -> m.getOwnerType() == Media.OwnerType.post)
+                        .mapToInt(Media::getOrderNum)
+                        .max()
+                        .orElse(0); // 없으면 0 (썸네일만 있거나 아무것도 없을 때)
 
-            int startOrder = maxOrderNum + 1;
+                int startOrder = maxOrderNum + 1;
 
-            for (MultipartFile file : files) {
-                if (file.isEmpty()) continue;
-                try {
-                    String fileUrl = s3UploadService.uploadFile(file);
-                    Media media = Media.builder()
-                            .ownerType(Media.OwnerType.post)
-                            .mediaType(Media.MediaType.image)
-                            .url(fileUrl)
-                            .orderNum(startOrder++)
-                            .build();
-                    post.addMedia(media);
-                } catch (IOException e) {
-                    throw new RuntimeException("추가 이미지 업로드 실패", e);
+                for (MultipartFile file : files) {
+                    if (file.isEmpty()) continue;
+                    try {
+                        String fileUrl = s3UploadService.get().uploadFile(file);
+                        Media media = Media.builder()
+                                .ownerType(Media.OwnerType.post)
+                                .mediaType(Media.MediaType.image)
+                                .url(fileUrl)
+                                .orderNum(startOrder++)
+                                .build();
+                        post.addMedia(media);
+                    } catch (IOException e) {
+                        throw new RuntimeException("추가 이미지 업로드 실패", e);
+                    }
                 }
+            } else {
+                throw new RuntimeException("S3 서비스가 설정되지 않았습니다.");
             }
         }
 

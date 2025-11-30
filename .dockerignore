@@ -1,0 +1,34 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# IDE
+.idea
+.vscode
+.fastRequest
+
+# Documentation
+README.md
+*.md
+
+# CI/CD
+.github
+
+# Logs
+*.log
+
+# Environment files (각 서비스별 Dockerfile에서 필요한 것만 COPY)
+.env*
+
+# Node
+node_modules
+npm-debug.log
+
+# Build artifacts
+build
+target
+dist
+
+# Test files
+test-image
