@@ -1,12 +1,11 @@
 // src/features/boards/pages/BoardDetailPage.tsx
 import { useParams, Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { usePost } from '@/features/boards/hooks/usePosts';
-import { compareRecipeWithRefrigerator, type RecipeRefrigeratorComparison } from '@/apis/boards.api';
 import CommentList from '@/features/comments/components/CommentList';
 import { formatYMDHMKorean } from '@/utils/date';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import DOMPurify from 'dompurify';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 import { useToggleLikeMutation, useDeletePostMutation } from '@/features/boards/hooks/usePostMutations';
@@ -15,7 +14,7 @@ import {
   useUnblockMemberMutation,
   useBlockedMembers,
 } from '@/features/members/hooks/useMemberBlocks';
-import { getDeductPreview, postDeduct } from '@/apis/refrigerator.api';
+import { getDeductPreview, postDeduct, getRefrigeratorItems } from '@/apis/refrigerator.api';
 import type { DeductPreviewResponse, DeductResponse } from '@/types/refrigerator';
 import { toggleScrap as toggleScrapApi } from '@/apis/scraps.api';
 
@@ -47,15 +46,45 @@ export default function BoardDetailPage() {
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
 
-  const [compareOpen, setCompareOpen] = useState(false);
-  const [compareResult, setCompareResult] = useState<RecipeRefrigeratorComparison | null>(null);
-  const [compareLoading, setCompareLoading] = useState(false);
-
   const [deductPreview, setDeductPreview] = useState<DeductPreviewResponse | null>(null);
   const [deductOpen, setDeductOpen] = useState(false);
   const [deductLoading, setDeductLoading] = useState(false);
   const [deductExecuting, setDeductExecuting] = useState(false);
   const [ignoreWarnings, setIgnoreWarnings] = useState(false);
+
+  const [fridgeNames, setFridgeNames] = useState<Set<string> | null>(null);
+  const [fridgeLoading, setFridgeLoading] = useState(false);
+  const [fridgeError, setFridgeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // 로그인 사용자만 냉장고 재료를 가져와서 간단한 이름 매칭 셋 구성
+    async function loadFridge() {
+      if (!user) {
+        setFridgeNames(null);
+        return;
+      }
+      try {
+        setFridgeLoading(true);
+        setFridgeError(null);
+        const res = await getRefrigeratorItems('name');
+        const names = new Set<string>((res.items ?? []).map((i) => i.name.trim().toLowerCase()).filter(Boolean));
+        setFridgeNames(names);
+      } catch {
+        setFridgeError('냉장고 정보를 불러오지 못했습니다.');
+        setFridgeNames(null);
+      } finally {
+        setFridgeLoading(false);
+      }
+    }
+    loadFridge();
+  }, [user]);
+
+  const isOwnedIngredient = (name?: string) => {
+    if (!name) return false;
+    if (!fridgeNames || fridgeNames.size === 0) return false;
+    const key = name.trim().toLowerCase();
+    return fridgeNames.has(key);
+  };
 
   if (Number.isNaN(id)) return <div className="p-6">잘못된 글 ID입니다.</div>;
   if (isLoading) return <div className="p-6">불러오는 중…</div>;
@@ -120,20 +149,6 @@ export default function BoardDetailPage() {
     } catch {
       show('로그인이 필요한 기능입니다.', { type: 'error' });
       nav('/login');
-    }
-  };
-
-  const onCompareClick = async () => {
-    try {
-      setCompareLoading(true);
-      const res = await compareRecipeWithRefrigerator(id);
-      setCompareResult(res);
-      setCompareOpen(true);
-    } catch {
-      show('냉장고 재료 비교를 위해서는 로그인이 필요합니다.', { type: 'error' });
-      nav('/login');
-    } finally {
-      setCompareLoading(false);
     }
   };
 
@@ -297,13 +312,6 @@ export default function BoardDetailPage() {
               내 식단 다이어리에 추가
             </button>
             <button
-              onClick={onCompareClick}
-              disabled={!user || compareLoading}
-              className="border px-3 py-1 rounded bg-amber-600 text-white disabled:opacity-50"
-            >
-              {compareLoading ? '비교 중…' : '내 냉장고와 재료 비교'}
-            </button>
-            <button
               onClick={onOpenDeductPreview}
               disabled={!user || deductLoading}
               className="border px-3 py-1 rounded bg-purple-600 text-white disabled:opacity-50"
@@ -331,20 +339,32 @@ export default function BoardDetailPage() {
       {isRecipePost && data.ingredients && data.ingredients.length > 0 && (
         <section className="mt-6 space-y-2">
           <h2 className="text-xl font-semibold">재료 정보</h2>
+          {/* fridgeError나 로딩 상태를 보조적으로 표시 */}
+          {user && fridgeLoading && <p className="text-xs text-gray-500">냉장고 정보를 불러오는 중...</p>}
+          {user && fridgeError && <p className="text-xs text-amber-700">{fridgeError}</p>}
           <ul className="list-disc list-inside space-y-1">
-            {data.ingredients.map((ing) => (
-              <li key={ing.id ?? ing.name}>
-                {ing.name}
-                {ing.quantity != null && (
-                  <span>
-                    {' '}
-                    - {ing.quantity}
-                    {ing.unit ?? ''}
-                  </span>
-                )}
-              </li>
-            ))}
+            {data.ingredients.map((ing) => {
+              const owned = isOwnedIngredient(ing.name);
+              return (
+                <li key={ing.id ?? ing.name}>
+                  <span className={owned ? 'text-green-700' : 'text-red-700'}>{ing.name}</span>
+                  {ing.quantity != null && (
+                    <span>
+                      {' '}
+                      - {ing.quantity}
+                      {ing.unit ?? ''}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
           </ul>
+          {user && fridgeNames && (
+            <p className="text-xs text-gray-500">
+              색상 안내: <span className="text-green-700 font-medium">초록색</span>은 냉장고에 있음,{' '}
+              <span className="text-red-700 font-medium">붉은색</span>은 부족함을 의미합니다.
+            </p>
+          )}
         </section>
       )}
 
@@ -377,40 +397,6 @@ export default function BoardDetailPage() {
       {authorBlockedAndHidden && (
         <div className="mt-6 p-4 bg-gray-50 border rounded text-xs text-gray-500">
           차단된 작성자의 글이므로 댓글도 숨겨졌습니다.
-        </div>
-      )}
-
-      {/* 냉장고 비교 모달 */}
-      {compareOpen && compareResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setCompareOpen(false)} />
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between border-b px-5 py-3">
-              <h2 className="text-lg font-semibold">냉장고 재료 비교</h2>
-              <button className="px-3 py-1 border rounded" onClick={() => setCompareOpen(false)}>
-                닫기
-              </button>
-            </div>
-            <div className="p-5 overflow-y-auto space-y-3">
-              <p className="text-sm text-gray-700">
-                총 {compareResult.totalNeeded}개 재료 중{' '}
-                <span className="text-green-600 font-semibold">{compareResult.ownedCount}개</span>는 냉장고에 있고,{' '}
-                <span className="text-red-600 font-semibold">{compareResult.missingCount}개</span>는 부족합니다.
-              </p>
-              <ul className="space-y-1 text-sm">
-                {compareResult.ingredients.map((ing) => (
-                  <li key={ing.name} className="flex justify-between">
-                    <span>
-                      {ing.name} - {ing.amount}
-                    </span>
-                    <span className={ing.status === 'OWNED' ? 'text-green-600' : 'text-red-600'}>
-                      {ing.status === 'OWNED' ? '보유' : '부족'}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       )}
 
