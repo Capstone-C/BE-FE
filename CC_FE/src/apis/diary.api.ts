@@ -25,6 +25,8 @@ export interface DiaryEntryResponse {
   content: string;
   imageUrl?: string | null;
   recipeId?: number | null;
+  // Added: optional recipe title if backend enriches response
+  recipeTitle?: string | null;
 }
 
 export interface CreateDiaryRequest {
