@@ -154,15 +154,16 @@ public class ProductSearchService {
      */
     private Sort createSort(String sortBy) {
         if (sortBy == null || sortBy.isBlank()) {
-            return Sort.by(Sort.Direction.DESC, "createdAt"); // 기본: 최신순
+            return Sort.unsorted(); // 기본: score 정렬 (Elasticsearch _score)
         }
 
         return switch (sortBy.toLowerCase()) {
+            case "relevance" -> Sort.unsorted(); // score 정렬
             case "price_asc" -> Sort.by(Sort.Direction.ASC, "price");
             case "price_desc" -> Sort.by(Sort.Direction.DESC, "price");
             case "latest" -> Sort.by(Sort.Direction.DESC, "createdAt");
             case "rating" -> Sort.by(Sort.Direction.DESC, "rating");
-            default -> Sort.by(Sort.Direction.DESC, "createdAt"); // relevance는 Elasticsearch score 기반으로 개선 가능
+            default -> Sort.unsorted(); // 기본 score 정렬
         };
     }
 }
