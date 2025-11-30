@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+// Add search params usage
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
 import ImageUploader from '@/components/ui/ImageUploader';
@@ -14,12 +15,16 @@ const MEAL_OPTIONS: { value: MealType; label: string }[] = [
 export default function DiaryCreatePage() {
   const { date } = useParams();
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { recipeId?: number } };
+  const location = useLocation();
+  const locationState = (location.state as { recipeId?: number } | undefined) || undefined;
+  // Parse mealType from query string
+  const searchParams = new URLSearchParams(location.search);
+  const mealTypeFromQuery = searchParams.get('mealType') as MealType | null;
   const qc = useQueryClient();
 
   const [form, setForm] = useState<CreateDiaryRequest>({
     date: date ?? '',
-    mealType: 'BREAKFAST',
+    mealType: mealTypeFromQuery ?? 'BREAKFAST',
     content: '',
     imageUrl: '',
     recipeId: undefined,
@@ -31,10 +36,16 @@ export default function DiaryCreatePage() {
   }, [date]);
 
   useEffect(() => {
-    if (location.state?.recipeId) {
-      setForm((f) => ({ ...f, recipeId: location.state?.recipeId }));
+    if (locationState?.recipeId) {
+      setForm((f) => ({ ...f, recipeId: locationState.recipeId }));
     }
-  }, [location.state?.recipeId]);
+  }, [locationState?.recipeId]);
+
+  useEffect(() => {
+    if (mealTypeFromQuery) {
+      setForm((f) => ({ ...f, mealType: mealTypeFromQuery }));
+    }
+  }, [mealTypeFromQuery]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: createDiary,
@@ -156,11 +167,7 @@ export default function DiaryCreatePage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">사진 (선택)</label>
-            <ImageUploader
-              value={form.imageUrl}
-              onChange={handleImageChange}
-              placeholder="식단 사진 업로드"
-            />
+            <ImageUploader value={form.imageUrl} onChange={handleImageChange} placeholder="식단 사진 업로드" />
           </div>
 
           <div>
