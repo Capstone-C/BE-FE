@@ -161,38 +161,40 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
     };
 
     return (
-        <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm border p-6 space-y-8">
-            <div className="border-b pb-4">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    {isEdit ? '레시피 수정' : '새 레시피 작성'}
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 p-8 space-y-8">
+            <div className="border-b-2 border-gray-100 pb-6">
+                <h1 className="text-3xl font-bold gradient-text mb-2">
+                    {isEdit ? '🍳 레시피 수정' : '✨ 새 레시피 작성'}
                 </h1>
-                <p className="text-gray-500 mt-1">
+                <p className="text-gray-600">
                     나만의 맛있는 레시피를 공유해보세요.
                 </p>
             </div>
 
             {/* 기본 정보 */}
             <section className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-800">기본 정보</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="text-purple-600">📝</span> 기본 정보
+                </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-1" id="field-title">
+                    <div className="space-y-2" id="field-title">
                         <label className="block text-sm font-medium text-gray-700">레시피 제목 <span className="text-red-500">*</span></label>
                         <input
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
-                            className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none ${errors.title ? 'border-red-500' : ''}`}
+                            className={`w-full border-2 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all ${errors.title ? 'border-red-500' : 'border-gray-200'}`}
                             placeholder="예: 소고기 미역국"
                         />
-                        {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
+                        {errors.title && <p className="text-red-500 text-sm flex items-center gap-1">⚠️ {errors.title}</p>}
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">카테고리</label>
                         <select
                             value={categoryId}
                             onChange={(e) => setCategoryId(Number(e.target.value))}
-                            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                         >
                             {categories.map(c => (
                                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -201,17 +203,17 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                     </div>
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">요약 (선택)</label>
                     <textarea
                         value={summary}
                         onChange={(e) => setSummary(e.target.value)}
-                        className="w-full border rounded-lg px-3 py-2 h-20 resize-none focus:ring-2 focus:ring-blue-500 outline-none"
+                        className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 h-24 resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                         placeholder="레시피에 대한 간단한 설명을 적어주세요."
                     />
                 </div>
 
-                <div className="space-y-1">
+                <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">대표 이미지 (선택)</label>
                   <ImageUploader
                     value={thumbnail}
@@ -221,18 +223,20 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                 </div>
               </section>
 
-            <hr />
+            <hr className="border-gray-200" />
 
             {/* 상세 정보 */}
             <section className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-800">상세 정보</h2>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                    <span className="text-purple-600">⚙️</span> 상세 정보
+                </h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">식단 타입</label>
                         <select
                             value={dietType}
                             onChange={(e) => setDietType(e.target.value as DietType)}
-                            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                         >
                             <option value="">선택 안함</option>
                             {DIET_TYPES.map(t => (
@@ -241,12 +245,12 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                         </select>
                     </div>
 
-                    <div className="space-y-1">
+                    <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700">난이도</label>
                         <select
                             value={difficulty}
                             onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-                            className="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                         >
                             <option value="">선택 안함</option>
                             {DIFFICULTIES.map(d => (
@@ -298,16 +302,16 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
             <hr />
 
             {/* 상태 및 버튼 */}
-            <div className="flex items-center justify-between pt-4">
-                <div className="flex items-center gap-2">
-                    <label className="text-sm font-medium text-gray-700">공개 상태:</label>
+            <div className="flex items-center justify-between pt-6">
+                <div className="flex items-center gap-3">
+                    <label className="text-sm font-semibold text-gray-700">📝 공개 상태:</label>
                     <select
                         value={status}
                         onChange={(e) => setStatus(e.target.value as UpsertPostStatus)}
-                        className="border rounded px-2 py-1 text-sm"
+                        className="border-2 border-gray-200 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                     >
-                        <option value="PUBLISHED">공개</option>
-                        <option value="DRAFT">비공개 (임시저장)</option>
+                        <option value="PUBLISHED">✅ 공개</option>
+                        <option value="DRAFT">📦 비공개 (임시저장)</option>
                     </select>
                 </div>
 
@@ -315,7 +319,7 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                     <button
                         type="button"
                         onClick={() => nav(-1)}
-                        className="px-4 py-2 border rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                        className="px-5 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
                     >
                         취소
                     </button>
@@ -323,9 +327,9 @@ export default function RecipeForm({ initialData, onSubmit, isEdit = false }: Re
                         type="button"
                         onClick={handleSubmit}
                         disabled={submitting}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                        className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all"
                     >
-                        {submitting ? '저장 중...' : (isEdit ? '수정 완료' : '레시피 등록')}
+                        {submitting ? '⏳ 저장 중...' : (isEdit ? '✅ 수정 완료' : '🎉 레시피 등록')}
                     </button>
                 </div>
             </div>

@@ -4,10 +4,10 @@ import { Footer } from '@/features/common/components/Footer';
 
 export function RootLayout() {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen">
       <HeaderNav />
       <main className="flex-grow">
-        <div className="py-6 container mx-auto px-4">
+        <div className="py-8 container mx-auto px-4">
           <Outlet />
         </div>
       </main>
