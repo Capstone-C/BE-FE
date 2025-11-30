@@ -2,10 +2,12 @@ spring:
   application:
     name: CC_BE
   datasource:
-    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:ccdb}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:ccdb}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useUnicode=true&connectionCollation=utf8mb4_unicode_ci
     username: ${MYSQL_USER:ccuser}
     password: ${MYSQL_PASSWORD:devpass}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-init-sql: "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci"
   jpa:
     hibernate:
       ddl-auto: update
@@ -13,13 +15,13 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: false
+        use_sql_comments: false
+        jdbc:
+          charset: UTF-8
     show-sql: false
   sql:
     init:
       mode: never
-  docker:
-    compose:
-      enabled: false
   servlet:
     multipart:
       max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
@@ -36,6 +38,11 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 logging:
   level:

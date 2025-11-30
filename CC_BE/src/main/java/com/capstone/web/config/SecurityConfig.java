@@ -30,8 +30,7 @@ public class SecurityConfig {
                         .requestMatchers("/static/**").permitAll()
                         // Shopping API (공개 조회)
                         .requestMatchers("/api/v1/shopping/**").permitAll()
-                        // 공개 조회 (GET)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/posts", "/api/v1/posts/*", "/api/boards").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/**", "/api/boards/**").permitAll()
                         // 추천 토글/작성/수정/삭제는 인증 필요
                         .requestMatchers(HttpMethod.POST, "/api/v1/posts/*/like").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/posts").authenticated()

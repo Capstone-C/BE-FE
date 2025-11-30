@@ -1,6 +1,5 @@
 # Compiled class files
 *.class
-*.log
 
 # Build directories
 build/
@@ -23,6 +22,7 @@ gradle-app.setting
 *.ipr
 *.iws
 .vscode/
+.fastRequest/
 *.swp
 *.swo
 *~
@@ -39,6 +39,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dist/
+package-lock.json
 
 # Test coverage
 coverage/
@@ -53,13 +54,13 @@ coverage/
 logs/
 *.log
 
-# Uploads
+# Uploads (런타임 생성)
 uploads/
-!uploads/.gitkeep
 
-# Docker
+# Docker volumes
 .docker/
 
-# Test results
+# Test files
+test-image/
 test-results/
 test-output.log
