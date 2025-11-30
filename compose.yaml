@@ -59,6 +59,9 @@ services:
       MYSQL_USER: ccuser
       MYSQL_PASSWORD: devpass
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      # JWT Security
+      JWT_SECRET: ${JWT_SECRET:-TeBN3BMojFjhgLW6XqZNKU80egfswI6PcJpc0WtadiXuf1dZUmse6GpPdpg6HHkK}
+      JWT_EXPIRATION_MILLIS: ${JWT_EXPIRATION_MILLIS:-3600000}
       # Gemini Vision API
       GEMINI_API_URL: ${GEMINI_API_URL}
       GEMINI_API_KEY: ${GEMINI_API_KEY}

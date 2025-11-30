@@ -49,4 +49,43 @@ public interface ProductSearchRepository extends ElasticsearchRepository<Product
      * 가격 범위로 검색
      */
     Page<ProductDocument> findByPriceBetween(Integer minPrice, Integer maxPrice, Pageable pageable);
+
+    /**
+     * 쇼핑몰 타입별로 삭제 (벌크 삭제용)
+     */
+    void deleteByMallType(String mallType);
+
+    /**
+     * 복합 검색: 키워드 + 카테고리 (Elasticsearch nori 형태소 분석 사용)
+     */
+    Page<ProductDocument> findByNameContainingAndCategory(String name, String category, Pageable pageable);
+
+    /**
+     * 복합 검색: 키워드 + 쇼핑몰 타입
+     */
+    Page<ProductDocument> findByNameContainingAndMallType(String name, String mallType, Pageable pageable);
+
+    /**
+     * 복합 검색: 키워드 + 카테고리 + 쇼핑몰 타입
+     */
+    Page<ProductDocument> findByNameContainingAndCategoryAndMallType(
+            String name, String category, String mallType, Pageable pageable);
+
+    /**
+     * 복합 검색: 키워드 + 가격 범위
+     */
+    Page<ProductDocument> findByNameContainingAndPriceBetween(
+            String name, Integer minPrice, Integer maxPrice, Pageable pageable);
+
+    /**
+     * 복합 검색: 카테고리 + 가격 범위
+     */
+    Page<ProductDocument> findByCategoryAndPriceBetween(
+            String category, Integer minPrice, Integer maxPrice, Pageable pageable);
+
+    /**
+     * 복합 검색: 키워드 + 카테고리 + 가격 범위
+     */
+    Page<ProductDocument> findByNameContainingAndCategoryAndPriceBetween(
+            String name, String category, Integer minPrice, Integer maxPrice, Pageable pageable);
 }

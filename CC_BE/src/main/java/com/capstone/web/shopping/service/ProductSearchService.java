@@ -60,27 +60,52 @@ public class ProductSearchService {
     /**
      * 키워드 검색 (가격 범위, 쇼핑몰 타입, 카테고리 필터 적용)
      * 
-     * NOTE: 현재는 기본 Repository 메서드만 사용
-     * 복합 필터는 향후 Elasticsearch Query DSL로 확장 가능
+     * 각 조합별로 적절한 Repository 메서드를 사용하여 정확한 검색 수행
      */
     private Page<ProductDocument> searchByKeyword(ProductSearchRequest request, Pageable pageable) {
-        String keyword = request.getKeyword();
+        String keyword = request.getKeyword().trim();
+        String category = request.getCategory();
+        String mallType = request.getMallType();
+        Integer minPrice = request.getMinPrice();
+        Integer maxPrice = request.getMaxPrice();
+        
         Page<ProductDocument> results;
 
-        // 가격 범위 필터가 있는 경우
-        if (request.getMinPrice() != null || request.getMaxPrice() != null) {
-            results = productSearchRepository.findByNameContaining(keyword, pageable);
+        // 복합 조건 검색 - 키워드 + 카테고리 + 가격
+        if (category != null && !category.isBlank() && (minPrice != null || maxPrice != null)) {
+            int min = minPrice != null ? minPrice : 0;
+            int max = maxPrice != null ? maxPrice : Integer.MAX_VALUE;
+            log.debug("Search: keyword + category + price range");
+            results = productSearchRepository.findByNameContainingAndCategoryAndPriceBetween(
+                    keyword, category, min, max, pageable);
         }
-        // 쇼핑몰 타입 필터
-        else if (request.getMallType() != null && !request.getMallType().isBlank()) {
-            results = productSearchRepository.findByNameContaining(keyword, pageable);
+        // 복합 조건 검색 - 키워드 + 카테고리 + 쇼핑몰
+        else if (category != null && !category.isBlank() && mallType != null && !mallType.isBlank()) {
+            log.debug("Search: keyword + category + mallType");
+            results = productSearchRepository.findByNameContainingAndCategoryAndMallType(
+                    keyword, category, mallType, pageable);
         }
-        // 카테고리 필터
-        else if (request.getCategory() != null && !request.getCategory().isBlank()) {
-            results = productSearchRepository.findByNameContaining(keyword, pageable);
+        // 복합 조건 검색 - 키워드 + 가격
+        else if (minPrice != null || maxPrice != null) {
+            int min = minPrice != null ? minPrice : 0;
+            int max = maxPrice != null ? maxPrice : Integer.MAX_VALUE;
+            log.debug("Search: keyword + price range");
+            results = productSearchRepository.findByNameContainingAndPriceBetween(
+                    keyword, min, max, pageable);
         }
-        // 키워드만 있는 경우
+        // 복합 조건 검색 - 키워드 + 쇼핑몰
+        else if (mallType != null && !mallType.isBlank()) {
+            log.debug("Search: keyword + mallType");
+            results = productSearchRepository.findByNameContainingAndMallType(keyword, mallType, pageable);
+        }
+        // 복합 조건 검색 - 키워드 + 카테고리
+        else if (category != null && !category.isBlank()) {
+            log.debug("Search: keyword + category");
+            results = productSearchRepository.findByNameContainingAndCategory(keyword, category, pageable);
+        }
+        // 키워드만
         else {
+            log.debug("Search: keyword only");
             results = productSearchRepository.findByNameContaining(keyword, pageable);
         }
 
@@ -109,6 +134,7 @@ public class ProductSearchService {
             }
         }
 
+        log.info("Found {} products for keyword: '{}'", results.getTotalElements(), keyword);
         return results;
     }
 
