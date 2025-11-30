@@ -35,12 +35,6 @@ spring:
       stack:
         auto: false
 
-  # Elasticsearch 자동설정 제외
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
-
 logging:
   level:
     root: WARN

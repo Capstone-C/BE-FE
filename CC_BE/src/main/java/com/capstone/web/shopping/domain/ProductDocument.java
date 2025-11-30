@@ -1,19 +1,13 @@
 package com.capstone.web.shopping.domain;
 
 import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.elasticsearch.annotations.*;
 
 import java.time.LocalDateTime;
 
 /**
- * Elasticsearch 상품 Document
- * 외부 쇼핑몰 API에서 수집한 상품 데이터를 Elasticsearch에 직접 저장
- * RDB를 사용하지 않고 Elasticsearch만 사용
+ * 쇼핑 상품 데이터 모델
+ * Naver Shopping API에서 수집한 상품 데이터
  */
-@Document(indexName = "products")
-@Setting(settingPath = "elasticsearch/product-settings.json")
-@Mapping(mappingPath = "elasticsearch/product-mappings.json")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
@@ -21,100 +15,84 @@ import java.time.LocalDateTime;
 public class ProductDocument {
 
     /**
-     * Elasticsearch 문서 ID
+     * 상품 ID
      * 형식: {mallType}_{externalProductId}
      */
-    @Id
     private String id;
 
     /**
-     * 상품명 (검색 대상)
+     * 상품명
      */
-    @Field(type = FieldType.Text, analyzer = "nori")
     private String name;
 
     /**
      * 현재 판매가격
      */
-    @Field(type = FieldType.Integer)
     private Integer price;
 
     /**
      * 원가 (정상가)
      */
-    @Field(type = FieldType.Integer)
     private Integer originalPrice;
 
     /**
      * 할인율
      */
-    @Field(type = FieldType.Integer)
     private Integer discountRate;
 
     /**
      * 상품 이미지 URL
      */
-    @Field(type = FieldType.Keyword, index = false)
     private String imageUrl;
 
     /**
      * 상품 상세 페이지 URL
      */
-    @Field(type = FieldType.Keyword, index = false)
     private String productUrl;
 
     /**
      * 쇼핑몰 타입
      */
-    @Field(type = FieldType.Keyword)
     private String mallType;
 
     /**
      * 상품 카테고리
      */
-    @Field(type = FieldType.Keyword)
     private String category;
 
     /**
-     * 상품 설명 (검색 대상)
+     * 상품 설명
      */
-    @Field(type = FieldType.Text, analyzer = "nori")
     private String description;
 
     /**
      * 배송 정보
      */
-    @Field(type = FieldType.Text)
     private String deliveryInfo;
 
     /**
      * 평점
      */
-    @Field(type = FieldType.Double)
     private Double rating;
 
     /**
      * 리뷰 수
      */
-    @Field(type = FieldType.Integer)
     private Integer reviewCount;
 
     /**
      * 상품 등록일시
      */
-    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     private LocalDateTime createdAt;
 
     /**
      * 상품 수정일시
      */
-    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
     private LocalDateTime updatedAt;
 
     /**
      * 외부 쇼핑몰의 상품 ID
      */
-    @Field(type = FieldType.Keyword)
     private String externalProductId;
 
     /**

@@ -20,10 +20,6 @@ spring:
   docker:
     compose:
       enabled: false
-  elasticsearch:
-    uris: ${ELASTICSEARCH_URIS:http://elasticsearch:9200}
-    username: ${ELASTICSEARCH_USERNAME:}
-    password: ${ELASTICSEARCH_PASSWORD:}
   servlet:
     multipart:
       max-file-size: ${UPLOAD_MAX_FILE_SIZE:10MB}
