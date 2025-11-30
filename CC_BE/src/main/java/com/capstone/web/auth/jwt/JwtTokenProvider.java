@@ -6,11 +6,16 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
+
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 import javax.crypto.SecretKey;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtTokenProvider {
 
@@ -23,7 +28,31 @@ public class JwtTokenProvider {
 
     @PostConstruct
     void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(properties.getSecret());
+        String configured = properties.getSecret();
+        byte[] keyBytes = null;
+
+        // Try standard Base64 first
+        try {
+            keyBytes = Decoders.BASE64.decode(configured);
+            log.info("Initialized JWT signing key using standard Base64 decoding ({} bytes).", keyBytes.length);
+        } catch (Exception base64Ex) {
+            log.warn("Standard Base64 decode failed for JWT secret: {}. Trying Base64URL...", base64Ex.getMessage());
+            // Try Base64URL (commonly used for URL-safe env values)
+            try {
+                keyBytes = Decoders.BASE64URL.decode(configured);
+                log.info("Initialized JWT signing key using Base64URL decoding ({} bytes).", keyBytes.length);
+            } catch (Exception base64UrlEx) {
+                log.warn("Base64URL decode also failed: {}. Falling back to raw UTF-8 bytes.", base64UrlEx.getMessage());
+                keyBytes = configured.getBytes(StandardCharsets.UTF_8);
+                log.info("Initialized JWT signing key using raw UTF-8 bytes ({} bytes).", keyBytes.length);
+            }
+        }
+
+        // Enforce minimum length (HS256 needs >=32 bytes of secret material)
+        if (keyBytes.length < 32) {
+            throw new IllegalStateException("JWT secret material too short (" + keyBytes.length + " bytes). Provide >=32 bytes (recommend >=48) after decoding. Current secret env name: JWT_SECRET.");
+        }
+
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
