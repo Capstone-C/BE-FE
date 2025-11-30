@@ -5,6 +5,9 @@ import { AxiosError } from 'axios';
 import { login } from '@/apis/auth';
 import { LoginRequest } from '@/apis/types';
 import { useAuth } from '@/hooks/useAuth';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -66,63 +69,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center">로그인</h1>
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              이메일
-            </label>
-            <input
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-4">
+      <div className="w-full max-w-xl py-8">
+        <Card className="p-10 space-y-8 shadow-xl">
+          <div className="text-center space-y-3">
+            <h1 className="text-4xl font-bold gradient-text">🍽️ 로그인</h1>
+            <p className="text-lg text-gray-600">Capstone에 오신 것을 환영합니다</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            <Input
               id="email"
               name="email"
               type="email"
+              label="이메일"
               autoComplete="off"
               required
               value={formData.email}
               onChange={handleChange}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="example@email.com"
             />
-          </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
+            <Input
               id="password"
               name="password"
               type="password"
+              label="비밀번호"
               autoComplete="new-password"
               required
               value={formData.password}
               onChange={handleChange}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="비밀번호를 입력하세요"
             />
-          </div>
 
-          {errorMessage && <p className="text-sm text-red-600 text-center">{errorMessage}</p>}
+            {errorMessage && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-base text-red-600 text-center">{errorMessage}</p>
+              </div>
+            )}
 
-          <div>
-            <button
+            <Button
               type="submit"
               disabled={isPending}
-              className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+              variant="primary"
+              className="w-full py-3 text-base"
             >
               {isPending ? '로그인 중...' : '로그인'}
-            </button>
+            </Button>
+          </form>
+
+          <div className="flex items-center gap-4 pt-6">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="text-base text-gray-500">또는</span>
+            <div className="flex-1 border-t border-gray-200"></div>
           </div>
-        </form>
-        <div className="mt-4 text-center">
-          계정이 없으신가요?{' '}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            회원가입
-          </Link>
-          <Link to="/find-password" className="text-blue-600 hover:underline">
-            비밀번호 찾기
-          </Link>
-        </div>
+
+          <div className="space-y-3 text-center text-base">
+            <p className="text-gray-600">
+              계정이 없으신가요?{' '}
+              <Link to="/signup" className="text-purple-600 hover:text-purple-700 font-medium hover:underline">
+                회원가입
+              </Link>
+            </p>
+            <Link to="/find-password" className="block text-gray-500 hover:text-purple-600 transition-colors">
+              비밀번호 찾기
+            </Link>
+          </div>
+        </Card>
       </div>
     </div>
   );

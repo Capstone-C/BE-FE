@@ -75,25 +75,26 @@ export default function BoardsListPage() {
   });
 
   return (
-    <Container className="py-6 space-y-4">
-      <div className="flex gap-3 items-center justify-between">
-        <h1 className="text-xl font-semibold">{title}</h1>
+    <Container className="py-16 space-y-10 px-8 max-w-7xl">
+      <div className="flex gap-4 items-center justify-between">
+        <h1 className="text-5xl font-bold gradient-text">📝 {title}</h1>
         {!isMyPosts && (
           <Link to={newPostHref} state={newPostState}>
-            <Button>새 글</Button>
+            <Button size="lg">✨ 새 글 작성</Button>
           </Link>
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {visiblePosts.map((p) => (
           <PostCard key={p.id} post={p} boardId={boardId} />
         ))}
       </div>
 
-      <div className="flex gap-2 justify-center pt-2">
+      <div className="flex gap-4 justify-center pt-10">
         <Button
           variant="secondary"
+          size="lg"
           disabled={page <= 1}
           onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page - 1) })}
         >
@@ -101,6 +102,7 @@ export default function BoardsListPage() {
         </Button>
         <Button
           variant="secondary"
+          size="lg"
           disabled={page >= data.totalPages}
           onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page + 1) })}
         >
