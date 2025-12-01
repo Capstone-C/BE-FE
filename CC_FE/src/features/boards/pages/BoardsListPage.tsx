@@ -1,9 +1,9 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { usePosts } from '@/features/boards/hooks/usePosts';
-import BoardSidebar from '@/features/boards/components/BoardSidebar';
-import { formatYMDHMKorean } from '@/utils/date';
-import { extractAuthorRef, getDisplayName } from '@/utils/author';
-import { useBlockedMembers } from '@/features/members/hooks/useMemberBlocks';
+import { usePosts } from '../hooks/usePosts'; // 상대 경로 수정
+import BoardSidebar from '../components/BoardSidebar'; // 상대 경로 수정
+import { formatYMDHMKorean } from '../../../utils/date'; // 상대 경로 수정
+import { extractAuthorRef, getDisplayName } from '../../../utils/author'; // 상대 경로 수정
+import { useBlockedMembers } from '../../members/hooks/useMemberBlocks'; // 상대 경로 수정
 
 export default function BoardsListPage() {
   const [sp, setSp] = useSearchParams();
@@ -11,6 +11,10 @@ export default function BoardsListPage() {
   const page = Number(sp.get('page') ?? 1);
   const size = Number(sp.get('size') ?? 20);
   const boardId = sp.get('categoryId');
+  // [추가] URL에서 authorId를 가져옵니다.
+  const authorIdParam = sp.get('authorId');
+  const authorId = authorIdParam ? Number(authorIdParam) : undefined;
+
   const searchType = sp.get('searchType') ?? undefined;
   const keyword = sp.get('keyword') ?? undefined;
 
@@ -21,6 +25,7 @@ export default function BoardsListPage() {
     sort: 'createdAt',
     boardId: boardId ? Number(boardId) : undefined,
     searchType,
+    authorId: authorId, // <<-- authorId를 쿼리에 전달
   });
 
   const { data: blocked } = useBlockedMembers();
@@ -41,6 +46,8 @@ export default function BoardsListPage() {
     setSp(newSp);
   };
 
+  const pageTitle = authorId ? `${authorId}번 회원이 쓴 글` : (boardId ? '게시판' : '전체 글');
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col md:flex-row gap-8">
@@ -53,7 +60,7 @@ export default function BoardsListPage() {
           <div className="mb-6 pb-4 border-b border-gray-200 flex justify-between items-end">
             <div>
               <h1 className="text-3xl font-bold leading-tight text-gray-900">
-                {boardId ? '게시판' : '전체 글'}
+                {pageTitle}
               </h1>
               <p className="mt-2 text-md text-gray-500">
                 다양한 식단 정보를 공유하고 소통해보세요.
@@ -85,8 +92,8 @@ export default function BoardsListPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                     {visiblePosts.map((post) => {
-                      const { inlineName, memberId } = extractAuthorRef(post);
-                      const authorName = getDisplayName(memberId, inlineName);
+                      const { inlineName, memberId: postAuthorId } = extractAuthorRef(post);
+                      const authorName = getDisplayName(postAuthorId, inlineName);
                       return (
                         <tr key={post.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.id}</td>
