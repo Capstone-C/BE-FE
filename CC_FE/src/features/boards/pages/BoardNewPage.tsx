@@ -1,131 +1,184 @@
-// src/features/boards/pages/BoardNewPage.tsx
-import axios from 'axios';
-import { useState, type ChangeEvent, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCreatePostMutation } from '@/features/boards/hooks/usePostMutations';
 import { listCategories, type Category } from '@/apis/categories.api';
 import { useToast } from '@/contexts/ToastContext';
-import { useCreatePostMutation } from '@/features/boards/hooks/usePostMutations';
+import BoardSidebar from '@/features/boards/components/BoardSidebar';
 
 export default function BoardNewPage() {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [categoryId, setCategoryId] = useState<number>(0);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(false);
-
   const nav = useNavigate();
   const [sp] = useSearchParams();
-  const location = useLocation() as { state?: { fromCategoryId?: number } };
   const { show } = useToast();
-  const createMutation = useCreatePostMutation();
 
-  const fixedCategoryId = useMemo(() => {
-    const fromState = location.state?.fromCategoryId;
-    const fromQuery = sp.get('categoryId');
-    if (Number.isFinite(fromState)) return fromState as number;
-    if (fromQuery) {
-      const n = Number(fromQuery);
-      if (Number.isFinite(n)) return n;
-    }
-    return undefined;
-  }, [location.state, sp]);
+  const createMutation = useCreatePostMutation();
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  const [title, setTitle] = useState('');
+  const [categoryId, setCategoryId] = useState<number>(0);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const initialCategoryId = Number(sp.get('categoryId') || 0);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const data = await listCategories();
-        const topLevel = data.filter((c) => c.parentId == null && c.type !== 'RECIPE');
-        setCategories(topLevel);
-
-        if (fixedCategoryId && topLevel.some((c) => c.id === fixedCategoryId)) {
-          setCategoryId(fixedCategoryId);
-        } else {
-          const first = topLevel[0];
-          if (first && typeof first.id === 'number') setCategoryId(first.id);
+    listCategories().then((data) => {
+      const filtered = data.filter((c) => c.parentId === null && c.type !== 'RECIPE');
+      setCategories(filtered);
+      if (initialCategoryId && filtered.some((c) => c.id === initialCategoryId)) {
+        setCategoryId(initialCategoryId);
+      } else if (filtered.length > 0) {
+        // [수정] 배열 인덱스 접근 안전성 확보 (noUncheckedIndexedAccess 대응)
+        const firstCategory = filtered[0];
+        if (firstCategory) {
+          setCategoryId(firstCategory.id);
         }
-      } catch (e) {
-        console.error('카테고리를 불러오지 못했습니다.', e);
       }
-    })();
-  }, [fixedCategoryId]);
+    });
+  }, [initialCategoryId]);
 
-  const onTitle = (e: ChangeEvent<HTMLInputElement>) => setTitle(e.target.value);
-  const onContent = (e: ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value);
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
 
-  const onSubmit = async () => {
-    const t = title.trim();
-    const c = content.trim();
-    if (!t || !c) return show('제목과 본문을 입력해주세요.', { type: 'error' });
-    if (t.length < 5) return show('제목은 5자 이상 입력해주세요.', { type: 'error' });
-    if (t.length > 100) return show('제목은 100자 이하로 입력해주세요.', { type: 'error' });
-    if (c.length < 10) return show('본문은 10자 이상 입력해주세요.', { type: 'error' });
-    if (c.length > 10000) return show('본문은 10000자 이하로 입력해주세요.', { type: 'error' });
-    if (!categoryId) return show('카테고리를 선택해주세요.', { type: 'error' });
-    setLoading(true);
-    try {
-      await createMutation.mutateAsync({ title: t, content: c, categoryId });
-      const board = fixedCategoryId ?? undefined;
-      const to = board ? `/boards?categoryId=${board}` : '/boards';
-      show('글이 등록되었습니다.', { type: 'success' });
-      nav(to);
-    } catch (err: unknown) {
-      let msg: string = '작성에 실패했습니다.';
-      if (axios.isAxiosError(err)) {
-        const status = err.response?.status;
-        const data = err.response?.data as { message?: string; error?: string } | undefined;
-        if (status === 401) msg = '로그인이 필요합니다.';
-        else if (status === 403) msg = '글을 작성할 권한이 없습니다.';
-        else if (status === 404) msg = '선택한 카테고리를 찾을 수 없습니다.';
-        else if (status === 400 || status === 422) msg = data?.message ?? '입력값을 확인해주세요.';
-        else msg = data?.message ?? data?.error ?? err.message ?? msg;
-      } else if (err instanceof Error) {
-        msg = err.message;
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (!file) return; // Null check
+
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (loadEvent) => {
+          const img = document.createElement('img');
+          img.src = loadEvent.target?.result as string;
+          img.style.maxWidth = '100%';
+          img.style.borderRadius = '8px';
+          // [수정] editorRef.current 안전하게 접근
+          if (editorRef.current) {
+            editorRef.current.appendChild(img);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        show('이미지 파일만 첨부할 수 있습니다.', { type: 'error' });
       }
-      show(msg, { type: 'error' });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const isCategoryLocked = Number.isFinite(fixedCategoryId);
+  const handleSubmit = async () => {
+    if (!title.trim()) return show('제목을 입력해주세요.', { type: 'error' });
+
+    // [수정] editorRef.current를 로컬 변수에 할당하여 타입 가드(Type Guard)가 유효하도록 수정
+    // 이렇게 하면 이후 코드에서 editor 변수는 null이 아님이 보장됩니다.
+    const editor = editorRef.current;
+    if (!editor) return;
+
+    if (!editor.innerHTML.trim()) {
+      return show('내용을 입력해주세요.', { type: 'error' });
+    }
+
+    try {
+      // 로컬 변수 editor 사용
+      const contentHtml = editor.innerHTML;
+
+      await createMutation.mutateAsync({
+        title,
+        content: contentHtml,
+        categoryId,
+        isRecipe: false,
+        status: 'PUBLISHED',
+      });
+
+      show('게시글이 등록되었습니다.', { type: 'success' });
+      nav(categoryId ? `/boards?categoryId=${categoryId}` : '/boards');
+    } catch (e) {
+      show('게시글 등록에 실패했습니다.', { type: 'error' });
+    }
+  };
+
+  const currentCategoryName = categories.find((c) => c.id === categoryId)?.name || '게시판';
 
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-bold">새 글 작성</h1>
+    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row gap-8">
+        <BoardSidebar />
+        <div className="w-full md:w-3/4">
+          <div className="mb-6 pb-4 border-b border-gray-200">
+            <h1 className="text-3xl font-bold leading-tight text-gray-900">{currentCategoryName} 글쓰기</h1>
+          </div>
 
-      <input className="border p-2 w-full" placeholder="제목" value={title} onChange={onTitle} />
+          <div className="bg-white p-8 rounded-lg shadow-lg">
+            {/* Category Select */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+              <select
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm"
+                value={categoryId}
+                onChange={(e) => setCategoryId(Number(e.target.value))}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      <textarea className="border p-2 w-full h-40" placeholder="본문" value={content} onChange={onContent} />
+            {/* Title Input */}
+            <div className="mb-6">
+              <input
+                type="text"
+                className="block w-full text-2xl px-0 border-0 border-b-2 border-gray-200 focus:ring-0 focus:border-[#4E652F] placeholder-gray-400 py-2"
+                placeholder="제목을 입력하세요"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
 
-      {/* 카테고리 선택 */}
-      <label className="block">
-        <span className="mr-2">카테고리</span>
-        <select
-          className="border p-2"
-          value={categoryId}
-          onChange={(e) => setCategoryId(Number(e.target.value))}
-          disabled={isCategoryLocked}
-          title={isCategoryLocked ? '게시판에서 진입하여 카테고리가 고정되었습니다' : undefined}
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name ?? `카테고리 ${c.id}`}
-            </option>
-          ))}
-        </select>
-      </label>
+            {/* Editor */}
+            <div>
+              {/* Content Area */}
+              <div
+                ref={editorRef}
+                contentEditable={true}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`w-full h-96 p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#71853A] overflow-y-auto ${isDragging ? 'ring-2 ring-[#4E652F] bg-gray-100' : ''}`}
+                suppressContentEditableWarning={true}
+              />
+              <p className="text-xs text-gray-500 mt-2 text-right">이미지를 드래그 앤 드롭하여 첨부할 수 있습니다.</p>
+            </div>
 
-      <div className="flex gap-2">
-        <button
-          disabled={!title || !content || loading}
-          onClick={onSubmit}
-          className="border px-3 py-2 rounded-md disabled:opacity-50"
-        >
-          {loading ? '등록 중…' : '등록'}
-        </button>
-        <button onClick={() => nav(-1)} className="border px-3 py-2 rounded-md">
-          취소
-        </button>
+            {/* Action Buttons */}
+            <div className="mt-8 flex justify-end space-x-4">
+              <button
+                onClick={() => nav(-1)}
+                className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSubmit}
+                className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4E652F] hover:bg-[#425528]"
+              >
+                등록
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

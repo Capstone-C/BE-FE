@@ -218,9 +218,10 @@ export default function DiaryCreatePage() {
             <button type="button" className="px-3 py-2 border rounded" onClick={onClose}>
               취소
             </button>
+            {/* [수정됨] 저장 버튼 색상 변경: bg-blue-600 -> bg-[#4E652F] */}
             <button
               type="submit"
-              className="px-3 py-2 border rounded bg-blue-600 text-white disabled:opacity-50"
+              className="px-3 py-2 border rounded bg-[#4E652F] text-white disabled:opacity-50 hover:bg-[#425528]"
               disabled={isPending}
             >
               {isPending ? '저장 중…' : '저장'}

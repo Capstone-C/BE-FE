@@ -58,13 +58,14 @@ export default function ShoppingPage() {
           <input
             type="text"
             placeholder="상품명 검색..."
-            className="flex-1 border p-2 rounded"
+            className="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#71853A]"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            // [수정됨] 버튼 색상 변경: bg-blue-600 -> bg-[#4E652F]
+            className="px-4 py-2 bg-[#4E652F] text-white rounded hover:bg-[#425528] transition-colors"
             aria-label="검색"
           >
             검색
@@ -72,7 +73,11 @@ export default function ShoppingPage() {
         </form>
 
         <div className="flex flex-wrap gap-4">
-          <select className="border p-2 rounded" value={mallType} onChange={(e) => setMallType(e.target.value)}>
+          <select
+            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#71853A]"
+            value={mallType}
+            onChange={(e) => setMallType(e.target.value)}
+          >
             <option value="">모든 쇼핑몰</option>
             <option value="NAVER">네이버</option>
             <option value="COUPANG">쿠팡</option>
@@ -83,7 +88,7 @@ export default function ShoppingPage() {
             <input
               type="number"
               placeholder="최소 가격"
-              className="border p-2 rounded w-32"
+              className="border p-2 rounded w-32 focus:outline-none focus:ring-2 focus:ring-[#71853A]"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
             />
@@ -91,7 +96,7 @@ export default function ShoppingPage() {
             <input
               type="number"
               placeholder="최대 가격"
-              className="border p-2 rounded w-32"
+              className="border p-2 rounded w-32 focus:outline-none focus:ring-2 focus:ring-[#71853A]"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
             />
@@ -113,11 +118,11 @@ export default function ShoppingPage() {
                 href={product.productUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden"
+                className="block bg-white rounded-lg shadow hover:shadow-md transition overflow-hidden group"
               >
                 <div className="aspect-square bg-gray-100 relative">
                   {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover" />
+                    <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   ) : (
                     <div className="flex items-center justify-center h-full text-gray-400">No Image</div>
                   )}
@@ -128,7 +133,7 @@ export default function ShoppingPage() {
                   )}
                 </div>
                 <div className="p-4 space-y-2">
-                  <h3 className="font-medium line-clamp-2 h-12">{product.name}</h3>
+                  <h3 className="font-medium line-clamp-2 h-12 group-hover:text-[#4E652F] transition-colors">{product.name}</h3>
                   <div className="flex justify-between items-end">
                     <div className="font-bold text-lg">{product.price.toLocaleString()}원</div>
                     {product.discountRate && product.discountRate > 0 && (
@@ -147,7 +152,7 @@ export default function ShoppingPage() {
               <button
                 disabled={page === 0}
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
-                className="px-4 py-2 border rounded disabled:opacity-50"
+                className="px-4 py-2 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
                 이전
               </button>
@@ -157,7 +162,7 @@ export default function ShoppingPage() {
               <button
                 disabled={page >= data.totalPages - 1}
                 onClick={() => setPage((p) => p + 1)}
-                className="px-4 py-2 border rounded disabled:opacity-50"
+                className="px-4 py-2 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
                 다음
               </button>

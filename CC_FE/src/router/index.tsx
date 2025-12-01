@@ -7,6 +7,7 @@ import ProtectedRoute from './ProtectedRoute';
 // Auth
 import LoginPage from '@/features/auth/pages/LoginPage';
 import SignupPage from '@/features/auth/pages/SignupPage';
+import RegisterSuccessPage from '@/features/auth/pages/RegisterSuccessPage';
 import ChangePasswordPage from '@/features/auth/pages/ChangePasswordPage';
 import FindPasswordPage from '@/features/auth/pages/FindPasswordPage';
 import ResetPasswordPage from '@/features/auth/pages/ResetPasswordPage';
@@ -42,6 +43,7 @@ import ReceiptScanPage from '@/features/refrigerator/pages/ReceiptScanPage';
 import RecommendationsPage from '@/features/refrigerator/pages/RecommendationsPage';
 
 // Recipes
+import RecipeListPage from '@/features/recipes/pages/RecipeListPage';
 import RecipeCreatePage from '@/features/recipes/pages/RecipeCreatePage';
 import RecipeEditPage from '@/features/recipes/pages/RecipeEditPage';
 
@@ -58,6 +60,7 @@ const router = createBrowserRouter([
       // Public auth routes
       { path: 'login', element: <LoginPage /> },
       { path: 'signup', element: <SignupPage /> },
+      { path: 'register-success', element: <RegisterSuccessPage /> },
       { path: 'find-password', element: <FindPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
 
@@ -70,16 +73,20 @@ const router = createBrowserRouter([
       // Shopping
       { path: 'shopping', element: <ShoppingPage /> },
 
-      // Diary
-      { path: 'diary', element: <DiaryCalendarPage /> },
-      { path: 'diary/:date', element: <DiaryDayPage /> },
-      { path: 'diary/:date/new', element: <DiaryCreatePage /> },
-      { path: 'diary/:date/edit/:id', element: <DiaryEditPage /> },
+      // Recipes (Public list)
+      { path: 'recipes', element: <RecipeListPage /> },
 
-      // Protected routes
+      // Protected routes (로그인 필요)
       {
         element: <ProtectedRoute />,
         children: [
+          // Diary
+          { path: 'diary', element: <DiaryCalendarPage /> },
+          { path: 'diary/:date', element: <DiaryDayPage /> },
+          { path: 'diary/:date/new', element: <DiaryCreatePage /> },
+          { path: 'diary/:date/edit/:id', element: <DiaryEditPage /> },
+
+          // MyPage
           { path: 'mypage', element: <ProfilePage /> },
           { path: 'mypage/edit', element: <ProfileEditPage /> },
           { path: 'mypage/withdraw', element: <WithdrawPage /> },
@@ -89,16 +96,16 @@ const router = createBrowserRouter([
           { path: 'mypage/blocked', element: <BlockedMembersPage /> },
           { path: 'mypage/scraps', element: <MyScrapsPage /> },
 
-          // Auth-required boards
+          // Boards actions
           { path: 'boards/new', element: <BoardNewPage /> },
           { path: 'boards/:postId/edit', element: <BoardEditPage /> },
 
-          // 냉장고 페이지
+          // Refrigerator
           { path: 'refrigerator', element: <RefrigeratorPage /> },
           { path: 'refrigerator/receipt-scan', element: <ReceiptScanPage /> },
           { path: 'refrigerator/recommendations', element: <RecommendationsPage /> },
 
-          // 레시피
+          // [중요] Recipes actions
           { path: 'recipes/new', element: <RecipeCreatePage /> },
           { path: 'recipes/:postId/edit', element: <RecipeEditPage /> },
         ],

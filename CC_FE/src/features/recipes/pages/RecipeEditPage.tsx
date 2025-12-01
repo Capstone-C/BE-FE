@@ -26,13 +26,14 @@ export default function RecipeEditPage() {
     cookTimeInMinutes: post.cookTimeInMinutes,
     servings: post.servings,
     difficulty: post.difficulty,
-    ingredients: post.ingredients?.map((i) => ({
+    // ingredients가 undefined일 경우 빈 배열로 처리하여 폼 초기화 오류 방지
+    ingredients: (post.ingredients ?? []).map((i) => ({
       name: i.name,
       quantity: i.quantity,
       unit: i.unit,
       memo: i.memo,
     })),
-    thumbnailUrl: undefined, // 현재 BE 미지원으로 undefined 처리 (필요 시 post.thumbnailUrl 사용)
+    thumbnailUrl: post.thumbnailUrl, // 기존 썸네일 유지
     summary,
     steps,
   };
