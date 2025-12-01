@@ -4,11 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { getRecommendations } from '@/apis/refrigerator.api';
 import type { RecommendedRecipe } from '@/types/refrigerator';
 import { Link } from 'react-router-dom';
-import { useToast } from '@/contexts/ToastContext';
 
 export default function RecommendationsPage() {
   const [limit, setLimit] = useState(10);
-  const { show } = useToast();
   const { data, isPending, isError, refetch, isFetching } = useQuery({
     queryKey: ['recommendations', limit],
     queryFn: () => getRecommendations(limit),
@@ -66,8 +64,6 @@ export default function RecommendationsPage() {
 
       <ul className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
         {recommendations.map((r) => {
-          const missingRequired = r.missingIngredients.filter((m) => m.isRequired).length;
-          const missingOptional = r.missingIngredients.filter((m) => !m.isRequired).length;
           return (
             <li key={r.recipeId} className="border rounded shadow-sm bg-white flex flex-col overflow-hidden">
               {r.imageUrl && (
@@ -102,16 +98,6 @@ export default function RecommendationsPage() {
                   >
                     상세 보기
                   </Link>
-                  <button
-                    onClick={() =>
-                      show(`필수 재료 부족: ${missingRequired}개, 선택 재료 부족: ${missingOptional}개`, {
-                        type: missingRequired ? 'error' : 'info',
-                      })
-                    }
-                    className="text-xs text-gray-600 underline"
-                  >
-                    부족 재료 {missingRequired + missingOptional}개 확인
-                  </button>
                 </div>
               </div>
               {r.missingIngredients.length > 0 && (

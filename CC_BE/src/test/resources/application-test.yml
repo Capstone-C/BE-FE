@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: CC_BE_TEST
   datasource:
     url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;DATABASE_TO_LOWER=TRUE
     username: sa
@@ -11,44 +13,61 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.H2Dialect
-        format_sql: false  # 보안: SQL 포맷팅 비활성화
-        show_sql: false    # 보안: Hibernate 내부 SQL 로그 비활성화
-        use_sql_comments: false  # 보안: SQL 주석 비활성화
-    show-sql: false  # 보안: Spring SQL 로그 비활성화
-    
+        format_sql: false
+        show_sql: false
+        use_sql_comments: false
+    show-sql: false
+
   h2:
     console:
       enabled: true
 
-  # Elasticsearch 비활성화 (테스트 환경에서는 Mock 사용)
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+  # [중요] S3 설정 추가 (가짜 값이라도 있어야 에러가 안 납니다)
+  cloud:
+    aws:
+      s3:
+        bucket: test-bucket
+      credentials:
+        access-key: test-access-key
+        secret-key: test-secret-key
+      region:
+        static: ap-northeast-2
+      stack:
+        auto: false
 
-# 테스트 초기화 전략: 필요 시 data.sql 사용 가능
 logging:
   level:
-    root: WARN  # 보안: 기본 로그 레벨 WARN으로 설정
+    root: WARN
     org.springframework: WARN
-    org.hibernate: WARN  # 보안: Hibernate 로그 최소화
-    org.hibernate.SQL: OFF  # 보안: SQL 로그 완전 비활성화
-    org.hibernate.tool.schema: OFF  # 보안: DDL 스키마 로그 완전 차단
-    org.hibernate.type.descriptor.sql: OFF  # 보안: SQL 타입 로그 차단
-    org.hibernate.type.descriptor.sql.BasicBinder: OFF
-    com.zaxxer.hikari: WARN  # 보안: HikariCP 로그 최소화
-    com.capstone: INFO  # 애플리케이션 로그만 INFO
+    org.hibernate: WARN
+    org.hibernate.SQL: OFF
+    com.zaxxer.hikari: WARN
+    com.capstone: INFO
 
 jwt:
   secret: ${JWT_SECRET:dGVzdF9qd3Rfc2VjcmV0X2tleV9zdHJpbmdfd2hpY2hfaXNfbG9uZ19lbm91Z2hfMzJieXRlcw==}
-  expiration-millis: ${JWT_EXPIRATION_MILLIS:3600000}
+  expiration-millis: 3600000
+
+gemini:
+  api-key: ${GEMINI_API_KEY:test-api-key}
+  api-url: https://generativelanguage.googleapis.com/v1beta/models
+  model: gemini-1.5-flash
+  max-tokens: 100
+
+# (추가) 네이버 API 설정 (없으면 에러 날 수 있음)
+naver:
+  api:
+    client-id: test-client-id
+    client-secret: test-client-secret
+
+# (추가) 쇼핑 설정 (없으면 에러 날 수 있음)
+shopping:
+  recommendation:
+    low-quantity-threshold: 2
+    expiration-days-threshold: 3
+    max-products-per-item: 10
 
 upload:
   dir: build/test-uploads
   max-file-size: 10MB
   max-request-size: 10MB
-
-gemini:
-  api-key: ${GEMINI_API_KEY:test-api-key}  # 보안: 환경변수 우선
-  api-url: https://generativelanguage.googleapis.com/v1beta/models
-  model: gemini-1.5-flash

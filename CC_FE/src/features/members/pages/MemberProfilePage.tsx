@@ -102,41 +102,27 @@ export default function MemberProfilePage() {
               <p className="text-sm text-gray-500">작성한 댓글 목록을 확인합니다.</p>
             </Link>
 
-            {/* 본인 전용 메뉴 */}
-            {viewingSelf && (
-              <>
-                <Link to="/mypage/edit" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <p className="font-medium text-gray-800">회원정보 수정</p>
-                  <p className="text-sm text-gray-500">닉네임 등 개인 정보를 수정합니다.</p>
-                </Link>
-                <Link to="/mypage/password" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <p className="font-medium text-gray-800">비밀번호 변경</p>
-                  <p className="text-sm text-gray-500">계정의 비밀번호를 변경합니다.</p>
-                </Link>
-                <Link to="/mypage/blocked" className="p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <p className="font-medium text-gray-800">차단 관리</p>
-                  <p className="text-sm text-gray-500">차단한 사용자 목록을 관리합니다.</p>
-                </Link>
-                <Link to="/mypage/withdraw" className="p-4 border border-red-200 rounded-lg hover:bg-red-50 transition-colors">
-                  <p className="font-medium text-red-700">회원 탈퇴</p>
-                  <p className="text-sm text-red-500">계정을 삭제하고 탈퇴합니다.</p>
-                </Link>
-              </>
-            )}
-
-            {/* 타인 프로필일 때 차단 버튼 */}
-            {!viewingSelf && (
-              <button
-                onClick={onBlockToggle}
-                className={`p-4 border rounded-lg transition-colors text-left ${isBlocked ? 'bg-red-50 border-red-200' : 'hover:bg-gray-50'}`}
-              >
-                <p className={`font-medium ${isBlocked ? 'text-red-700' : 'text-gray-800'}`}>
-                  {isBlocked ? '차단 해제' : '사용자 차단'}
-                </p>
-                <p className="text-sm text-gray-500">이 사용자의 글과 댓글을 보지 않습니다.</p>
-              </button>
-            )}
-          </div>
+      {/* 본인 전용 관리 버튼 */}
+      {viewingSelf && (
+        <div className="mt-6 flex flex-wrap gap-4">
+          <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+            회원정보 수정
+          </Link>
+          <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
+            비밀번호 변경
+          </Link>
+          <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+            회원탈퇴
+          </Link>
+          <Link
+            to="/mypage/blocked"
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+          >
+            차단된 사용자 관리
+          </Link>
+          <Link to="/mypage/scraps" className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
+            내 스크랩북
+          </Link>
         </div>
       </div>
     </div>

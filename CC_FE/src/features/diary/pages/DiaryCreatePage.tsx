@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+// Add search params usage
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
 import ImageUploader from '@/components/ui/ImageUploader';
+import { getPost } from '@/apis/boards.api';
+import { parseRecipeUrlToId } from '@/utils/recipe';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -14,27 +17,57 @@ const MEAL_OPTIONS: { value: MealType; label: string }[] = [
 export default function DiaryCreatePage() {
   const { date } = useParams();
   const navigate = useNavigate();
-  const location = useLocation() as { state?: { recipeId?: number } };
+  const location = useLocation();
+  const locationState = (location.state as { recipeId?: number } | undefined) || undefined;
+  // Parse mealType from query string
+  const searchParams = new URLSearchParams(location.search);
+  const mealTypeFromQuery = searchParams.get('mealType') as MealType | null;
   const qc = useQueryClient();
 
   const [form, setForm] = useState<CreateDiaryRequest>({
     date: date ?? '',
-    mealType: 'BREAKFAST',
+    mealType: mealTypeFromQuery ?? 'BREAKFAST',
     content: '',
     imageUrl: '',
     recipeId: undefined,
   });
-  const [errors, setErrors] = useState<{ mealType?: string; content?: string } | null>(null);
+  const [recipeUrlInput, setRecipeUrlInput] = useState<string>('');
+  const [recipeTitle, setRecipeTitle] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ mealType?: string; content?: string }>({});
 
   useEffect(() => {
     if (date) setForm((f) => ({ ...f, date }));
   }, [date]);
 
   useEffect(() => {
-    if (location.state?.recipeId) {
-      setForm((f) => ({ ...f, recipeId: location.state?.recipeId }));
+    if (locationState?.recipeId) {
+      setForm((f) => ({ ...f, recipeId: locationState.recipeId }));
+      setRecipeUrlInput(locationState.recipeId.toString());
     }
-  }, [location.state?.recipeId]);
+  }, [locationState?.recipeId]);
+
+  useEffect(() => {
+    if (mealTypeFromQuery) {
+      setForm((f) => ({ ...f, mealType: mealTypeFromQuery }));
+    }
+  }, [mealTypeFromQuery]);
+
+  useEffect(() => {
+    // When recipeId changes, attempt to fetch its title
+    async function loadTitle() {
+      if (form.recipeId) {
+        try {
+          const post = await getPost(form.recipeId);
+          setRecipeTitle(post.title);
+        } catch {
+          setRecipeTitle(null);
+        }
+      } else {
+        setRecipeTitle(null);
+      }
+    }
+    void loadTitle();
+  }, [form.recipeId]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: createDiary,
@@ -54,13 +87,18 @@ export default function DiaryCreatePage() {
     const { name, value } = e.target;
     setForm((prev) => {
       const next = { ...prev };
-      if (name === 'recipeId') next.recipeId = value === '' ? undefined : Number(value);
-      else if (name === 'date') next.date = value;
+      if (name === 'date') next.date = value;
       else if (name === 'mealType') next.mealType = value as MealType;
       else if (name === 'content') next.content = value;
-      // imageUrl change is handled separately
       return next;
     });
+  };
+
+  const handleRecipeUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setRecipeUrlInput(value);
+    const parsed = parseRecipeUrlToId(value);
+    setForm((prev) => ({ ...prev, recipeId: parsed }));
   };
 
   const handleImageChange = (url: string) => {
@@ -156,23 +194,24 @@ export default function DiaryCreatePage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">사진 (선택)</label>
-            <ImageUploader
-              value={form.imageUrl}
-              onChange={handleImageChange}
-              placeholder="식단 사진 업로드"
-            />
+            <ImageUploader value={form.imageUrl} onChange={handleImageChange} placeholder="식단 사진 업로드" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">레시피 ID (선택)</label>
+            <label className="block text-sm font-medium mb-1">레시피 URL 또는 ID (선택)</label>
             <input
-              type="number"
-              name="recipeId"
-              value={form.recipeId ?? ''}
-              onChange={handleChange}
+              type="text"
+              name="recipeUrl"
+              value={recipeUrlInput}
+              onChange={handleRecipeUrlChange}
+              placeholder="예: /boards/123 또는 전체 URL"
               className="w-full border rounded px-3 py-2"
-              min={1}
             />
+            {form.recipeId && (
+              <p className="text-xs text-gray-600 mt-1">
+                연결된 레시피: {recipeTitle ? recipeTitle : `#${form.recipeId}`}
+              </p>
+            )}
           </div>
 
           <div className="pt-2 flex gap-2 justify-end">

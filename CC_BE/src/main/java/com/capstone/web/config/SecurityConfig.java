@@ -28,8 +28,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/v1/auth/login", "/api/v1/auth/logout", "/api/v1/auth/password-reset", "/api/v1/auth/password-reset/confirm", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers("/static/**").permitAll()
-                        // 공개 조회 (GET)
-                        .requestMatchers(HttpMethod.GET, "/api/v1/posts", "/api/v1/posts/*", "/api/boards").permitAll()
+                        // Shopping API (공개 조회)
+                        .requestMatchers("/api/v1/shopping/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/posts/**", "/api/boards/**").permitAll()
                         // 추천 토글/작성/수정/삭제는 인증 필요
                         .requestMatchers(HttpMethod.POST, "/api/v1/posts/*/like").authenticated()
                         .requestMatchers(HttpMethod.POST, "/api/v1/posts").authenticated()

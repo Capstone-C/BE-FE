@@ -3,24 +3,24 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import DOMPurify from 'dompurify';
 
 import { usePost } from '@/features/boards/hooks/usePosts';
-import { useToggleLikeMutation, useDeletePostMutation } from '@/features/boards/hooks/usePostMutations';
-import { compareRecipeWithRefrigerator } from '@/apis/boards.api';
-import { postDeduct } from '@/apis/refrigerator.api';
-import BoardSidebar from '@/features/boards/components/BoardSidebar';
 import CommentList from '@/features/comments/components/CommentList';
-
+import { formatYMDHMKorean } from '@/utils/date';
+import { extractAuthorRef, getDisplayName } from '@/utils/author';
+import DOMPurify from 'dompurify';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/contexts/ToastContext';
 
 import { formatYMDHMKorean } from '@/utils/date';
 import { extractAuthorRef, getDisplayName } from '@/utils/author';
 import {
-  ThumbsUpIcon,
-  EyeIcon,
-  DiaryIcon,
-  FridgeIcon,
-  ReceiptIcon
-} from '@/components/ui/Icons';
+  useBlockMemberMutation,
+  useUnblockMemberMutation,
+  useBlockedMembers,
+} from '@/features/members/hooks/useMemberBlocks';
+import { getDeductPreview, postDeduct, getRefrigeratorItems } from '@/apis/refrigerator.api';
+import type { DeductPreviewResponse, DeductResponse } from '@/types/refrigerator';
+import { toggleScrap as toggleScrapApi } from '@/apis/scraps.api';
 
 // 공유하기 아이콘 (인라인 SVG)
 const ShareIcon = ({ className = "w-5 h-5" }) => (
@@ -43,15 +43,52 @@ export default function BoardDetailPage() {
   const [liked, setLiked] = useState<boolean | null>(null);
   const [likeCount, setLikeCount] = useState<number | null>(null);
 
-  if (isLoading) return <div className="p-8 text-center">불러오는 중…</div>;
-  if (isError || !data) return <div className="p-8 text-center text-red-600">글을 찾을 수 없습니다.</div>;
+  const [deductPreview, setDeductPreview] = useState<DeductPreviewResponse | null>(null);
+  const [deductOpen, setDeductOpen] = useState(false);
+  const [deductLoading, setDeductLoading] = useState(false);
+  const [deductExecuting, setDeductExecuting] = useState(false);
+  const [ignoreWarnings, setIgnoreWarnings] = useState(false);
 
-  const { inlineName, memberId } = extractAuthorRef(data);
-  const authorName = getDisplayName(memberId, inlineName);
-  const isAuthor = user && user.id === memberId;
+  const [fridgeNames, setFridgeNames] = useState<Set<string> | null>(null);
+  const [fridgeLoading, setFridgeLoading] = useState(false);
+  const [fridgeError, setFridgeError] = useState<string | null>(null);
 
-  const currentLiked = liked ?? (data as any).likedByMe ?? false;
-  const currentLikeCount = likeCount ?? data.likeCount ?? 0;
+  useEffect(() => {
+    // 로그인 사용자만 냉장고 재료를 가져와서 간단한 이름 매칭 셋 구성
+    async function loadFridge() {
+      if (!user) {
+        setFridgeNames(null);
+        return;
+      }
+      try {
+        setFridgeLoading(true);
+        setFridgeError(null);
+        const res = await getRefrigeratorItems('name');
+        const names = new Set<string>((res.items ?? []).map((i) => i.name.trim().toLowerCase()).filter(Boolean));
+        setFridgeNames(names);
+      } catch {
+        setFridgeError('냉장고 정보를 불러오지 못했습니다.');
+        setFridgeNames(null);
+      } finally {
+        setFridgeLoading(false);
+      }
+    }
+    loadFridge();
+  }, [user]);
+
+  const isOwnedIngredient = (name?: string) => {
+    if (!name) return false;
+    if (!fridgeNames || fridgeNames.size === 0) return false;
+    const key = name.trim().toLowerCase();
+    return fridgeNames.has(key);
+  };
+
+  if (Number.isNaN(id)) return <div className="p-6">잘못된 글 ID입니다.</div>;
+  if (isLoading) return <div className="p-6">불러오는 중…</div>;
+  if (isError || !data) return <div className="p-6">글을 찾을 수 없거나 오류가 발생했습니다.</div>;
+
+  const isRecipePost = (data as any).isRecipe === true;
+
   const safeHtml = DOMPurify.sanitize(data.content ?? '');
 
   const onToggleLike = async () => {
@@ -69,14 +106,13 @@ export default function BoardDetailPage() {
     }
   };
 
-  const onDelete = async () => {
-    if (!confirm('정말로 이 글을 삭제하시겠습니까?')) return;
+  const onToggleScrap = async () => {
     try {
-      await deleteMutation.mutateAsync(id);
-      show('삭제되었습니다.', { type: 'success' });
-      nav('/boards');
+      const res = await toggleScrapApi(id);
+      show(res.scrapped ? '스크랩북에 추가했습니다.' : '스크랩북에서 삭제했습니다.', { type: 'success' });
     } catch {
-      show('삭제 권한이 없거나 오류가 발생했습니다.', { type: 'error' });
+      show('로그인이 필요한 기능입니다.', { type: 'error' });
+      nav('/login');
     }
   };
 
@@ -168,8 +204,39 @@ export default function BoardDetailPage() {
           </div>
         </div>
 
-        {/* 액션 버튼 그룹 */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      {/* 상호작용 버튼 영역 */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <button
+          onClick={onToggleLike}
+          className={`border px-3 py-1 rounded ${currentLiked ? 'bg-blue-600 text-white' : ''}`}
+        >
+          {currentLiked ? '추천 취소' : '추천'} ({currentLikeCount})
+        </button>
+        {isRecipePost && (
+          <>
+            <button onClick={onToggleScrap} className="border px-3 py-1 rounded">
+              스크랩
+            </button>
+            <button onClick={onShare} className="border px-3 py-1 rounded">
+              공유하기
+            </button>
+            <button onClick={onAddToDiary} className="border px-3 py-1 rounded bg-green-600 text-white">
+              내 식단 다이어리에 추가
+            </button>
+            <button
+              onClick={onOpenDeductPreview}
+              disabled={!user || deductLoading}
+              className="border px-3 py-1 rounded bg-purple-600 text-white disabled:opacity-50"
+            >
+              {deductLoading ? '미리보기…' : '재료 차감'}
+            </button>
+          </>
+        )}
+        <Link to={editHref} state={editState} className="underline">
+          수정
+        </Link>
+        <button onClick={onDelete}>삭제</button>
+        {memberId && user && user.id !== memberId && (
           <button
             onClick={handleShare}
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
@@ -177,6 +244,52 @@ export default function BoardDetailPage() {
             <ShareIcon className="w-4 h-4 text-gray-500" />
             공유하기
           </button>
+        )}
+      </div>
+
+      {/* 재료 섹션 */}
+      {isRecipePost && data.ingredients && data.ingredients.length > 0 && (
+        <section className="mt-6 space-y-2">
+          <h2 className="text-xl font-semibold">재료 정보</h2>
+          {/* fridgeError나 로딩 상태를 보조적으로 표시 */}
+          {user && fridgeLoading && <p className="text-xs text-gray-500">냉장고 정보를 불러오는 중...</p>}
+          {user && fridgeError && <p className="text-xs text-amber-700">{fridgeError}</p>}
+          <ul className="list-disc list-inside space-y-1">
+            {data.ingredients.map((ing) => {
+              const owned = isOwnedIngredient(ing.name);
+              return (
+                <li key={ing.id ?? ing.name}>
+                  <span className={owned ? 'text-green-700' : 'text-red-700'}>{ing.name}</span>
+                  {ing.quantity != null && (
+                    <span>
+                      {' '}
+                      - {ing.quantity}
+                      {ing.unit ?? ''}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          {user && fridgeNames && (
+            <p className="text-xs text-gray-500">
+              색상 안내: <span className="text-green-700 font-medium">초록색</span>은 냉장고에 있음,{' '}
+              <span className="text-red-700 font-medium">붉은색</span>은 부족함을 의미합니다.
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* 조리 순서(본문) 섹션 */}
+      {!authorBlockedAndHidden && (
+        <section className="mt-6 space-y-2">
+          {isRecipePost && <h2 className="text-xl font-semibold">조리 순서</h2>}
+          <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: safeHtml }} />
+        </section>
+      )}
+      {authorBlockedAndHidden && (
+        <div className="mt-6 p-6 bg-gray-100 rounded text-sm text-gray-600 space-y-3">
+          <p>이 작성자는 차단되어 본문이 숨겨졌습니다.</p>
           <button
             onClick={handleAddToDiary}
             className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors"
@@ -200,60 +313,81 @@ export default function BoardDetailPage() {
           </button>
         </div>
 
-        {/* 재료 목록 */}
-        {data.ingredients && data.ingredients.length > 0 && (
-          <div>
-            <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-              <span className="w-1.5 h-6 bg-[#4E652F] mr-2 rounded-full"></span>
-              재료 준비
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {data.ingredients.map((ing: any, idx: number) => (
-                <div key={idx} className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:border-[#4E652F] transition-colors">
-                  <div className="flex items-center space-x-3">
-                    <input type="checkbox" className="w-4 h-4 text-[#4E652F] rounded focus:ring-[#4E652F] border-gray-300" />
-                    <span className="font-medium text-gray-800">{ing.name}</span>
-                  </div>
-                  <div className="text-sm">
-                    <span className="font-bold text-[#4E652F]">
-                      {ing.quantity ? `${ing.quantity}${ing.unit || ''}` : ''}
-                    </span>
-                    {ing.memo && <span className="text-gray-400 text-xs ml-1">({ing.memo})</span>}
-                  </div>
-                </div>
-              ))}
+      {/* 댓글 섹션 */}
+      {!authorBlockedAndHidden && (
+        <section className="mt-6">
+          <CommentList postId={id} />
+        </section>
+      )}
+      {authorBlockedAndHidden && (
+        <div className="mt-6 p-4 bg-gray-50 border rounded text-xs text-gray-500">
+          차단된 작성자의 글이므로 댓글도 숨겨졌습니다.
+        </div>
+      )}
+
+      {/* 재료 차감 미리보기 모달 */}
+      {deductOpen && deductPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setDeductOpen(false)} />
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b px-5 py-3">
+              <h2 className="text-lg font-semibold">재료 차감 미리보기</h2>
+              <button className="px-3 py-1 border rounded" onClick={() => setDeductOpen(false)}>
+                닫기
+              </button>
             </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col md:flex-row gap-8">
-
-        <BoardSidebar />
-
-        <div className="flex-1 min-w-0">
-          <div className="bg-white p-6 sm:p-8 rounded-lg shadow-lg mb-6">
-
-            <div className="border-b border-gray-200 pb-4 mb-6">
-              <div className="flex justify-between items-start gap-4">
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  {data.title}
-                </h1>
-                {isAuthor && (
-                  <div className="flex items-center space-x-2 flex-shrink-0 text-sm">
-                    <Link to={editLink} className="text-gray-500 hover:text-[#4E652F] transition-colors">
-                      수정
-                    </Link>
-                    <span className="text-gray-300">|</span>
-                    <button onClick={onDelete} className="text-gray-500 hover:text-red-600 transition-colors">
-                      삭제
-                    </button>
-                  </div>
-                )}
+            <div className="p-5 overflow-y-auto space-y-4 text-sm">
+              <p>
+                레시피: <span className="font-semibold">{deductPreview.recipeName}</span>
+              </p>
+              {!deductPreview.canProceed && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                  <p className="text-amber-800">필수 재료가 부족하여 기본적으로 차감이 불가능합니다.</p>
+                  <p className="text-amber-700 mt-1 text-xs">경고를 무시하고 진행하려면 아래 옵션을 선택하세요.</p>
+                </div>
+              )}
+              <div className="space-y-2">
+                <table className="w-full text-xs border">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border px-2 py-1 text-left">재료</th>
+                      <th className="border px-2 py-1 text-left">필요량</th>
+                      <th className="border px-2 py-1 text-left">현재</th>
+                      <th className="border px-2 py-1 text-left">상태</th>
+                      <th className="border px-2 py-1 text-left">메시지</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {deductPreview.ingredients.map((ing) => (
+                      <tr key={ing.name} className="hover:bg-gray-50">
+                        <td className="border px-2 py-1">
+                          {ing.name}
+                          {ing.isRequired ? (
+                            <span className="ml-1 text-red-600">*</span>
+                          ) : (
+                            <span className="ml-1 text-gray-400">(선택)</span>
+                          )}
+                        </td>
+                        <td className="border px-2 py-1">{ing.requiredAmount ?? '—'}</td>
+                        <td className="border px-2 py-1">{ing.currentAmount ?? '없음'}</td>
+                        <td className="border px-2 py-1">
+                          <span
+                            className={
+                              ing.status === 'OK'
+                                ? 'text-green-600'
+                                : ing.status === 'INSUFFICIENT'
+                                  ? 'text-amber-600'
+                                  : 'text-red-600'
+                            }
+                          >
+                            {ing.status}
+                          </span>
+                        </td>
+                        <td className="border px-2 py-1 text-gray-600">{ing.message ?? ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mt-3">

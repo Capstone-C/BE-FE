@@ -20,6 +20,7 @@ import MyPostsPage from '@/features/members/pages/MyPostsPage';
 import MyCommentsPage from '@/features/members/pages/MyCommentsPage';
 import MemberProfilePage from '@/features/members/pages/MemberProfilePage';
 import BlockedMembersPage from '@/features/members/pages/BlockedMembersPage';
+import MyScrapsPage from '@/features/members/pages/MyScrapsPage';
 
 // Boards
 import BoardsListPage from '@/features/boards/pages/BoardsListPage';
@@ -93,6 +94,7 @@ const router = createBrowserRouter([
           { path: 'mypage/posts', element: <MyPostsPage /> },
           { path: 'mypage/comments', element: <MyCommentsPage /> },
           { path: 'mypage/blocked', element: <BlockedMembersPage /> },
+          { path: 'mypage/scraps', element: <MyScrapsPage /> },
 
           // Boards actions
           { path: 'boards/new', element: <BoardNewPage /> },

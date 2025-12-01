@@ -141,7 +141,9 @@ export default function DiaryDayPage() {
                                 className="text-xs text-blue-600 mt-1 underline"
                                 onClick={() => onRecipeClick(entry.recipeId!)}
                               >
-                                원본 레시피 보기 #{entry.recipeId}
+                                {entry.recipeTitle
+                                  ? `레시피: ${entry.recipeTitle}`
+                                  : `원본 레시피 보기 #${entry.recipeId}`}
                               </button>
                             ) : null}
                           </div>

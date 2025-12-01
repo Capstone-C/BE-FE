@@ -9,6 +9,8 @@ import {
   type UpdateDiaryRequest,
 } from '@/apis/diary.api';
 import ImageUploader from '@/components/ui/ImageUploader';
+import { getPost } from '@/apis/boards.api';
+import { parseRecipeUrlToId } from '@/utils/recipe';
 
 const MEAL_OPTIONS: { value: MealType; label: string }[] = [
   { value: 'BREAKFAST', label: '아침' },
@@ -36,6 +38,8 @@ export default function DiaryEditPage() {
     imageUrl: current?.imageUrl ?? '',
     recipeId: current?.recipeId ?? undefined,
   });
+  const [recipeUrlInput, setRecipeUrlInput] = useState<string>(current?.recipeId ? String(current.recipeId) : '');
+  const [recipeTitle, setRecipeTitle] = useState<string | null>(null);
 
   useEffect(() => {
     if (current) {
@@ -45,8 +49,25 @@ export default function DiaryEditPage() {
         imageUrl: current.imageUrl ?? '',
         recipeId: current.recipeId ?? undefined,
       });
+      setRecipeUrlInput(current.recipeId ? String(current.recipeId) : '');
     }
   }, [current]);
+
+  useEffect(() => {
+    async function loadTitle() {
+      if (form.recipeId) {
+        try {
+          const post = await getPost(form.recipeId);
+          setRecipeTitle(post.title);
+        } catch {
+          setRecipeTitle(null);
+        }
+      } else {
+        setRecipeTitle(null);
+      }
+    }
+    void loadTitle();
+  }, [form.recipeId]);
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: (payload: UpdateDiaryRequest) => updateDiary(Number(id), payload),
@@ -66,16 +87,20 @@ export default function DiaryEditPage() {
     const { name, value } = e.target;
     setForm((prev) => {
       const next = { ...prev } as UpdateDiaryRequest;
-      if (name === 'recipeId') {
-        next.recipeId = value === '' ? undefined : Number(value);
-      } else if (name === 'content') {
+      if (name === 'content') {
         next.content = value;
       } else if (name === 'mealType') {
         next.mealType = value as MealType;
       }
-      // imageUrl handled by separate function
       return next;
     });
+  };
+
+  const handleRecipeUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setRecipeUrlInput(val);
+    const parsed = parseRecipeUrlToId(val);
+    setForm((prev) => ({ ...prev, recipeId: parsed }));
   };
 
   const handleImageChange = (url: string) => {
@@ -165,22 +190,24 @@ export default function DiaryEditPage() {
 
           <div>
             <label className="block text-sm font-medium mb-1">사진 (선택)</label>
-            <ImageUploader
-              value={form.imageUrl}
-              onChange={handleImageChange}
-              placeholder="식단 사진 업로드"
-            />
+            <ImageUploader value={form.imageUrl} onChange={handleImageChange} placeholder="식단 사진 업로드" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">레시피 ID (선택)</label>
+            <label className="block text-sm font-medium mb-1">레시피 URL 또는 ID (선택)</label>
             <input
-              type="number"
-              name="recipeId"
-              value={form.recipeId ?? ''}
-              onChange={handleChange}
+              type="text"
+              name="recipeUrl"
+              value={recipeUrlInput}
+              onChange={handleRecipeUrlChange}
+              placeholder="예: /boards/123 또는 전체 URL"
               className="w-full border rounded px-3 py-2"
             />
+            {form.recipeId && (
+              <p className="text-xs text-gray-600 mt-1">
+                연결된 레시피: {recipeTitle ? recipeTitle : `#${form.recipeId}`}
+              </p>
+            )}
           </div>
 
           <div className="pt-2 flex gap-2 justify-end">

@@ -2,31 +2,28 @@ package com.capstone.web.posts.service;
 
 import com.capstone.web.category.domain.Category;
 import com.capstone.web.category.repository.CategoryRepository;
+import com.capstone.web.common.S3UploadService;
+import com.capstone.web.media.repository.MediaRepository;
 import com.capstone.web.member.domain.Member;
 import com.capstone.web.member.repository.MemberRepository;
 import com.capstone.web.posts.domain.Posts;
 import com.capstone.web.posts.dto.PostDto;
 import com.capstone.web.posts.repository.PostsRepository;
-import com.capstone.web.common.S3UploadService;
-import io.awspring.cloud.s3.S3Template;
+import com.capstone.web.refrigerator.repository.RefrigeratorItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@TestPropertySource(properties = "spring.cloud.aws.s3.bucket=test-bucket")
-@Import(PostUpdatedAtBehaviorTest.TestBeans.class)
 @Transactional
 class PostUpdatedAtBehaviorTest {
 
@@ -38,6 +35,13 @@ class PostUpdatedAtBehaviorTest {
     private MemberRepository memberRepository;
     @Autowired
     private CategoryRepository categoryRepository;
+
+    // [수정] 복잡한 TestBeans 대신 MockBean 사용
+    @MockitoBean
+    private S3UploadService s3UploadService;
+    @MockitoBean private MediaRepository mediaRepository;
+    @MockitoBean private RefrigeratorItemRepository refrigeratorItemRepository;
+
     private Member author;
     private Category category;
 
@@ -53,6 +57,7 @@ class PostUpdatedAtBehaviorTest {
     @DisplayName("조회(view)로 인한 viewCount 증가 시 updatedAt은 변경되지 않는다")
     @Test
     void viewDoesNotChangeUpdatedAt() {
+        // given
         PostDto.CreateRequest createReq = new PostDto.CreateRequest();
         createReq.setCategoryId(category.getId());
         createReq.setTitle("제목");
@@ -70,10 +75,11 @@ class PostUpdatedAtBehaviorTest {
         Posts saved = postsRepository.findById(postId).orElseThrow();
         var originalUpdatedAt = saved.getUpdatedAt();
 
-        // 조회 (viewCount 증가)
+        // when: 조회 (viewCount 증가)
         postService.getPostById(postId);
-        Posts afterView = postsRepository.findById(postId).orElseThrow();
 
+        // then
+        Posts afterView = postsRepository.findById(postId).orElseThrow();
         assertThat(afterView.getViewCount()).isEqualTo(1);
         assertThat(afterView.getUpdatedAt()).isEqualTo(originalUpdatedAt);
     }
@@ -81,6 +87,7 @@ class PostUpdatedAtBehaviorTest {
     @DisplayName("본문/메타 수정 시 updatedAt은 변경된다")
     @Test
     void updateChangesUpdatedAt() throws InterruptedException {
+        // given
         PostDto.CreateRequest createReq = new PostDto.CreateRequest();
         createReq.setCategoryId(category.getId());
         createReq.setTitle("제목");
@@ -98,8 +105,9 @@ class PostUpdatedAtBehaviorTest {
         Posts saved = postsRepository.findById(postId).orElseThrow();
         var beforeUpdate = saved.getUpdatedAt();
 
-        Thread.sleep(20); // 시간 차 확보
+        Thread.sleep(20); // 시간 차 확보 (DB 타임스탬프 정밀도 고려)
 
+        // when: 수정
         PostDto.UpdateRequest updateReq = new PostDto.UpdateRequest();
         updateReq.setTitle("새로운 제목");
         updateReq.setContent("새로운 내용");
@@ -114,20 +122,9 @@ class PostUpdatedAtBehaviorTest {
         updateReq.setIngredients(null);
 
         postService.updatePost(postId, author.getId(), updateReq, null, null);
+
+        // then
         Posts afterUpdate = postsRepository.findById(postId).orElseThrow();
-
         assertThat(afterUpdate.getUpdatedAt()).isAfter(beforeUpdate);
-    }
-
-    static class TestBeans {
-        @Bean
-        S3Template s3Template() {
-            return mock(S3Template.class);
-        }
-
-        @Bean
-        S3UploadService s3UploadService(S3Template s3Template) {
-            return new S3UploadService(s3Template);
-        }
     }
 }
