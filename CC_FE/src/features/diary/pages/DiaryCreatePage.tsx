@@ -139,34 +139,37 @@ export default function DiaryCreatePage() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-xl font-semibold">식단 추가</h2>
-          <button className="px-3 py-1 border rounded" onClick={onClose}>
-            닫기
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between border-b-2 border-gray-100 px-8 py-5 bg-gradient-to-r from-purple-50 to-indigo-50">
+          <h2 className="text-3xl font-bold gradient-text">➕ 식단 추가</h2>
+          <button 
+            className="px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:bg-white transition-all text-base" 
+            onClick={onClose}
+          >
+            ✕
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto">
+        <form onSubmit={onSubmit} className="p-8 space-y-6 overflow-y-auto">
           <div>
-            <label className="block text-sm font-medium mb-1">날짜</label>
+            <label className="block text-base font-semibold mb-2 text-gray-700">📅 날짜</label>
             <input
               type="date"
               name="date"
               value={form.date}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">식사 타입</label>
+            <label className="block text-base font-semibold mb-2 text-gray-700">🍽️ 식사 타입</label>
             <select
               name="mealType"
               value={form.mealType}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
               required
             >
               {MEAL_OPTIONS.map((opt) => (
@@ -175,56 +178,60 @@ export default function DiaryCreatePage() {
                 </option>
               ))}
             </select>
-            {errors?.mealType && <p className="text-sm text-red-600 mt-1">{errors.mealType}</p>}
+            {errors?.mealType && <p className="text-sm text-red-600 mt-1">⚠️ {errors.mealType}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">메뉴/내용</label>
+            <label className="block text-base font-semibold mb-2 text-gray-700">📝 메뉴/내용</label>
             <textarea
               name="content"
               value={form.content}
               onChange={handleChange}
               maxLength={500}
               placeholder="예) 닭가슴살 샐러드와 현미밥"
-              className="w-full border rounded px-3 py-2 h-28"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 h-28 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none text-base"
               required
             />
-            {errors?.content && <p className="text-sm text-red-600 mt-1">{errors.content}</p>}
+            {errors?.content && <p className="text-sm text-red-600 mt-1">⚠️ {errors.content}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">사진 (선택)</label>
+            <label className="block text-base font-semibold mb-2 text-gray-700">📸 사진 (선택)</label>
             <ImageUploader value={form.imageUrl} onChange={handleImageChange} placeholder="식단 사진 업로드" />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">레시피 URL 또는 ID (선택)</label>
+            <label className="block text-base font-semibold mb-2 text-gray-700">📖 레시피 URL 또는 ID (선택)</label>
             <input
               type="text"
               name="recipeUrl"
               value={recipeUrlInput}
               onChange={handleRecipeUrlChange}
               placeholder="예: /boards/123 또는 전체 URL"
-              className="w-full border rounded px-3 py-2"
+              className="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-base"
             />
             {form.recipeId && (
-              <p className="text-xs text-gray-600 mt-1">
-                연결된 레시피: {recipeTitle ? recipeTitle : `#${form.recipeId}`}
+              <p className="text-sm text-purple-600 mt-2 font-medium">
+                🔗 연결된 레시피: {recipeTitle ? recipeTitle : `#${form.recipeId}`}
               </p>
             )}
           </div>
 
-          <div className="pt-2 flex gap-2 justify-end">
-            <button type="button" className="px-3 py-2 border rounded" onClick={onClose}>
+          <div className="pt-3 flex gap-3 justify-end">
+            <button 
+              type="button" 
+              className="px-6 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all text-base" 
+              onClick={onClose}
+            >
               취소
             </button>
             {/* [수정됨] 저장 버튼 색상 변경: bg-blue-600 -> bg-[#4E652F] */}
             <button
               type="submit"
-              className="px-3 py-2 border rounded bg-[#4E652F] text-white disabled:opacity-50 hover:bg-[#425528]"
+              className="px-7 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all text-base"
               disabled={isPending}
             >
-              {isPending ? '저장 중…' : '저장'}
+              {isPending ? '⏳ 저장 중…' : '🎉 저장'}
             </button>
           </div>
         </form>

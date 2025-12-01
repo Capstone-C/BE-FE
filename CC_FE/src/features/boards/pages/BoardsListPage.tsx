@@ -42,105 +42,39 @@ export default function BoardsListPage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col md:flex-row gap-8">
+    <Container className="py-16 space-y-10 px-8 max-w-7xl">
+      <div className="flex gap-4 items-center justify-between">
+        <h1 className="text-5xl font-bold gradient-text">📝 {title}</h1>
+        {!isMyPosts && (
+          <Link to={newPostHref} state={newPostState}>
+            <Button size="lg">✨ 새 글 작성</Button>
+          </Link>
+        )}
+      </div>
 
-        {/* Sidebar */}
-        <BoardSidebar />
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {visiblePosts.map((p) => (
+          <PostCard key={p.id} post={p} boardId={boardId} />
+        ))}
+      </div>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
-          <div className="mb-6 pb-4 border-b border-gray-200 flex justify-between items-end">
-            <div>
-              <h1 className="text-3xl font-bold leading-tight text-gray-900">
-                {boardId ? '게시판' : '전체 글'}
-              </h1>
-              <p className="mt-2 text-md text-gray-500">
-                다양한 식단 정보를 공유하고 소통해보세요.
-              </p>
-            </div>
-            <Link
-              to="/boards/new"
-              state={boardId ? { fromCategoryId: Number(boardId) } : undefined}
-              className="px-4 py-2 bg-[#4E652F] text-white text-sm font-medium rounded-md hover:bg-[#425528] transition-colors flex-shrink-0"
-            >
-              글쓰기
-            </Link>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            {visiblePosts.length > 0 ? (
-              <>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                    <tr>
-                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">번호</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">제목</th>
-                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">글쓴이</th>
-                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">추천</th>
-                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">조회</th>
-                      <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-32">날짜</th>
-                    </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                    {visiblePosts.map((post) => {
-                      const { inlineName, memberId } = extractAuthorRef(post);
-                      const authorName = getDisplayName(memberId, inlineName);
-                      return (
-                        <tr key={post.id} className="hover:bg-gray-50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.id}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">
-                            <Link to={`/boards/${post.id}`} className="block hover:text-[#4E652F] font-medium">
-                              {post.title}
-                              {post.commentCount > 0 && (
-                                <span className="ml-2 text-xs font-semibold text-[#71853A]">
-                                                        [{post.commentCount}]
-                                                    </span>
-                              )}
-                            </Link>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{authorName}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.likeCount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{post.viewCount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500 text-xs">
-                            {formatYMDHMKorean(post.createdAt).split(' ')[0]} {/* 날짜만 표시 */}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Pagination */}
-                <div className="p-4 flex justify-center items-center space-x-2 border-t">
-                  <button
-                    onClick={() => handlePageChange(page - 1)}
-                    disabled={page <= 1}
-                    className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    이전
-                  </button>
-                  <span className="text-sm text-gray-600 px-2">
-                        {page} / {data.totalPages}
-                    </span>
-                  <button
-                    onClick={() => handlePageChange(page + 1)}
-                    disabled={page >= data.totalPages}
-                    className="px-3 py-1 text-sm rounded-md border border-gray-300 bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    다음
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-20 text-gray-500">
-                게시글이 존재하지 않습니다.
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="flex gap-4 justify-center pt-10">
+        <Button
+          variant="secondary"
+          size="lg"
+          disabled={page <= 1}
+          onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page - 1) })}
+        >
+          이전
+        </Button>
+        <Button
+          variant="secondary"
+          size="lg"
+          disabled={page >= data.totalPages}
+          onClick={() => setSp({ ...Object.fromEntries(sp), page: String(page + 1) })}
+        >
+          다음
+        </Button>
       </div>
     </div>
   );

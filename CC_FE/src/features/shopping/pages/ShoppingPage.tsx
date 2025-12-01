@@ -49,23 +49,22 @@ export default function ShoppingPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">쇼핑 / 상품 검색</h1>
+    <div className="max-w-7xl mx-auto px-8 py-16">
+      <h1 className="text-5xl font-bold mb-10 gradient-text">🛒 쇼핑 / 상품 검색</h1>
 
       {/* Search & Filters */}
-      <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        <form onSubmit={handleSearch} className="flex gap-2">
+      <div className="bg-white p-8 rounded-lg shadow-md space-y-6">
+        <form onSubmit={handleSearch} className="flex gap-3">
           <input
             type="text"
             placeholder="상품명 검색..."
-            className="flex-1 border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#71853A]"
+            className="flex-1 border-2 border-gray-200 px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
           />
           <button
             type="submit"
-            // [수정됨] 버튼 색상 변경: bg-blue-600 -> bg-[#4E652F]
-            className="px-4 py-2 bg-[#4E652F] text-white rounded hover:bg-[#425528] transition-colors"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all font-semibold text-base"
             aria-label="검색"
           >
             검색
@@ -73,30 +72,26 @@ export default function ShoppingPage() {
         </form>
 
         <div className="flex flex-wrap gap-4">
-          <select
-            className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-[#71853A]"
-            value={mallType}
-            onChange={(e) => setMallType(e.target.value)}
-          >
+          <select className="border-2 border-gray-200 px-4 py-3 rounded-lg text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent" value={mallType} onChange={(e) => setMallType(e.target.value)}>
             <option value="">모든 쇼핑몰</option>
             <option value="NAVER">네이버</option>
             <option value="COUPANG">쿠팡</option>
             <option value="11ST">11번가</option>
           </select>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <input
               type="number"
               placeholder="최소 가격"
-              className="border p-2 rounded w-32 focus:outline-none focus:ring-2 focus:ring-[#71853A]"
+              className="border-2 border-gray-200 px-4 py-3 rounded-lg w-40 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
             />
-            <span>~</span>
+            <span className="text-gray-500">~</span>
             <input
               type="number"
               placeholder="최대 가격"
-              className="border p-2 rounded w-32 focus:outline-none focus:ring-2 focus:ring-[#71853A]"
+              className="border-2 border-gray-200 px-4 py-3 rounded-lg w-40 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
             />
@@ -106,12 +101,12 @@ export default function ShoppingPage() {
 
       {/* Results */}
       {isLoading || isFetching ? (
-        <div className="text-center py-10">로딩 중...</div>
+        <div className="text-center py-16 text-lg text-gray-600">로딩 중...</div>
       ) : error ? (
-        <div className="text-center py-10 text-red-500">에러가 발생했습니다.</div>
+        <div className="text-center py-16 text-lg text-red-500">에러가 발생했습니다.</div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
             {data?.products.map((product) => (
               <a
                 key={product.id}
