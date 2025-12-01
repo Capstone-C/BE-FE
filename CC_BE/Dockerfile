@@ -21,5 +21,6 @@ RUN apt-get update && \
 ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata
 
 WORKDIR /app
-COPY --from=builder /app/build/libs/*.jar app.jar
+# [수정됨] 와일드카드 대신 명시적인 JAR 파일 이름(cc-be.jar)을 사용합니다.
+COPY --from=builder /app/build/libs/cc-be.jar app.jar
 ENTRYPOINT ["java", "-jar", "app.jar"]

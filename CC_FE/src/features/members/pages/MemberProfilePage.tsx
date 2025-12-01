@@ -1,15 +1,15 @@
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { getMember, type Member } from '@/apis/members';
-import { getMe } from '@/apis/auth';
-import { formatDateYMDKorean } from '@/utils/date';
+import { getMember, type Member } from '../../../apis/members';
+import { getMe } from '../../../apis/auth';
+import { formatDateYMDKorean } from '../../../utils/date';
 import {
   useBlockMemberMutation,
   useUnblockMemberMutation,
   useBlockedMembers,
-} from '@/features/members/hooks/useMemberBlocks';
-import { useToast } from '@/contexts/ToastContext';
-import type { BlockedMember } from '@/apis/memberBlocks';
+} from '../hooks/useMemberBlocks';
+import { useToast } from '../../../contexts/ToastContext';
+import type { BlockedMember } from '../../../apis/memberBlocks';
 
 export default function MemberProfilePage() {
   const { memberId } = useParams();
@@ -85,44 +85,63 @@ export default function MemberProfilePage() {
 
         <div className="border-t border-gray-200 p-8">
           <h3 className="text-xl font-semibold text-gray-700 mb-4">활동 및 관리</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 공통 메뉴 */}
-            <Link
-              to={viewingSelf ? '/mypage/posts' : `/boards?authorId=${effectiveMember.id}`}
-              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <p className="font-medium text-gray-800">작성한 게시글</p>
-              <p className="text-sm text-gray-500">작성한 게시글 목록을 확인합니다.</p>
-            </Link>
-            <Link
-              to={viewingSelf ? '/mypage/comments' : `/mypage/comments?authorId=${effectiveMember.id}`}
-              className="p-4 border rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <p className="font-medium text-gray-800">작성한 댓글</p>
-              <p className="text-sm text-gray-500">작성한 댓글 목록을 확인합니다.</p>
-            </Link>
 
-      {/* 본인 전용 관리 버튼 */}
-      {viewingSelf && (
-        <div className="mt-6 flex flex-wrap gap-4">
-          <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-            회원정보 수정
-          </Link>
-          <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
-            비밀번호 변경
-          </Link>
-          <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
-            회원탈퇴
-          </Link>
-          <Link
-            to="/mypage/blocked"
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-          >
-            차단된 사용자 관리
-          </Link>
-          <Link to="/mypage/scraps" className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
-            내 스크랩북
-          </Link>
+          {/* 활동 보기 버튼 (공개/본인 공통) */}
+          <div className="mt-6 flex flex-wrap gap-4">
+            <Link
+              to={viewingSelf ? '/mypage/posts' : `/boards?authorId=${encodeURIComponent(String(effectiveMember.id))}`}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+            >
+              {viewingSelf ? '내가 작성한 글 보기' : '이 회원이 작성한 글 보기'}
+            </Link>
+            <Link
+              to={
+                viewingSelf
+                  ? '/mypage/comments'
+                  : `/mypage/comments?authorId=${encodeURIComponent(String(effectiveMember.id))}`
+              }
+              className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm"
+            >
+              {viewingSelf ? '내가 작성한 댓글 보기' : '이 회원이 작성한 댓글 보기'}
+            </Link>
+          </div>
+
+          {/* 본인 전용 관리 버튼 */}
+          {viewingSelf && (
+            <div className="mt-6 flex flex-wrap gap-4">
+              <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                회원정보 수정
+              </Link>
+              <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
+                비밀번호 변경
+              </Link>
+              <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
+                회원탈퇴
+              </Link>
+              <Link
+                to="/mypage/blocked"
+                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
+              >
+                차단된 사용자 관리
+              </Link>
+              <Link to="/mypage/scraps" className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
+                내 스크랩북
+              </Link>
+            </div>
+          )}
+
+          {/* 타인 프로필일 때 차단 버튼 */}
+          {!viewingSelf && (
+            <div className="mt-6 flex flex-wrap gap-4">
+              <button
+                onClick={onBlockToggle}
+                disabled={blockMutation.isPending || unblockMutation.isPending}
+                className={`px-6 py-2 rounded-lg text-white text-sm ${isBlocked ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-800 hover:bg-gray-900'} disabled:opacity-50`}
+              >
+                {isBlocked ? '차단 해제' : '차단하기'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
