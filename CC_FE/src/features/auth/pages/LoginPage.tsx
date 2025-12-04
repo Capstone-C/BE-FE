@@ -21,7 +21,9 @@ export default function LoginPage() {
     mutationFn: login,
     onSuccess: (data) => {
       authLogin(data.member, data.accessToken);
-      alert('로그인 되었습니다.');
+      // alert('로그인 되었습니다.');
+
+      // 로그인 전 페이지로 리다이렉트 또는 홈으로 이동
       const from = location?.state?.from;
       if (typeof from === 'string') {
         navigate(from, { replace: true });
@@ -66,63 +68,75 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold text-center">로그인</h1>
-        <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              이메일
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="off"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+    <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F0F5E5] min-h-[calc(100vh-5rem)]">
+      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            로그인
+          </h2>
+        </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="new-password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            />
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6" autoComplete="off">
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div>
+              <label htmlFor="email" className="sr-only">
+                이메일
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="이메일"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] focus:z-10 sm:text-sm"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="sr-only">
+                비밀번호
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="비밀번호"
+                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] focus:z-10 sm:text-sm"
+              />
+            </div>
           </div>
 
           {errorMessage && <p className="text-sm text-red-600 text-center">{errorMessage}</p>}
+
+          <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Link to="/find-password" className="font-medium text-[#4E652F] hover:text-[#425528]">
+                아이디/비밀번호 찾기
+              </Link>
+              <span className="text-gray-300">|</span>
+              <Link to="/signup" className="font-medium text-[#4E652F] hover:text-[#425528]">
+                회원가입
+              </Link>
+            </div>
+          </div>
 
           <div>
             <button
               type="submit"
               disabled={isPending}
-              className="w-full px-4 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400"
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-[#4E652F] hover:bg-[#425528] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#71853A] transition-colors disabled:bg-gray-400"
             >
               {isPending ? '로그인 중...' : '로그인'}
             </button>
           </div>
         </form>
-        <div className="mt-4 text-center">
-          계정이 없으신가요?{' '}
-          <Link to="/signup" className="text-blue-600 hover:underline">
-            회원가입
-          </Link>
-          <Link to="/find-password" className="text-blue-600 hover:underline">
-            비밀번호 찾기
-          </Link>
-        </div>
       </div>
     </div>
   );

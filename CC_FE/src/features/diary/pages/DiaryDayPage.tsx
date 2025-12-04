@@ -81,7 +81,11 @@ export default function DiaryDayPage() {
             <button className="px-3 py-1 border rounded" onClick={() => refetch()} disabled={isFetching}>
               새로고침
             </button>
-            <button className="px-3 py-1 border rounded bg-blue-600 text-white" onClick={onAdd}>
+            {/* [수정됨] 식단 추가 버튼 색상 변경 */}
+            <button
+              className="px-3 py-1 border rounded bg-[#4E652F] text-white hover:bg-[#425528]"
+              onClick={onAdd}
+            >
               식단 추가
             </button>
             <button className="px-3 py-1 border rounded" onClick={onClose}>
@@ -98,7 +102,11 @@ export default function DiaryDayPage() {
           ) : !data || data.length === 0 ? (
             <div className="py-8 text-center text-gray-600">
               <p className="mb-3">기록된 식단이 없습니다. 첫 식단을 추가해보세요.</p>
-              <button className="px-3 py-1 border rounded" onClick={onAdd}>
+              {/* [수정됨] 식단 추가 버튼 색상 변경 */}
+              <button
+                className="px-3 py-1 border rounded bg-[#4E652F] text-white hover:bg-[#425528]"
+                onClick={onAdd}
+              >
                 식단 추가
               </button>
             </div>
