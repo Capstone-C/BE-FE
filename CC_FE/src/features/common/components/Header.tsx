@@ -1,6 +1,5 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { SearchIcon } from '@/components/ui/Icons.tsx';
 import { useAuth } from '@/hooks/useAuth.ts';
 
 const Header: React.FC = () => {
@@ -16,7 +15,7 @@ const Header: React.FC = () => {
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-18">
           <div className="flex items-center space-x-8">
             <div className="flex-shrink-0">
               <Link to="/" className="flex flex-col items-start leading-tight">
@@ -26,23 +25,8 @@ const Header: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex-1 flex justify-center px-2 lg:ml-6 lg:justify-center">
-            <div className="max-w-lg w-full lg:max-w-md">
-              <label htmlFor="search" className="sr-only">Search</label>
-              <div className="relative text-gray-400 focus-within:text-[#4E652F]">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <SearchIcon className="h-5 w-5" />
-                </div>
-                <input
-                  id="search"
-                  className="block w-full bg-white py-3 pl-12 pr-4 border border-gray-200 rounded-full leading-5 text-gray-900 placeholder-gray-500 shadow-sm focus:outline-none focus:border-[#71853A] focus:ring-2 focus:ring-[#71853A] sm:text-sm transition-all duration-300 ease-in-out"
-                  placeholder="레시피, Q&A, 쇼핑몰을 검색해보세요"
-                  type="search"
-                  name="search"
-                />
-              </div>
-            </div>
-          </div>
+          {/* [수정] 검색창 제거 후, 우측 정렬을 유지하기 위한 빈 공간(spacer) 추가 */}
+          <div className="flex-1"></div>
 
           <div className="flex items-center space-x-4">
             {user ? (
