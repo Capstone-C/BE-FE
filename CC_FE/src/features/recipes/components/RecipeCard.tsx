@@ -26,9 +26,7 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
               loading="lazy"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">
-              이미지 없음
-            </div>
+            <div className="w-full h-full flex items-center justify-center text-gray-400 bg-gray-100">이미지 없음</div>
           )}
           {/* Overlay for stats on hover (Optional style choice from combined code, or keep static) */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -58,9 +56,17 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
               {/* Simple avatar placeholder with gradient background */}
               {authorName.charAt(0)}
             </div>
-            <span className="text-sm font-medium text-gray-700 truncate">
-              {authorName}
-            </span>
+            {memberId ? (
+              <Link
+                to={`/members/${memberId}`}
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm font-medium text-gray-700 truncate hover:text-[#4E652F] hover:underline transition-colors"
+              >
+                {authorName}
+              </Link>
+            ) : (
+              <span className="text-sm font-medium text-gray-700 truncate">{authorName}</span>
+            )}
           </div>
 
           {/* Meta Stats (Always visible) */}
