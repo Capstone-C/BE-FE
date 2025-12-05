@@ -42,9 +42,10 @@ export default function ImageUploader({ value, onChange, placeholder = "이미�
   };
 
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    // [수정] h-full w-full로 부모 컨테이너(aspect-video)를 채우도록 변경
+    <div className={`flex flex-col gap-2 w-full h-full ${className}`}>
       {value ? (
-        <div className="relative w-full h-48 bg-gray-100 rounded-lg overflow-hidden border group">
+        <div className="relative w-full h-full bg-gray-100 rounded-lg overflow-hidden border group">
           <img src={value} alt="Uploaded" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
             <button
@@ -67,7 +68,7 @@ export default function ImageUploader({ value, onChange, placeholder = "이미�
         <div
           onClick={() => !uploading && fileInputRef.current?.click()}
           className={`
-            w-full h-48 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors
+            w-full h-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer transition-colors
             ${uploading ? 'bg-gray-50 border-gray-300 cursor-wait' : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50'}
           `}
         >

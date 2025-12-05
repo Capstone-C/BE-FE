@@ -7,7 +7,7 @@ const HeroSection: React.FC = () => {
 
   return (
     <div
-      className="relative h-96 bg-cover bg-center flex items-center justify-center"
+      className="relative h-80 bg-cover bg-center flex items-center justify-center"
       style={{ backgroundImage: `url(${heroImageBase64})` }}
       aria-label="Healthy salad with various vegetables"
     >
