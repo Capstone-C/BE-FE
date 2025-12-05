@@ -6,76 +6,92 @@ import RecentPostsSection from '@/features/common/components/RecentPostsSection'
 
 const HomePage: React.FC = () => {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-[#F0F5E5] py-20 sm:py-32 overflow-hidden">
-        {/* Background Decoration */}
-        <div className="absolute inset-0 overflow-hidden">
-          <img
-            src="/images/hero-bg-pattern.svg"
-            alt=""
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full object-cover opacity-10"
-            onError={(e) => (e.currentTarget.style.display = 'none')}
-          />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="lg:grid lg:grid-cols-12 lg:gap-8 items-center">
-            {/* Text Content */}
-            <div className="lg:col-span-6 sm:text-center lg:text-left">
-              <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl lg:text-5xl xl:text-6xl">
-                {/* [수정] 'block' 클래스를 사용하여 항상 줄바꿈 되도록 설정 */}
-                <span className="block">건강한 식단,</span>
-                <span className="block text-[#4E652F] mt-1">
-                  즐거운 커뮤니티
-                </span>
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-indigo-50 -z-10"></div>
+        <Container className="py-32 px-8">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8 animate-fade-in">
+              <div className="inline-block px-6 py-3 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full text-base font-medium text-purple-700 mb-6">
+                ✨ 스마트한 레시피 관리 플랫폼
+              </div>
+              <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight">
+                나만의 레시피와<br />
+                <span className="gradient-text">식생활을 한 곳에서</span>
               </h1>
-              <p className="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                다양한 식단 정보를 공유하고, 나에게 맞는 건강한 라이프스타일을
-                찾아보세요. 함께하면 더 즐겁습니다.
+              <p className="text-xl text-gray-600 leading-relaxed">
+                레시피 작성·공유, 내 냉장고 재료 비교, 식단 다이어리까지.<br />
+                간편하게 시작하세요.
               </p>
-              <div className="mt-8 sm:mt-12 sm:flex sm:justify-center lg:justify-start">
-                <div className="rounded-md shadow">
-                  <Link
-                    to="/boards"
-                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-[#4E652F] hover:bg-[#425528] transition-colors duration-300 md:py-4 md:text-lg md:px-10"
-                  >
-                    커뮤니티 시작하기
-                  </Link>
-                </div>
-                <div className="mt-3 sm:mt-0 sm:ml-3">
-                  <Link
-                    to="/recipes"
-                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-[#4E652F] bg-[#F0F5E5] hover:bg-[#E4E9D9] transition-colors duration-300 md:py-4 md:text-lg md:px-10"
-                  >
-                    레시피 보기
-                  </Link>
-                </div>
+              <div className="flex flex-wrap gap-4 pt-6">
+                <Link to="/boards">
+                  <Button size="lg">🔍 레시피 둘러보기</Button>
+                </Link>
+                <Link to="/recipes/new">
+                  <Button variant="outline" size="lg">✍️ 레시피 작성</Button>
+                </Link>
               </div>
             </div>
-
-            {/* Hero Image */}
-            <div className="mt-12 lg:mt-0 lg:col-span-6 relative">
-              <div className="mx-auto max-w-md px-4 sm:max-w-2xl sm:px-6 lg:max-w-none lg:px-0 relative">
-                {/* Decorative blob shape */}
-                <div className="absolute top-0 left-0 w-full h-full bg-[#4E652F] opacity-10 rounded-full filter blur-3xl transform -translate-x-1/2 -translate-y-1/4 lg:translate-x-0 lg:translate-y-0 lg:origin-top-right lg:scale-150"></div>
-
-                <img
-                  className="relative w-full rounded-2xl shadow-xl ring-1 ring-gray-900/10 z-10 transform hover:scale-105 transition-transform duration-500 object-cover"
-                  src="/images/yachaewa-kong-gwa-sigmul-bucheonim-geuleus-yoli-pyeongmyeondo.jpg"
-                  alt="건강한 식단 이미지"
-                />
+            <div className="hidden md:block">
+              <div className="relative">
+                <div className="aspect-video rounded-3xl bg-gradient-to-br from-purple-200 via-indigo-200 to-blue-200 shadow-2xl transform rotate-2 hover:rotate-0 transition-transform duration-300"></div>
+                <div className="absolute inset-0 aspect-video rounded-3xl bg-white shadow-2xl flex items-center justify-center text-6xl">
+                  🍳
+                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Best Recipe Section */}
-      <BestRecipeSection />
-
-      {/* Recent Posts Section */}
-      <RecentPostsSection />
+      {/* Features Section */}
+      <section className="py-20">
+        <Container className="px-8">
+          <div className="text-center mb-20">
+            <h2 className="text-5xl font-bold text-gray-900 mb-8">주요 기능</h2>
+            <p className="text-2xl text-gray-600">Capstone이 제공하는 다양한 기능을 만나보세요</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-12 max-w-7xl mx-auto">
+            <Link to="/refrigerator" className="group">
+              <div className="relative h-full bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-lg">
+                    🧊
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">내 냉장고</h3>
+                  <p className="text-base text-gray-600 leading-relaxed">보유 재료를 관리하고 레시피와 비교해 부족한 재료를 확인하세요.</p>
+                </div>
+              </div>
+            </Link>
+            <Link to="/diary" className="group">
+              <div className="relative h-full bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-blue-500 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-lg">
+                    📖
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">식단 다이어리</h3>
+                  <p className="text-base text-gray-600 leading-relaxed">하루 식단을 기록하고 레시피를 연동해 더 편하게 관리하세요.</p>
+                </div>
+              </div>
+            </Link>
+            <Link to="/community" className="group">
+              <div className="relative h-full bg-white rounded-2xl p-10 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                <div className="relative">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-3xl mb-6 shadow-lg">
+                    💬
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-4">커뮤니티</h3>
+                  <p className="text-base text-gray-600 leading-relaxed">자유롭게 소통하고 질문/팁을 나누세요.</p>
+                </div>
+              </div>
+            </Link>
+          </div>
+        </Container>
+      </section>
     </div>
   );
 };

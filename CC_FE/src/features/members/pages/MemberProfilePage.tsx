@@ -56,94 +56,111 @@ export default function MemberProfilePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold leading-tight text-gray-900">
-          {viewingSelf ? '마이페이지' : '회원 프로필'}
-        </h1>
+    <div className="max-w-4xl mx-auto p-8">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold gradient-text mb-2">{viewingSelf ? '👤 마이페이지' : '👥 회원 프로필'}</h1>
+        <p className="text-gray-600">{viewingSelf ? '내 정보와 활동을 관리하세요' : '회원 프로필 정보'}</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-8">
-          <div className="flex items-center space-x-6">
-            <div className="w-24 h-24 rounded-full bg-gray-300 flex-shrink-0 flex items-center justify-center overflow-hidden">
-              {effectiveMember.profile ? (
-                <img src={effectiveMember.profile} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-3xl text-gray-500">{displayName.charAt(0)}</span>
-              )}
+      <div className="bg-white shadow-xl rounded-2xl p-8 flex items-center space-x-8 border-2 border-gray-100">
+        {profileImageUrl ? (
+          <div className="relative">
+            <img
+              src={profileImageUrl}
+              alt={`${displayName}의 프로필 이미지`}
+              className="w-36 h-36 rounded-full object-cover border-4 border-purple-100 shadow-lg"
+            />
+            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center">
+              <span className="text-white text-xl">✨</span>
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-800">{displayName}</h2>
-              <p className="text-md text-gray-500 mt-1">{effectiveMember.email}</p>
-              {effectiveMember.joinedAt && (
-                <p className="text-sm text-gray-400 mt-2">가입일: {formatDateYMDKorean(effectiveMember.joinedAt)}</p>
+          </div>
+        ) : (
+          <div className="w-36 h-36 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center text-4xl text-purple-600 font-bold shadow-lg border-4 border-purple-200">
+            {displayName.charAt(0)}
+          </div>
+        )}
+
+        <div className="flex-grow">
+          <div className="mb-4">
+            <p className="text-sm text-gray-500 font-medium">닉네임</p>
+            <p className="text-3xl font-bold text-gray-800">{displayName}</p>
+          </div>
+
+          {viewingSelf ? (
+            <>
+              {(effectiveMember as any).email && (
+                <div className="mb-4 bg-gradient-to-r from-purple-50 to-indigo-50 p-3 rounded-xl border-2 border-purple-100">
+                  <p className="text-xs text-purple-600 font-semibold mb-1">📧 이메일</p>
+                  <p className="text-base text-gray-800 font-medium">{(effectiveMember as any).email}</p>
+                </div>
+              )}
+              {(effectiveMember as any).joinedAt && (
+                <div className="text-sm">
+                  <p className="text-gray-500">📅 가입일: <span className="font-medium">{formatDateYMDKorean((effectiveMember as any).joinedAt)}</span></p>
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-200 p-8">
-          <h3 className="text-xl font-semibold text-gray-700 mb-4">활동 및 관리</h3>
-
-          {/* 활동 보기 버튼 (공개/본인 공통) */}
-          <div className="mt-6 flex flex-wrap gap-4">
-            <Link
-              to={viewingSelf ? '/mypage/posts' : `/boards?authorId=${encodeURIComponent(String(effectiveMember.id))}`}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
-            >
-              {viewingSelf ? '내가 작성한 글 보기' : '이 회원이 작성한 글 보기'}
-            </Link>
-            <Link
-              to={
-                viewingSelf
-                  ? '/mypage/comments'
-                  : `/mypage/comments?authorId=${encodeURIComponent(String(effectiveMember.id))}`
-              }
-              className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm"
-            >
-              {viewingSelf ? '내가 작성한 댓글 보기' : '이 회원이 작성한 댓글 보기'}
-            </Link>
-          </div>
-
-          {/* 본인 전용 관리 버튼 */}
-          {viewingSelf && (
-            <div className="mt-6 flex flex-wrap gap-4">
-              <Link to="/mypage/edit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                회원정보 수정
-              </Link>
-              <Link to="/mypage/password" className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm">
-                비밀번호 변경
-              </Link>
-              <Link to="/mypage/withdraw" className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm">
-                회원탈퇴
-              </Link>
-              <Link
-                to="/mypage/blocked"
-                className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm"
-              >
-                차단된 사용자 관리
-              </Link>
-              <Link to="/mypage/scraps" className="px-6 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 text-sm">
-                내 스크랩북
-              </Link>
-            </div>
-          )}
-
-          {/* 타인 프로필일 때 차단 버튼 */}
-          {!viewingSelf && (
-            <div className="mt-6 flex flex-wrap gap-4">
-              <button
-                onClick={onBlockToggle}
-                disabled={blockMutation.isPending || unblockMutation.isPending}
-                className={`px-6 py-2 rounded-lg text-white text-sm ${isBlocked ? 'bg-red-600 hover:bg-red-700' : 'bg-gray-800 hover:bg-gray-900'} disabled:opacity-50`}
-              >
-                {isBlocked ? '차단 해제' : '차단하기'}
-              </button>
-            </div>
-          )}
-        </div>
+      {/* 활동 보기 버튼 (공개/본인 공통) */}
+      <div className="mt-8 flex flex-wrap gap-4">
+        <Link
+          to={viewingSelf ? '/mypage/posts' : `/boards?authorId=${encodeURIComponent(String(effectiveMember.id))}`}
+          className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2"
+        >
+          📝 {viewingSelf ? '내가 작성한 글 보기' : '이 회원이 작성한 글 보기'}
+        </Link>
+        <Link
+          to={
+            viewingSelf
+              ? '/mypage/comments'
+              : `/mypage/comments?authorId=${encodeURIComponent(String(effectiveMember.id))}`
+          }
+          className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2"
+        >
+          💬 {viewingSelf ? '내가 작성한 댓글 보기' : '이 회원이 작성한 댓글 보기'}
+        </Link>
       </div>
+
+      {/* 본인 전용 관리 버튼 */}
+      {viewingSelf && (
+        <div className="mt-6 flex flex-wrap gap-4">
+          <Link to="/mypage/edit" className="px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2">
+            ✏️ 회원정보 수정
+          </Link>
+          <Link to="/mypage/password" className="px-6 py-3 bg-gradient-to-r from-gray-600 to-slate-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2">
+            🔐 비밀번호 변경
+          </Link>
+          <Link to="/mypage/withdraw" className="px-6 py-3 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2">
+            🚪 회원탈퇴
+          </Link>
+          <Link
+            to="/mypage/blocked"
+            className="px-6 py-3 bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2"
+          >
+            🚫 차단된 사용자 관리
+          </Link>
+          <Link to="/mypage/scraps" className="px-6 py-3 bg-gradient-to-r from-yellow-600 to-amber-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold flex items-center gap-2">
+            ⭐ 내 스크랩북
+          </Link>
+        </div>
+      )}
+      {!viewingSelf && (
+        <div className="mt-6 flex flex-wrap gap-4">
+          <button
+            onClick={onBlockToggle}
+            disabled={blockMutation.isPending || unblockMutation.isPending}
+            className={`px-6 py-3 rounded-xl text-white font-semibold flex items-center gap-2 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100 ${
+              isBlocked 
+                ? 'bg-gradient-to-r from-red-600 to-rose-600' 
+                : 'bg-gradient-to-r from-gray-800 to-slate-900'
+            }`}
+          >
+            {isBlocked ? '🚫 차단 해제' : '🚫 차단하기'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

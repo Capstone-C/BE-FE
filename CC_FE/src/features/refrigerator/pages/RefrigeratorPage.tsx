@@ -177,130 +177,153 @@ export default function RefrigeratorPage() {
   const expiredCount = data?.expiredCount ?? 0;
 
   return (
-    <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold leading-tight text-gray-900">내 냉장고</h1>
+    <div className="max-w-7xl mx-auto px-8 py-16">
+      <div className="text-center mb-16">
+        <h1 className="text-6xl font-bold gradient-text mb-4">🧊 내 냉장고</h1>
+        <p className="text-2xl text-gray-600">식재료를 관리하고 신선하게 보관하세요</p>
       </div>
-
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div className="flex items-center">
-          <span className="text-gray-700 font-medium mr-2 whitespace-nowrap">정렬:</span>
+      
+      <div className="flex items-center justify-between mb-10 p-8 bg-white rounded-xl shadow-md">
+        <div className="flex items-center gap-4">
+          <label htmlFor="sort" className="text-base font-medium text-gray-700">
+            정렬:
+          </label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
-            className="block w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm rounded-md"
+            className="border-2 border-gray-200 rounded-lg px-4 py-2.5 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
             <option value="expirationDate">소비기한 임박순</option>
             <option value="name">이름순</option>
             <option value="createdAt">등록일순</option>
           </select>
         </div>
-
-        <div className="flex space-x-2">
-          <Link to="/refrigerator/recommendations" className="px-4 py-2 bg-white border border-[#4E652F] text-[#4E652F] text-sm font-medium rounded-md hover:bg-[#F0F5E5] transition-colors">
-            레시피 추천 보기
+        <div className="flex items-center gap-3">
+          <Link
+            to="/refrigerator/recommendations"
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-base hover:shadow-lg hover:scale-105 transition-all font-medium"
+          >
+            ✨ 레시피 추천
           </Link>
           <button
-            onClick={() => setShowAddForm(true)}
-            className="px-4 py-2 bg-[#4E652F] text-white text-sm font-medium rounded-md hover:bg-[#425528] transition-colors flex items-center"
+            onClick={() => setShowAddForm((v) => !v)}
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 text-white text-base hover:shadow-lg hover:scale-105 transition-all font-medium"
           >
-            <PlusIcon className="w-4 h-4 mr-1"/>
-            식재료 추가
+            ➕ 식재료 추가
           </button>
-          <Link to="/refrigerator/receipt-scan" className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200 transition-colors flex items-center">
-            <ReceiptIcon className="w-4 h-4 mr-1" />
-            영수증으로 추가
+          <Link
+            to="/refrigerator/receipt-scan"
+            className="px-5 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-base hover:shadow-lg hover:scale-105 transition-all font-medium"
+          >
+            📄 영수증 추가
           </Link>
         </div>
       </div>
 
       {showAddForm && (
-        <div className="fixed inset-0 bg-black/20 z-50 flex items-center justify-center" onClick={() => setShowAddForm(false)}>
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col m-4" onClick={e => e.stopPropagation()}>
-            <header className="flex items-center justify-between p-5 border-b">
-              <h2 className="text-xl font-bold text-gray-800">식재료 추가</h2>
-              <button onClick={() => setShowAddForm(false)} className="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
-                ✕
-              </button>
-            </header>
-
-            <form onSubmit={handleAddSubmit} className="p-6 flex-grow overflow-y-auto space-y-6">
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-8 border-2 border-gray-100">
+            <h2 className="text-2xl font-bold gradient-text mb-6">➕ 식재료 추가</h2>
+            <form onSubmit={handleAddSubmit} className="space-y-5" data-refrigerator-add-form="true">
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1">식재료명 <span className="text-red-500">*</span></label>
+                <label className="block text-base font-semibold text-gray-700 mb-2">🥗 식재료명 *</label>
                 <input
                   ref={nameInputRef}
                   value={nameValue}
                   onChange={(e) => setNameValue(e.target.value)}
-                  className={`block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3 ${formErrors.name ? 'border-red-500' : ''}`}
-                  placeholder="예: 계란"
+                  autoFocus
+                  className={`w-full border-2 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${formErrors.name ? 'border-red-500' : 'border-gray-200'}`}
                 />
-                {formErrors.name && <p className="mt-1 text-xs text-red-600">{formErrors.name}</p>}
-                <p className="mt-1 text-xs text-gray-500">같은 이름+같은 소비기한은 수량이 합산됩니다.</p>
+                {formErrors.name && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.name}</p>}
+                {!formErrors.name && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    💡 같은 이름+같은 소비기한(또는 모두 미지정)은 수량이 합산됩니다.
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-gray-800 mb-1">수량</label>
+                  <label className="block text-base font-semibold text-gray-700 mb-2">📊 수량</label>
                   <input
                     type="number"
                     min={0}
-                    value={quantityValue}
-                    onChange={(e) => setQuantityValue(e.target.value)}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
-                    placeholder="0"
+                    className={`w-full border-2 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${formErrors.quantity ? 'border-red-500' : 'border-gray-200'}`}
                   />
+                  {formErrors.quantity && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.quantity}</p>}
                 </div>
                 <div className="relative">
-                  <label className="block text-sm font-bold text-gray-800 mb-1">단위</label>
+                  <label className="block text-base font-semibold text-gray-700 mb-2">📏 단위</label>
                   <input
                     value={unitValue}
                     onChange={(e) => setUnitValue(e.target.value)}
                     onFocus={() => setShowUnitSuggestions(true)}
                     onBlur={() => setTimeout(() => setShowUnitSuggestions(false), 150)}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
-                    placeholder="예: 개, g"
+                    className={`w-full border-2 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${formErrors.unit ? 'border-red-500' : 'border-gray-200'}`}
+                    placeholder="예: 개, g, ml"
+                    autoComplete="off"
                   />
                   {showUnitSuggestions && (
-                    <ul className="absolute top-full left-0 right-0 bg-white border rounded shadow mt-1 max-h-40 overflow-auto text-xs z-10">
+                    <ul className="absolute top-full left-0 right-0 bg-white border-2 border-purple-200 rounded-xl shadow-lg mt-2 max-h-40 overflow-auto text-base z-10">
                       {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).map((u) => (
-                        <li key={u} className="px-2 py-1 hover:bg-blue-50 cursor-pointer" onMouseDown={(e) => { e.preventDefault(); setUnitValue(u); }}>
+                        <li
+                          key={u}
+                          className="px-4 py-2 hover:bg-purple-50 cursor-pointer transition-colors"
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            setUnitValue(u);
+                          }}
+                        >
                           {u}
                         </li>
                       ))}
+                      {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).length === 0 && (
+                        <li className="px-4 py-2 text-gray-400">일치하는 제안 없음</li>
+                      )}
                     </ul>
                   )}
+                  {formErrors.unit && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.unit}</p>}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1">소비기한</label>
+                <label className="block text-base font-semibold text-gray-700 mb-2">📅 소비기한</label>
                 <DatePicker
                   selected={addExpirationDate}
                   onChange={(d) => setAddExpirationDate(d)}
                   locale={ko}
                   dateFormat="yyyy년 MM월 dd일"
-                  placeholderText="선택"
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3"
-                  isClearable
+                  placeholderText="소비기한 선택"
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-base focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 />
+                <p className="mt-1 text-sm text-gray-600">
+                  {addExpirationDate ? `선택: ${formatDateYMDKorean(addExpirationDate)}` : '선택된 날짜 없음'}
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-gray-800 mb-1">메모</label>
+                <label className="block text-base font-semibold text-gray-700 mb-2">📝 메모</label>
                 <textarea
-                  value={memoValue}
-                  onChange={(e) => setMemoValue(e.target.value)}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2 px-3 h-24 resize-none"
-                  placeholder="메모를 입력하세요"
+                  name="memo"
+                  rows={3}
+                  className={`w-full border-2 rounded-xl px-4 py-3 text-base resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all ${formErrors.memo ? 'border-red-500' : 'border-gray-200'}`}
                 />
+                {formErrors.memo && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.memo}</p>}
               </div>
-
-              <div className="pt-4 flex justify-end space-x-3 border-t border-gray-100">
-                <button type="button" onClick={() => setShowAddForm(false)} className="px-6 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50">
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-5 py-2.5 border-2 border-gray-200 rounded-xl text-gray-600 font-medium hover:bg-gray-50 hover:border-gray-300 transition-all"
+                >
                   취소
                 </button>
-                <button type="submit" className="px-6 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-[#4E652F] hover:bg-[#425528]">
-                  저장
+                <button
+                  type="submit"
+                  disabled={createMutation.isPending}
+                  className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 transition-all"
+                >
+                  {createMutation.isPending ? '⏳ 저장 중...' : '💾 저장'}
                 </button>
               </div>
             </form>
@@ -308,62 +331,68 @@ export default function RefrigeratorPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-lg shadow overflow-hidden min-h-[400px]">
-        {/* [수정] 로딩 및 에러 상태 UI 추가 */}
-        {isPending ? (
-          <div className="h-96 flex flex-col items-center justify-center text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#4E652F] mb-4"></div>
-            <p className="text-xl text-gray-500 font-medium">불러오는 중...</p>
-          </div>
-        ) : isError ? (
-          <div className="h-96 flex flex-col items-center justify-center text-center">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <p className="text-xl text-gray-500 font-medium">식재료를 불러오지 못했습니다.</p>
-            <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">
-              다시 시도
-            </button>
-          </div>
-        ) : items.length === 0 ? (
-          <div className="h-96 flex flex-col items-center justify-center text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <span className="text-4xl">🧺</span>
-            </div>
-            <p className="text-xl text-gray-500 font-medium">냉장고가 비어있습니다.</p>
-            <p className="text-gray-400 mt-1">첫 식재료를 추가해보세요!</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-1/5">식재료명</th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/12">수량</th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/12">단위</th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/4">소비기한 (D-day)</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-bold text-gray-800 uppercase tracking-wider w-1/4">메모</th>
-                <th scope="col" className="px-6 py-3 text-center text-xs font-bold text-gray-800 uppercase tracking-wider w-1/6">관리</th>
+      {isPending && <div className="p-6 text-center text-gray-600 text-base">불러오는 중...</div>}
+      {isError && <div className="p-6 text-center text-red-600 text-base">목록을 불러오는 중 오류가 발생했습니다.</div>}
+
+      {!isPending && !isError && items.length === 0 && (
+        <div className="bg-white p-10 rounded shadow text-center">
+          <p className="text-xl font-medium mb-2">냉장고가 비어있습니다. 첫 식재료를 추가해보세요!</p>
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="bg-white rounded shadow overflow-x-auto">
+          <table className="min-w-full text-base">
+            <thead>
+              <tr className="bg-gray-100 text-left">
+                <th className="px-4 py-3 font-semibold">식재료명</th>
+                <th className="px-4 py-3 font-semibold">수량</th>
+                <th className="px-4 py-3 font-semibold">단위</th>
+                <th className="px-4 py-3 font-semibold">소비기한 (D-day)</th>
+                <th className="px-4 py-3 font-semibold">메모</th>
+                <th className="px-4 py-3 font-semibold">관리</th>
               </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
               {items.map((item) => (
-                <tr key={item.id} className={`hover:bg-gray-50 ${removingIds.has(item.id) ? 'opacity-0 transition-opacity duration-300' : ''}`}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-700">{item.quantity}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">{item.unit || '—'}</td>
-                  <td className={`px-6 py-4 whitespace-nowrap text-sm text-center ${item.expired ? 'text-red-600 font-bold' : item.expirationSoon ? 'text-orange-600 font-bold' : 'text-gray-700'}`}>
-                    {item.expirationDate ? `${formatDateYMDKorean(item.expirationDate)} ${formatDDay(item.daysUntilExpiration)}` : '—'}
+                <tr
+                  key={item.id}
+                  className={`${classForItem(item)} border-t transition-opacity duration-300 ${removingIds.has(item.id) ? 'opacity-0' : 'opacity-100'}`}
+                >
+                  <td className="px-4 py-3 font-medium">{item.name}</td>
+                  <td className="px-4 py-3">{item.quantity}</td>
+                  <td className="px-4 py-3">{item.unit ?? '—'}</td>
+                  <td className={`${dDayTextColor(item)} px-4 py-3`}>
+                    {item.expirationDate
+                      ? `${formatDateYMDKorean(item.expirationDate)} (${formatDDay(item.daysUntilExpiration)})`
+                      : '—'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500 truncate max-w-xs">{item.memo || ''}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                    <button onClick={() => setEditingItem(item)} className="text-gray-600 hover:text-gray-900 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md mr-2 text-xs transition-colors">수정</button>
-                    <button onClick={() => setDeleteTarget(item)} className="text-white bg-red-600 hover:bg-red-700 px-3 py-1 rounded-md text-xs transition-colors inline-flex items-center">
-                      삭제 <TrashIcon className="w-3 h-3 ml-1" />
+                  <td className="px-4 py-3 max-w-xs truncate" title={item.memo ?? ''}>
+                    {item.memo ?? '—'}
+                  </td>
+                  <td className="px-4 py-3 flex items-center gap-2">
+                    <button
+                      onClick={() => setEditingItem(item)}
+                      className="px-3 py-1.5 bg-gray-200 rounded hover:bg-gray-300 text-sm"
+                    >
+                      수정
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(item)}
+                      className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 flex items-center gap-1 text-sm"
+                    >
+                      <span>삭제</span>
+                      <span aria-hidden>🗑️</span>
                     </button>
                   </td>
                 </tr>
               ))}
-              </tbody>
-            </table>
+            </tbody>
+          </table>
+          <div className="p-5 text-base text-gray-600 flex gap-6 font-medium">
+            <span>총 {data?.totalCount}개</span>
+            <span>임박 {data?.expiringCount}개</span>
+            <span>지남 {data?.expiredCount}개</span>
           </div>
         )}
       </div>

@@ -29,10 +29,10 @@ const MEALS: Array<{
   color: string;
   mealType: string;
 }> = [
-  { key: 'hasBreakfast', label: '아침', code: 'B', color: 'bg-yellow-200 text-yellow-900', mealType: 'BREAKFAST' },
-  { key: 'hasLunch', label: '점심', code: 'L', color: 'bg-orange-200 text-orange-900', mealType: 'LUNCH' },
-  { key: 'hasDinner', label: '저녁', code: 'D', color: 'bg-indigo-200 text-indigo-900', mealType: 'DINNER' },
-  { key: 'hasSnack', label: '간식', code: 'S', color: 'bg-pink-200 text-pink-900', mealType: 'SNACK' },
+  { key: 'hasBreakfast', label: '아침', code: 'B', color: 'bg-gradient-to-r from-yellow-50 to-orange-50 text-orange-700 border border-orange-200', mealType: 'BREAKFAST' },
+  { key: 'hasLunch', label: '점심', code: 'L', color: 'bg-gradient-to-r from-orange-50 to-red-50 text-red-700 border border-red-200', mealType: 'LUNCH' },
+  { key: 'hasDinner', label: '저녁', code: 'D', color: 'bg-gradient-to-r from-purple-50 to-indigo-50 text-indigo-700 border border-indigo-200', mealType: 'DINNER' },
+  { key: 'hasSnack', label: '간식', code: 'S', color: 'bg-gradient-to-r from-pink-50 to-purple-50 text-purple-700 border border-purple-200', mealType: 'SNACK' },
 ];
 
 interface DayCellProps {
@@ -68,10 +68,10 @@ const DayCell = ({
       tabIndex={focused ? 0 : -1}
       onFocus={() => setFocusedIndex(index)}
       onClick={navigateToDay}
-      className={`border rounded p-2 min-h-28 cursor-pointer flex flex-col gap-2 relative outline-none transition-colors ${
-        any ? 'border-blue-300' : 'border-gray-200'
-      } ${focused ? 'ring-2 ring-blue-400' : ''} ${
-        isToday ? `bg-blue-50 ${pulseToday ? 'ring-2 ring-blue-500 animate-pulse' : ''}` : 'hover:bg-gray-50'
+      className={`border rounded-xl p-4 min-h-32 cursor-pointer flex flex-col gap-3 relative outline-none transition-all duration-200 ${
+        any ? 'border-purple-300 bg-purple-50/30' : 'border-gray-200'
+      } ${focused ? 'ring-2 ring-purple-400 shadow-lg' : ''} ${
+        isToday ? `bg-gradient-to-br from-purple-50 to-indigo-50 border-purple-400 ${pulseToday ? 'ring-2 ring-purple-500 animate-pulse' : ''}` : 'hover:bg-gray-50 hover:shadow-md hover:-translate-y-0.5'
       }`}
       aria-label={`${date.getMonth() + 1}월 ${date.getDate()}일: ${any ? '기록 있음' : '기록 없음'} ${
         entry
@@ -82,7 +82,7 @@ const DayCell = ({
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className={`text-sm font-semibold ${isToday ? 'text-blue-600' : ''}`}>{date.getDate()}</span>
+        <span className={`text-base font-semibold ${isToday ? 'text-blue-600' : ''}`}>{date.getDate()}</span>
       </div>
 
       {entry && (
@@ -99,7 +99,7 @@ const DayCell = ({
           {MEALS.filter((m) => entry[m.key]).map((m) => (
             <span
               key={m.key}
-              className={`inline-flex items-center justify-center text-[10px] font-semibold px-1.5 py-0.5 rounded ${m.color}`}
+              className={`inline-flex items-center justify-center text-xs font-semibold px-2 py-1 rounded ${m.color}`}
               title={m.label}
               aria-label={`${m.label} 기록됨`}
             >
@@ -244,22 +244,29 @@ export default function DiaryCalendarPage() {
   }, [jumpToToday, cursor.year, cursor.month, days, today]);
 
   return (
-    <div className="max-w-6xl mx-auto p-4" aria-labelledby="diary-calendar-heading">
-      <h1 id="diary-calendar-heading" className="text-2xl font-bold mb-4">
-        내 식단 다이어리 캘린더
-      </h1>
+    <div className="max-w-7xl mx-auto px-8 py-16" aria-labelledby="diary-calendar-heading">
+      <div className="mb-12 text-center">
+        <h1 id="diary-calendar-heading" className="text-6xl font-bold gradient-text mb-4">
+          📖 내 식단 다이어리
+        </h1>
+        <p className="text-2xl text-gray-600">매일의 식사를 기록하고 관리하세요</p>
+      </div>
 
       {/* Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1 border rounded" onClick={handlePrev} aria-label="이전 달">
-            {'<'}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-10 p-8 bg-white rounded-xl shadow-md">
+        <div className="flex items-center gap-3">
+          <button 
+            className="px-5 py-2.5 bg-white border-2 border-purple-200 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium text-base" 
+            onClick={handlePrev} 
+            aria-label="이전 달"
+          >
+            ◀
           </button>
           <select
             aria-label="연도 선택"
             value={cursor.year}
             onChange={onChangeYear}
-            className="px-2 py-1 border rounded"
+            className="px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
           >
             {Array.from({ length: 5 }, (_, i) => today.getFullYear() - 2 + i).map((y) => (
               <option key={y} value={y}>
@@ -271,7 +278,7 @@ export default function DiaryCalendarPage() {
             aria-label="월 선택"
             value={cursor.month}
             onChange={onChangeMonth}
-            className="px-2 py-1 border rounded"
+            className="px-4 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-base"
           >
             {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
               <option key={m} value={m}>
@@ -279,36 +286,44 @@ export default function DiaryCalendarPage() {
               </option>
             ))}
           </select>
-          <button className="px-3 py-1 border rounded" onClick={handleNext} aria-label="다음 달">
-            {'>'}
+          <button 
+            className="px-5 py-2.5 bg-white border-2 border-purple-200 text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium text-base" 
+            onClick={handleNext} 
+            aria-label="다음 달"
+          >
+            ▶
           </button>
-          <button className="px-3 py-1 border rounded" onClick={handleToday} title="오늘로 이동 (T 키)">
+          <button 
+            className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all font-medium text-base" 
+            onClick={handleToday} 
+            title="오늘로 이동 (T 키)"
+          >
             오늘
           </button>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <button
-            className="px-3 py-1 border rounded"
+            className="px-5 py-2.5 border-2 border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 font-medium text-base"
             onClick={() => refetch()}
             disabled={isFetching}
             aria-label="새로고침"
           >
-            새로고침
+            🔄 새로고침
           </button>
         </div>
       </div>
 
       {/* Legend + Summary */}
-      <div className="flex flex-wrap items-center justify-between mb-4 gap-4">
-        <div className="flex items-center gap-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between mb-6 gap-4">
+        <div className="flex items-center gap-3 text-sm">
           {MEALS.map((m) => (
-            <div key={m.key} className="flex items-center gap-1">
-              <span className={`w-5 h-5 flex items-center justify-center rounded ${m.color}`}>{m.code}</span>
+            <div key={m.key} className="flex items-center gap-1.5">
+              <span className={`w-6 h-6 flex items-center justify-center rounded ${m.color}`}>{m.code}</span>
               <span className="text-gray-600">{m.label}</span>
             </div>
           ))}
         </div>
-        <div className="text-sm text-gray-700 flex flex-wrap gap-3">
+        <div className="text-base text-gray-700 flex flex-wrap gap-4 font-medium">
           <span>기록 있는 날짜: {summary.daysWithAny}일</span>
           <span>아침: {summary.breakfast}</span>
           <span>점심: {summary.lunch}</span>
