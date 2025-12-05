@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { BoardIcon, QnaIcon, RecipeIcon, DiaryIcon, ShoppingIcon, FridgeIcon, BellIcon } from '@/components/ui/Icons';
+import { BoardIcon, QnaIcon, RecipeIcon, DiaryIcon, ShoppingIcon, FridgeIcon } from '@/components/ui/Icons';
 import { listCategories, type Category } from '@/apis/categories.api';
-import NotificationDropdown from '@/features/common/components/NotificationDropdown';
+// 알림 컴포넌트 import 제거
+// import NotificationDropdown from '@/features/common/components/NotificationDropdown';
 
 const NavigationBar: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [isBoardOpen, setIsBoardOpen] = useState(false);
-  const [isNotiOpen, setIsNotiOpen] = useState(false);
-  const notiRef = useRef<HTMLLIElement>(null);
+
+  // 알림 관련 state 및 ref 제거
+  // const [isNotiOpen, setIsNotiOpen] = useState(false);
+  // const notiRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
     listCategories().then((list) => {
@@ -17,7 +20,8 @@ const NavigationBar: React.FC = () => {
     }).catch(() => {});
   }, []);
 
-  // 알림창 외부 클릭 시 닫기
+  // 알림창 외부 클릭 시 닫기 useEffect 제거
+  /*
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (notiRef.current && !notiRef.current.contains(event.target as Node)) {
@@ -29,6 +33,7 @@ const NavigationBar: React.FC = () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [notiRef]);
+  */
 
   const navItems = [
     { name: '게시판', icon: BoardIcon, href: '/boards', hasDropdown: true },
@@ -37,12 +42,13 @@ const NavigationBar: React.FC = () => {
     { name: '다이어리', icon: DiaryIcon, href: '/diary' },
     { name: '쇼핑몰', icon: ShoppingIcon, href: '/shopping' },
     { name: '냉장고', icon: FridgeIcon, href: '/refrigerator' },
-    // 알림은 별도 처리
+    // 알림 항목은 여기서 제거됨
   ];
 
   return (
     <nav className="bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 알림 아이콘 삭제로 인한 공간 재배치를 위해 justify-around 유지 혹은 필요시 gap 조정 */}
         <ul className="flex justify-around items-center h-20">
           {navItems.map((item) => (
             <li key={item.name} className="relative h-full flex items-center">
@@ -88,17 +94,7 @@ const NavigationBar: React.FC = () => {
             </li>
           ))}
 
-          {/* 알림 아이콘 (별도 처리) */}
-          <li className="relative h-full flex items-center cursor-pointer" ref={notiRef}>
-            <button
-              onClick={() => setIsNotiOpen(!isNotiOpen)}
-              className="flex flex-col items-center text-gray-600 hover:text-[#4E652F] transition-colors duration-200 group px-2 focus:outline-none"
-            >
-              <BellIcon className={`w-8 h-8 mb-1 transition-colors duration-200 ${isNotiOpen ? 'text-[#71853A]' : 'text-gray-400 group-hover:text-[#71853A]'}`} />
-              <span className="text-sm font-medium">알림</span>
-            </button>
-            {isNotiOpen && <NotificationDropdown />}
-          </li>
+          {/* 알림 아이콘 삭제됨 */}
         </ul>
       </div>
     </nav>

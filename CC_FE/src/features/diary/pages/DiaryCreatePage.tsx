@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-// Add search params usage
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDiary, type CreateDiaryRequest, type MealType } from '@/apis/diary.api';
 import ImageUploader from '@/components/ui/ImageUploader';
@@ -19,7 +18,7 @@ export default function DiaryCreatePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = (location.state as { recipeId?: number } | undefined) || undefined;
-  // Parse mealType from query string
+
   const searchParams = new URLSearchParams(location.search);
   const mealTypeFromQuery = searchParams.get('mealType') as MealType | null;
   const qc = useQueryClient();
@@ -53,7 +52,6 @@ export default function DiaryCreatePage() {
   }, [mealTypeFromQuery]);
 
   useEffect(() => {
-    // When recipeId changes, attempt to fetch its title
     async function loadTitle() {
       if (form.recipeId) {
         try {
@@ -137,97 +135,130 @@ export default function DiaryCreatePage() {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-xl font-semibold">식단 추가</h2>
-          <button className="px-3 py-1 border rounded" onClick={onClose}>
-            닫기
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+        aria-label="모달 닫기"
+      />
+
+      {/* 모달 컨테이너: flex-col로 설정하여 헤더/바디/푸터 분리 */}
+      <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden z-10">
+
+        {/* 1. 헤더 (고정) */}
+        <div className="flex items-center justify-between border-b px-6 py-4 bg-white shrink-0">
+          <h2 className="text-xl font-bold text-gray-800">식단 추가</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="p-5 space-y-4 overflow-y-auto">
-          <div>
-            <label className="block text-sm font-medium mb-1">날짜</label>
-            <input
-              type="date"
-              name="date"
-              value={form.date}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-          </div>
+        {/* 2. 내용 (스크롤 영역) */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <form id="create-diary-form" onSubmit={onSubmit} className="space-y-5">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">날짜</label>
+                <input
+                  type="date"
+                  name="date"
+                  value={form.date}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-[#4E652F] focus:border-transparent outline-none transition-all"
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">식사 타입</label>
-            <select
-              name="mealType"
-              value={form.mealType}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            >
-              {MEAL_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            {errors?.mealType && <p className="text-sm text-red-600 mt-1">{errors.mealType}</p>}
-          </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">식사 타입</label>
+                <select
+                  name="mealType"
+                  value={form.mealType}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-[#4E652F] focus:border-transparent outline-none transition-all bg-white"
+                  required
+                >
+                  {MEAL_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {errors?.mealType && <p className="text-xs text-red-500 mt-1 ml-1">{errors.mealType}</p>}
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">메뉴/내용</label>
-            <textarea
-              name="content"
-              value={form.content}
-              onChange={handleChange}
-              maxLength={500}
-              placeholder="예) 닭가슴살 샐러드와 현미밥"
-              className="w-full border rounded px-3 py-2 h-28"
-              required
-            />
-            {errors?.content && <p className="text-sm text-red-600 mt-1">{errors.content}</p>}
-          </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">메뉴/내용</label>
+              <textarea
+                name="content"
+                value={form.content}
+                onChange={handleChange}
+                maxLength={500}
+                placeholder="예) 닭가슴살 샐러드와 현미밥"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 h-32 resize-none focus:ring-2 focus:ring-[#4E652F] focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+                required
+              />
+              {errors?.content && <p className="text-xs text-red-500 mt-1 ml-1">{errors.content}</p>}
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">사진 (선택)</label>
-            <ImageUploader value={form.imageUrl} onChange={handleImageChange} placeholder="식단 사진 업로드" />
-          </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">사진 <span className="text-gray-400 font-normal text-xs">(선택)</span></label>
+              <div className="border border-dashed border-gray-300 rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors">
+                <ImageUploader
+                  value={form.imageUrl}
+                  onChange={handleImageChange}
+                  placeholder="클릭하여 식단 사진 업로드"
+                />
+              </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">레시피 URL 또는 ID (선택)</label>
-            <input
-              type="text"
-              name="recipeUrl"
-              value={recipeUrlInput}
-              onChange={handleRecipeUrlChange}
-              placeholder="예: /boards/123 또는 전체 URL"
-              className="w-full border rounded px-3 py-2"
-            />
-            {form.recipeId && (
-              <p className="text-xs text-gray-600 mt-1">
-                연결된 레시피: {recipeTitle ? recipeTitle : `#${form.recipeId}`}
-              </p>
-            )}
-          </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">레시피 연결 <span className="text-gray-400 font-normal text-xs">(선택)</span></label>
+              <input
+                type="text"
+                name="recipeUrl"
+                value={recipeUrlInput}
+                onChange={handleRecipeUrlChange}
+                placeholder="레시피 URL 또는 ID 입력"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-[#4E652F] focus:border-transparent outline-none transition-all placeholder:text-gray-400"
+              />
+              {form.recipeId && (
+                <div className="mt-2 text-sm text-[#4E652F] bg-[#4E652F]/10 px-3 py-2 rounded-md flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+                  </svg>
+                  <span>연결됨: <strong>{recipeTitle ? recipeTitle : `#${form.recipeId}`}</strong></span>
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
 
-          <div className="pt-2 flex gap-2 justify-end">
-            <button type="button" className="px-3 py-2 border rounded" onClick={onClose}>
-              취소
-            </button>
-            {/* [수정됨] 저장 버튼 색상 변경: bg-blue-600 -> bg-[#4E652F] */}
-            <button
-              type="submit"
-              className="px-3 py-2 border rounded bg-[#4E652F] text-white disabled:opacity-50 hover:bg-[#425528]"
-              disabled={isPending}
-            >
-              {isPending ? '저장 중…' : '저장'}
-            </button>
-          </div>
-        </form>
+        {/* 3. 푸터 (버튼 고정) */}
+        <div className="border-t px-6 py-4 bg-gray-50 shrink-0 flex justify-end gap-3">
+          <button
+            type="button"
+            className="px-4 py-2.5 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors font-medium text-sm"
+            onClick={onClose}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            form="create-diary-form" // 폼 ID와 연결
+            className="px-6 py-2.5 border border-transparent rounded-lg bg-[#4E652F] text-white text-sm font-medium hover:bg-[#3d5024] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#4E652F] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
+            disabled={isPending}
+          >
+            {isPending ? '저장 중...' : '저장하기'}
+          </button>
+        </div>
+
       </div>
     </div>
   );
