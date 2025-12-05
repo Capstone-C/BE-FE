@@ -16,13 +16,7 @@ import { useToast } from '../../../contexts/ToastContext';
 
 import { formatYMDHMKorean } from '../../../utils/date';
 import { extractAuthorRef, getDisplayName } from '../../../utils/author';
-import {
-  ThumbsUpIcon,
-  EyeIcon,
-  DiaryIcon,
-  FridgeIcon,
-  ReceiptIcon,
-} from '../../../components/ui/Icons';
+import { ThumbsUpIcon, EyeIcon, DiaryIcon, FridgeIcon, ReceiptIcon } from '../../../components/ui/Icons';
 import type { DeductPreviewResponse } from '../../../types/refrigerator';
 
 // 공유하기 아이콘 (인라인 SVG)
@@ -42,7 +36,6 @@ const ShareIcon = ({ className = 'w-5 h-5' }) => (
     />
   </svg>
 );
-
 
 export default function BoardDetailPage() {
   const { postId } = useParams();
@@ -87,9 +80,7 @@ export default function BoardDetailPage() {
         setFridgeError(null);
         // NOTE: 'name'으로 정렬하여 DB 부하를 줄임
         const res = await getRefrigeratorItems('name');
-        const names = new Set<string>(
-          (res.items ?? []).map((i) => i.name.trim().toLowerCase()).filter(Boolean),
-        );
+        const names = new Set<string>((res.items ?? []).map((i) => i.name.trim().toLowerCase()).filter(Boolean));
         setFridgeNames(names);
       } catch {
         setFridgeError('냉장고 정보를 불러오지 못했습니다.');
@@ -269,7 +260,9 @@ export default function BoardDetailPage() {
           </div>
           <div className="bg-white p-3 rounded-lg shadow-sm">
             <span className="block text-xs text-gray-500 mb-1">조리 시간</span>
-            <span className="font-semibold text-gray-800">{data.cookTimeInMinutes ? `${data.cookTimeInMinutes}분` : '-'}</span>
+            <span className="font-semibold text-gray-800">
+              {data.cookTimeInMinutes ? `${data.cookTimeInMinutes}분` : '-'}
+            </span>
           </div>
           <div className="bg-white p-3 rounded-lg shadow-sm">
             <span className="block text-xs text-gray-500 mb-1">분량</span>
@@ -320,7 +313,6 @@ export default function BoardDetailPage() {
           </button>
         </div>
 
-
         {/* 재료 목록 */}
         {data.ingredients && data.ingredients.length > 0 && (
           <div className="mt-8">
@@ -342,10 +334,11 @@ export default function BoardDetailPage() {
                     }`}
                   >
                     <div className="flex items-center space-x-3">
-                      <span className={`w-3 h-3 rounded-full ${isOwned ? 'bg-green-600' : 'bg-red-500'}`} title={isOwned ? '냉장고에 있음' : '부족함'}></span>
-                      <span className={`font-medium ${isOwned ? 'text-green-700' : 'text-gray-800'}`}>
-                        {ing.name}
-                      </span>
+                      <span
+                        className={`w-3 h-3 rounded-full ${isOwned ? 'bg-green-600' : 'bg-red-500'}`}
+                        title={isOwned ? '냉장고에 있음' : '부족함'}
+                      ></span>
+                      <span className={`font-medium ${isOwned ? 'text-green-700' : 'text-gray-800'}`}>{ing.name}</span>
                     </div>
                     <div className="text-sm">
                       <span className={`font-bold ${isOwned ? 'text-green-700' : 'text-[#4E652F]'}`}>
@@ -380,9 +373,7 @@ export default function BoardDetailPage() {
             {/* 헤더 및 메타 정보 */}
             <div className="border-b border-gray-200 pb-4 mb-6">
               <div className="flex justify-between items-start gap-4">
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                  {data.title}
-                </h1>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">{data.title}</h1>
                 {isAuthor && (
                   <div className="flex items-center space-x-2 flex-shrink-0 text-sm">
                     <Link to={editLink} className="text-gray-500 hover:text-[#4E652F] transition-colors">
@@ -397,7 +388,16 @@ export default function BoardDetailPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500 mt-3">
-                <span className="font-medium text-gray-700">{authorName}</span>
+                {memberId ? (
+                  <Link
+                    to={`/members/${memberId}`}
+                    className="font-medium text-gray-700 hover:text-[#4E652F] hover:underline transition-colors"
+                  >
+                    {authorName}
+                  </Link>
+                ) : (
+                  <span className="font-medium text-gray-700">{authorName}</span>
+                )}
                 <span className="hidden sm:inline text-gray-300">|</span>
                 <span>{formatYMDHMKorean(data.createdAt)}</span>
                 <span className="hidden sm:inline text-gray-300">|</span>
@@ -492,28 +492,28 @@ export default function BoardDetailPage() {
               <div className="space-y-2">
                 <table className="w-full text-xs border">
                   <thead>
-                  <tr className="bg-gray-50">
-                    <th className="border px-2 py-1 text-left">재료</th>
-                    <th className="border px-2 py-1 text-left">필요량</th>
-                    <th className="border px-2 py-1 text-left">현재 (수량)</th>
-                    <th className="border px-2 py-1 text-left">상태</th>
-                    <th className="border px-2 py-1 text-left">메시지</th>
-                  </tr>
+                    <tr className="bg-gray-50">
+                      <th className="border px-2 py-1 text-left">재료</th>
+                      <th className="border px-2 py-1 text-left">필요량</th>
+                      <th className="border px-2 py-1 text-left">현재 (수량)</th>
+                      <th className="border px-2 py-1 text-left">상태</th>
+                      <th className="border px-2 py-1 text-left">메시지</th>
+                    </tr>
                   </thead>
                   <tbody>
-                  {deductPreview.ingredients.map((ing) => (
-                    <tr key={ing.name} className="hover:bg-gray-50">
-                      <td className="border px-2 py-1">
-                        {ing.name}
-                        {ing.isRequired ? (
-                          <span className="ml-1 text-red-600">*</span>
-                        ) : (
-                          <span className="ml-1 text-gray-400">(선택)</span>
-                        )}
-                      </td>
-                      <td className="border px-2 py-1">{ing.requiredAmount ?? '—'}</td>
-                      <td className="border px-2 py-1">{ing.currentAmount ?? '없음'}</td>
-                      <td className="border px-2 py-1">
+                    {deductPreview.ingredients.map((ing) => (
+                      <tr key={ing.name} className="hover:bg-gray-50">
+                        <td className="border px-2 py-1">
+                          {ing.name}
+                          {ing.isRequired ? (
+                            <span className="ml-1 text-red-600">*</span>
+                          ) : (
+                            <span className="ml-1 text-gray-400">(선택)</span>
+                          )}
+                        </td>
+                        <td className="border px-2 py-1">{ing.requiredAmount ?? '—'}</td>
+                        <td className="border px-2 py-1">{ing.currentAmount ?? '없음'}</td>
+                        <td className="border px-2 py-1">
                           <span
                             className={
                               ing.status === 'OK'
@@ -525,10 +525,10 @@ export default function BoardDetailPage() {
                           >
                             {ing.status}
                           </span>
-                      </td>
-                      <td className="border px-2 py-1 text-gray-600">{ing.message ?? ''}</td>
-                    </tr>
-                  ))}
+                        </td>
+                        <td className="border px-2 py-1 text-gray-600">{ing.message ?? ''}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
