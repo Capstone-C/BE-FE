@@ -315,7 +315,7 @@ export default function DiaryCalendarPage() {
             onClick={() => refetch()}
             disabled={isFetching}
           >
-            새로고침
+            🔄 새로고침
           </button>
         </div>
       </div>

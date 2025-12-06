@@ -74,85 +74,93 @@ export default function DiaryDayPage() {
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
 
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between border-b px-5 py-3">
-          <h2 className="text-xl font-semibold">{formatKoreanDate(date)}</h2>
-          <div className="flex gap-2">
-            <button className="px-3 py-1 border rounded" onClick={() => refetch()} disabled={isFetching}>
-              새로고침
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-hidden">
+        <div className="flex items-center justify-between border-b-2 border-gray-100 px-8 py-5 bg-gradient-to-r from-purple-50 to-indigo-50">
+          <h2 className="text-3xl font-bold gradient-text">📅 {formatKoreanDate(date)}</h2>
+          <div className="flex gap-3">
+            <button 
+              className="px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:bg-white transition-all font-medium text-base" 
+              onClick={() => refetch()} 
+              disabled={isFetching}
+            >
+              {isFetching ? '⏳' : '🔄'} 새로고침
             </button>
-            {/* [수정됨] 식단 추가 버튼 색상 변경 */}
-            <button
-              className="px-3 py-1 border rounded bg-[#4E652F] text-white hover:bg-[#425528]"
+            <button 
+              className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all font-semibold text-base" 
               onClick={onAdd}
             >
-              식단 추가
+              ➕ 식단 추가
             </button>
-            <button className="px-3 py-1 border rounded" onClick={onClose}>
-              닫기
+            <button 
+              className="px-4 py-2.5 border-2 border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-base" 
+              onClick={onClose}
+            >
+              ✕
             </button>
           </div>
         </div>
 
-        <div className="p-5 overflow-y-auto">
+        <div className="p-8 overflow-y-auto">
           {isLoading ? (
-            <div className="py-8 text-center">불러오는 중…</div>
+            <div className="py-12 text-center text-lg">불러오는 중…</div>
           ) : isError ? (
-            <div className="py-8 text-center text-red-600">해당 날짜의 식단을 불러오지 못했습니다.</div>
+            <div className="py-12 text-center text-red-600 text-lg">해당 날짜의 식단을 불러오지 못했습니다.</div>
           ) : !data || data.length === 0 ? (
-            <div className="py-8 text-center text-gray-600">
-              <p className="mb-3">기록된 식단이 없습니다. 첫 식단을 추가해보세요.</p>
-              {/* [수정됨] 식단 추가 버튼 색상 변경 */}
-              <button
-                className="px-3 py-1 border rounded bg-[#4E652F] text-white hover:bg-[#425528]"
-                onClick={onAdd}
-              >
+            <div className="py-12 text-center text-gray-600">
+              <p className="mb-4 text-lg">기록된 식단이 없습니다. 첫 식단을 추가해보세요.</p>
+              <button className="px-4 py-2 border rounded text-base" onClick={onAdd}>
                 식단 추가
               </button>
             </div>
           ) : (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-8">
               {MEAL_ORDER.map((mt) => (
                 <div key={mt}>
-                  <h3 className="text-lg font-bold mb-3">{MEAL_LABEL[mt]}</h3>
+                  <h3 className="text-xl font-bold mb-4">{MEAL_LABEL[mt]}</h3>
                   {grouped[mt].length === 0 ? (
-                    <div className="text-sm text-gray-500">기록 없음</div>
+                    <div className="text-base text-gray-500 italic">📭 기록 없음</div>
                   ) : (
-                    <ul className="space-y-3">
+                    <ul className="space-y-4">
                       {grouped[mt].map((entry) => (
-                        <li key={entry.id} className="border rounded p-3 flex gap-3">
+                        <li key={entry.id} className="border-2 border-gray-100 rounded-xl p-5 flex gap-5 bg-gradient-to-r from-white to-gray-50 hover:shadow-md transition-all">
                           {entry.imageUrl ? (
                             <img
                               src={entry.imageUrl}
                               alt="식단 이미지"
-                              className="w-20 h-20 object-cover rounded"
+                              className="w-28 h-28 object-cover rounded-xl shadow-sm"
                               onError={(e) => (e.currentTarget.style.display = 'none')}
                             />
                           ) : (
-                            <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 text-xs">
-                              No Image
+                            <div className="w-28 h-28 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl flex items-center justify-center text-gray-400 text-sm font-medium">
+                              🍽️<br/>No Image
                             </div>
                           )}
                           <div className="flex-1">
-                            <div className="font-medium">{entry.content}</div>
+                            <div className="font-semibold text-gray-800 text-base">{entry.content}</div>
                             {entry.recipeId ? (
                               <button
                                 type="button"
-                                className="text-xs text-blue-600 mt-1 underline"
+                                className="text-sm text-purple-600 mt-2 hover:text-purple-700 font-medium flex items-center gap-1"
                                 onClick={() => onRecipeClick(entry.recipeId!)}
                               >
-                                {entry.recipeTitle
+                                📖 {entry.recipeTitle
                                   ? `레시피: ${entry.recipeTitle}`
                                   : `원본 레시피 보기 #${entry.recipeId}`}
                               </button>
                             ) : null}
                           </div>
                           <div className="flex flex-col gap-2">
-                            <button className="px-2 py-1 border rounded text-sm" onClick={() => onEdit(entry.id)}>
-                              수정
+                            <button 
+                              className="px-4 py-2 border-2 border-purple-200 rounded-lg text-sm text-purple-600 hover:bg-purple-50 transition-all font-medium" 
+                              onClick={() => onEdit(entry.id)}
+                            >
+                              ✏️ 수정
                             </button>
-                            <button className="px-2 py-1 border rounded text-sm" onClick={() => onDelete(entry.id)}>
-                              삭제
+                            <button 
+                              className="px-4 py-2 border-2 border-red-200 rounded-lg text-sm text-red-600 hover:bg-red-50 transition-all font-medium" 
+                              onClick={() => onDelete(entry.id)}
+                            >
+                              🗑️ 삭제
                             </button>
                           </div>
                         </li>

@@ -5,6 +5,9 @@ import { AxiosError } from 'axios';
 import { login } from '@/apis/auth';
 import { LoginRequest } from '@/apis/types';
 import { useAuth } from '@/hooks/useAuth';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -68,75 +71,73 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#F0F5E5] min-h-[calc(100vh-5rem)]">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            로그인
-          </h2>
-        </div>
-
-        <form onSubmit={handleSubmit} className="mt-8 space-y-6" autoComplete="off">
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="email" className="sr-only">
-                이메일
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="이메일"
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] focus:z-10 sm:text-sm"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="sr-only">
-                비밀번호
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="비밀번호"
-                className="appearance-none rounded-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-[#71853A] focus:border-[#71853A] focus:z-10 sm:text-sm"
-              />
-            </div>
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-indigo-50 px-4">
+      <div className="w-full max-w-xl py-8">
+        <Card className="p-10 space-y-8 shadow-xl">
+          <div className="text-center space-y-3">
+            <h1 className="text-4xl font-bold gradient-text">🍽️ 로그인</h1>
+            <p className="text-lg text-gray-600">Capstone에 오신 것을 환영합니다</p>
           </div>
 
-          {errorMessage && <p className="text-sm text-red-600 text-center">{errorMessage}</p>}
+          <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              label="이메일"
+              autoComplete="off"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="example@email.com"
+            />
 
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center space-x-2 text-gray-600">
-              <Link to="/find-password" className="font-medium text-[#4E652F] hover:text-[#425528]">
-                아이디/비밀번호 찾기
-              </Link>
-              <span className="text-gray-300">|</span>
-              <Link to="/signup" className="font-medium text-[#4E652F] hover:text-[#425528]">
-                회원가입
-              </Link>
-            </div>
-          </div>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              label="비밀번호"
+              autoComplete="new-password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="비밀번호를 입력하세요"
+            />
 
-          <div>
-            <button
+            {errorMessage && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-base text-red-600 text-center">{errorMessage}</p>
+              </div>
+            )}
+
+            <Button
               type="submit"
               disabled={isPending}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-lg font-medium rounded-md text-white bg-[#4E652F] hover:bg-[#425528] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#71853A] transition-colors disabled:bg-gray-400"
+              variant="primary"
+              className="w-full py-3 text-base"
             >
               {isPending ? '로그인 중...' : '로그인'}
-            </button>
+            </Button>
+          </form>
+
+          <div className="flex items-center gap-4 pt-6">
+            <div className="flex-1 border-t border-gray-200"></div>
+            <span className="text-base text-gray-500">또는</span>
+            <div className="flex-1 border-t border-gray-200"></div>
           </div>
-        </form>
+
+          <div className="space-y-3 text-center text-base">
+            <p className="text-gray-600">
+              계정이 없으신가요?{' '}
+              <Link to="/signup" className="text-purple-600 hover:text-purple-700 font-medium hover:underline">
+                회원가입
+              </Link>
+            </p>
+            <Link to="/find-password" className="block text-gray-500 hover:text-purple-600 transition-colors">
+              비밀번호 찾기
+            </Link>
+          </div>
+        </Card>
       </div>
     </div>
   );

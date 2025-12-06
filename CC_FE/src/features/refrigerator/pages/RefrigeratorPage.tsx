@@ -283,6 +283,7 @@ export default function RefrigeratorPage() {
                     className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2.5 px-4 transition-all"
                     placeholder="0"
                   />
+                  {formErrors.quantity && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.quantity}</p>}
                 </div>
                 <div className="relative">
                   <label className="block text-sm font-bold text-gray-700 mb-1.5">단위</label>
@@ -301,8 +302,12 @@ export default function RefrigeratorPage() {
                           {u}
                         </li>
                       ))}
+                      {COMMON_UNITS.filter((u) => !unitValue || u.includes(unitValue)).length === 0 && (
+                        <li className="px-4 py-2 text-gray-400">일치하는 제안 없음</li>
+                      )}
                     </ul>
                   )}
+                  {formErrors.unit && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.unit}</p>}
                 </div>
               </div>
 
@@ -317,6 +322,9 @@ export default function RefrigeratorPage() {
                   className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2.5 px-4 transition-all"
                   isClearable
                 />
+                <p className="mt-1 text-sm text-gray-600">
+                  {addExpirationDate ? `선택: ${formatDateYMDKorean(addExpirationDate)}` : '선택된 날짜 없음'}
+                </p>
               </div>
 
               <div>
@@ -327,6 +335,7 @@ export default function RefrigeratorPage() {
                   className="block w-full border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-[#71853A] focus:border-[#71853A] sm:text-sm py-2.5 px-4 h-24 resize-none transition-all"
                   placeholder="메모를 입력하세요 (선택)"
                 />
+                {formErrors.memo && <p className="mt-2 text-sm text-red-600">⚠️ {formErrors.memo}</p>}
               </div>
 
               <div className="pt-2 flex justify-end space-x-3">
@@ -436,8 +445,12 @@ export default function RefrigeratorPage() {
                   </td>
                 </tr>
               ))}
-              </tbody>
-            </table>
+            </tbody>
+          </table>
+          <div className="p-5 text-base text-gray-600 flex gap-6 font-medium">
+            <span>총 {data?.totalCount}개</span>
+            <span>임박 {data?.expiringCount}개</span>
+            <span>지남 {data?.expiredCount}개</span>
           </div>
         )}
       </div>
