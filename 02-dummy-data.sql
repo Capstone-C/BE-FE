@@ -1,6 +1,10 @@
 -- 더미 데이터 삽입 스크립트
 -- 테스트 및 개발용 샘플 데이터
 
+-- Character set 설정
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 USE ccdb;
 
 -- 1. 회원 데이터 (members)
@@ -18,26 +22,16 @@ INSERT INTO members (email, nickname, password, role, export_score, joined_at, l
 ('admin@test.com', '관리자', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy', 'ADMIN', 0, NOW(), NOW(), NULL, NOW());
 
 -- 2. 카테고리 데이터 (category)
--- type: RECIPE, FREE, QA, VEGAN, CARNIVORE
+-- type: RECIPE, FREE, QA, VEGAN
 INSERT INTO category (name, type, parent_id) VALUES
 -- 레시피 카테고리
-('한식 레시피', 'RECIPE', NULL),
-('중식 레시피', 'RECIPE', NULL),
-('일식 레시피', 'RECIPE', NULL),
-('양식 레시피', 'RECIPE', NULL),
-('분식 레시피', 'RECIPE', NULL),
-('디저트 레시피', 'RECIPE', NULL),
+('레시피', 'RECIPE', NULL),
 -- 자유 게시판
-('자유게시판', 'FREE', NULL),
-('정보공유', 'FREE', NULL),
-('후기', 'FREE', NULL),
+('자유', 'FREE', NULL),
 -- Q&A
-('레시피 질문', 'QA', NULL),
-('재료 질문', 'QA', NULL),
-('조리법 질문', 'QA', NULL),
--- 비건/육식
-('비건 레시피', 'VEGAN', NULL),
-('육식 레시피', 'CARNIVORE', NULL);
+('Q&A', 'QA', NULL),
+-- 비건
+('비건', 'VEGAN', NULL);
 
 -- 3. 레시피 데이터 (recipe)
 INSERT INTO recipe (name, description, instructions, cook_time, difficulty, servings, image_url, created_at, updated_at) VALUES
@@ -164,25 +158,53 @@ INSERT INTO diary (member_id, meal_type, date, content, image_url, recipe_id, cr
 
 -- 7. 게시글 데이터 (posts)
 INSERT INTO posts (author_id, category_id, title, content, is_recipe, status, view_count, like_count, comment_count, cook_time_in_minutes, difficulty, servings, diet_type, file, selected, created_at, updated_at) VALUES
--- 레시피 게시글
+-- 레시피 게시글 (category_id = 1)
 (1, 1, '김치찌개 맛있게 끓이는 법', '김치찌개를 끓일 때는 묵은 김치를 사용하는 것이 포인트입니다.\n돼지고기와 함께 볶다가 물을 부어주세요.\n\n**재료**\n- 김치 300g\n- 돼지고기 200g\n- 두부 반 모\n- 대파 반 대\n\n**조리법**\n1. 돼지고기를 먹기 좋은 크기로 자릅니다.\n2. 냄비에 식용유를 두르고 김치를 볶습니다.\n3. 돼지고기를 넣고 함께 볶습니다.\n4. 물을 붓고 끓입니다.\n5. 두부와 대파를 넣고 한소끔 끓입니다.', 1, 'PUBLISHED', 45, 12, 3, 30, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
-(1, 1, '얼큰한 된장찌개 레시피', '된장찌개는 멸치육수를 사용하면 더 깊은 맛이 납니다.\n두부와 애호박을 듬뿍 넣어보세요.\n\n**꿀팁**\n- 멸치 육수에 다시마를 함께 넣으면 감칠맛이 더해집니다.\n- 된장은 체에 거르지 말고 그대로 풀어주세요.', 1, 'PUBLISHED', 38, 8, 2, 25, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
-(2, 4, '집에서 만드는 간단한 파스타', '마늘과 올리브오일만 있으면 맛있는 알리오올리오를 만들 수 있어요!\n\n**재료**\n- 스파게티면 200g\n- 마늘 5쪽\n- 올리브오일 5큰술\n- 페페론치노 1개\n- 파슬리 약간\n\n**조리 시간**: 15분', 1, 'PUBLISHED', 67, 23, 5, 15, 'LOW', 1, 'VEGETARIAN', 'FALSE', 'TRUE', NOW() - INTERVAL 3 DAY, NOW()),
-(2, 1, '불고기 양념 황금 레시피', '간장 3: 설탕 2: 참기름 1의 비율로 만들면 완벽한 불고기 양념이 됩니다.\n\n**양념 재료**\n- 간장 3큰술\n- 설탕 2큰술\n- 참기름 1큰술\n- 다진마늘 1큰술\n- 후추 약간\n\n여기에 배를 갈아 넣으면 더욱 부드러운 불고기를 만들 수 있어요!', 1, 'PUBLISHED', 92, 34, 8, 40, 'MEDIUM', 4, 'GENERAL', 'FALSE', 'TRUE', NOW() - INTERVAL 5 DAY, NOW()),
-(3, 5, '떡볶이 매운맛 조절하는 법', '고춧가루 양을 조절하고 설탕을 약간 더 넣으면 덜 매워요.\n\n**팁**\n- 물엿을 넣으면 윤기가 나고 덜 맵습니다.\n- 우유를 조금 넣으면 크림떡볶이 같은 맛이 나요.\n- 어묵과 계란을 넣으면 더 맛있어요!', 1, 'PUBLISHED', 56, 18, 4, 20, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
-(3, 8, '밑반찬으로 좋은 계란말이', '계란말이에 당근과 대파를 다져서 넣으면 영양만점!\n\n계란 4개에 소금 약간, 다진 야채를 넣고 잘 섞어주세요.\n팬에 기름을 두르고 계란물을 부어 돌돌 말아주면 완성!', 1, 'PUBLISHED', 41, 15, 2, 10, 'LOW', 2, 'VEGETARIAN', 'FALSE', 'FALSE', NOW(), NOW()),
-(4, 1, '제육볶음 매콤하게 만들기', '고추장 양념에 고춧가루를 추가하면 더 매콤해요.\n\n**양념장**\n- 고추장 2큰술\n- 고춧가루 1큰술\n- 간장 1큰술\n- 설탕 1큰술\n- 다진마늘 1큰술\n\n돼지고기는 목살이나 앞다리살을 추천합니다!', 1, 'PUBLISHED', 78, 25, 6, 30, 'MEDIUM', 3, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
-(5, 1, '순두부찌개 간단 레시피', '혼자 사는 사람들에게 강추하는 순두부찌개!\n\n**재료**\n- 순두부 1봉지\n- 계란 1개\n- 고춧가루 1큰술\n- 다진마늘 1큰술\n- 멸치 육수 2컵\n\n순두부를 통째로 넣고 끓이다가 계란을 풀어 넣으면 완성!', 1, 'PUBLISHED', 52, 16, 3, 20, 'LOW', 1, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
-(6, 13, '비건 두부 스크램블 레시피', '계란 대신 두부로 만드는 스크램블!\n\n**재료**\n- 두부 1모\n- 강황가루 1/4작은술\n- 양파, 파프리카\n- 소금, 후추\n\n두부를 으깨서 노릇하게 볶아주세요.\n강황가루를 넣으면 색이 예뻐집니다!', 1, 'PUBLISHED', 34, 12, 2, 15, 'LOW', 1, 'VEGAN', 'FALSE', 'FALSE', NOW(), NOW()),
-(7, 7, '초보자를 위한 파전 만들기', '처음 요리하는 분들도 쉽게 만들 수 있는 파전!\n\n**재료**\n- 부침가루 1컵\n- 물 1컵\n- 대파 3대\n- 계란 1개\n\n반죽을 너무 되직하게 만들지 마세요.\n팬을 충분히 달궈야 바삭합니다!', 1, 'PUBLISHED', 29, 9, 1, 20, 'LOW', 2, 'VEGETARIAN', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
--- 자유 게시판 글
-(1, 7, '요리 초보인데 추천 레시피 있나요?', '요리를 시작하려고 하는데 어떤 메뉴부터 시작하면 좋을까요?\n간단하면서도 맛있는 레시피 추천 부탁드려요!', 0, 'PUBLISHED', 23, 5, 7, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
-(2, 8, '냉장고 정리 꿀팁 공유해요', '유통기한 임박한 재료들을 한눈에 보는 방법!\n\n1. 냉장고 앞쪽에 유통기한 짧은 것 배치\n2. 투명 용기 사용\n3. 라벨 붙이기\n\n여러분의 냉장고 정리 팁도 공유해주세요!', 0, 'PUBLISHED', 45, 15, 8, NULL, NULL, NULL, NULL, 'FALSE', 'TRUE', NOW() - INTERVAL 2 DAY, NOW()),
-(3, 9, '김치찌개 맛집 다녀왔어요', '오늘 점심에 김치찌개 맛집 다녀왔는데 정말 맛있었어요.\n묵은 김치로 끓인 것 같은데 집에서도 이렇게 만들 수 있을까요?', 0, 'PUBLISHED', 31, 8, 4, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
--- Q&A 게시글
-(7, 10, '김치찌개에 설탕 넣어도 되나요?', '김치찌개 끓일 때 너무 시큼해서 설탕을 넣으려고 하는데\n괜찮을까요? 아니면 다른 방법이 있을까요?', 0, 'PUBLISHED', 18, 3, 5, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
-(8, 11, '닭가슴살 보관 방법 질문', '닭가슴살을 대량으로 샀는데 보관 방법을 모르겠어요.\n냉동 보관하면 얼마나 보관할 수 있나요?', 0, 'PUBLISHED', 22, 4, 3, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
-(7, 12, '파스타 면 삶을 때 소금 꼭 넣어야 하나요?', '파스타 레시피 보면 면 삶을 때 소금을 넣으라고 하는데\n왜 넣는 건가요? 안 넣으면 맛이 많이 다른가요?', 0, 'PUBLISHED', 27, 6, 4, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW(), NOW());
+(2, 1, '된장찌개 황금 레시피', '구수한 된장 맛을 내려면 멸치육수가 필수!\n\n**재료**\n- 된장 2큰술\n- 두부 1모\n- 애호박 1/2개\n- 감자 1개\n- 대파 1대\n- 멸치 육수 3컵\n\n**조리법**\n1. 멸치 육수를 끓입니다.\n2. 된장을 풀어줍니다.\n3. 감자, 애호박, 두부를 넣고 끓입니다.\n4. 대파를 넣고 마무리합니다.', 1, 'PUBLISHED', 38, 8, 2, 25, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(3, 1, '불고기 양념 황금비율', '간장 3: 설탕 2: 참기름 1의 비율로!\n\n**양념 재료**\n- 간장 3큰술\n- 설탕 2큰술\n- 참기름 1큰술\n- 다진마늘 1큰술\n- 후추 약간\n- 배 1/4개 (갈아서)\n\n**조리법**\n1. 소고기를 얇게 썰어 준비합니다.\n2. 모든 양념을 섞어 양념장을 만듭니다.\n3. 고기에 양념을 버무려 30분 재웁니다.\n4. 팬에 구워줍니다.', 1, 'PUBLISHED', 92, 34, 8, 40, 'MEDIUM', 4, 'GENERAL', 'FALSE', 'TRUE', NOW() - INTERVAL 5 DAY, NOW()),
+(1, 1, '김치볶음밥 초간단 레시피', '냉장고 남은 김치로 5분만에 완성!\n\n**재료**\n- 밥 1공기\n- 김치 150g\n- 스팸 또는 햄 100g\n- 김치국물 2큰술\n- 참기름 1큰술\n- 계란 1개\n\n**조리법**\n1. 김치와 스팸을 잘게 썹니다.\n2. 팬에 식용유를 두르고 김치를 볶습니다.\n3. 밥을 넣고 함께 볶습니다.\n4. 김치국물과 참기름을 넣어 마무리합니다.\n5. 계란 후라이를 올려 완성합니다.', 1, 'PUBLISHED', 67, 23, 5, 15, 'LOW', 1, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(4, 1, '제육볶음 매콤하게', '고추장 양념에 고춧가루를 추가하면 더 매콤!\n\n**양념장**\n- 고추장 2큰술\n- 고춧가루 1큰술\n- 간장 1큰술\n- 설탕 1큰술\n- 다진마늘 1큰술\n- 생강가루 약간\n\n**재료**\n- 돼지고기 목살 400g\n- 양파 1개\n- 대파 1대\n- 양배추 1/4통\n\n돼지고기는 목살이나 앞다리살을 추천합니다!', 1, 'PUBLISHED', 78, 25, 6, 30, 'MEDIUM', 3, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
+(2, 1, '떡볶이 매운맛 조절법', '고춧가루 양을 조절하고 설탕을 약간 더 넣으면 덜 매워요.\n\n**재료**\n- 떡 300g\n- 어묵 150g\n- 양배추 2줌\n- 대파 1대\n- 계란 2개\n\n**소스**\n- 고춧가루 2큰술\n- 설탕 1.5큰술\n- 간장 1큰술\n- 물엿 1큰술\n\n물엿을 넣으면 윤기가 나고 덜 맵습니다!', 1, 'PUBLISHED', 56, 18, 4, 20, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 4 DAY, NOW()),
+(5, 1, '계란말이 부드럽게 만들기', '우유를 넣으면 더 부드러워요!\n\n**재료**\n- 계란 4개\n- 우유 2큰술\n- 소금 약간\n- 당근 1/4개 (다져서)\n- 대파 1/2대 (다져서)\n\n**조리법**\n1. 계란을 풀고 우유, 소금, 다진 야채를 넣습니다.\n2. 팬에 기름을 두르고 달굽니다.\n3. 계란물을 3번에 나눠 부으며 돌돌 말아줍니다.\n\n불 조절이 중요해요. 약불에서 천천히!', 1, 'PUBLISHED', 41, 15, 2, 10, 'LOW', 2, 'GENERAL', 'FALSE', 'FALSE', NOW(), NOW()),
+(3, 1, '순두부찌개 혼밥 레시피', '혼자 사는 사람들에게 강추!\n\n**재료**\n- 순두부 1봉지\n- 계란 1개\n- 고춧가루 1큰술\n- 다진마늘 1큰술\n- 멸치 육수 2컵\n- 대파, 청양고추\n\n**조리법**\n1. 육수에 고춧가루를 풀어줍니다.\n2. 순두부를 통째로 넣습니다.\n3. 한소끔 끓으면 계란을 풀어 넣습니다.\n4. 대파와 고추를 넣고 마무리합니다.', 1, 'PUBLISHED', 52, 16, 3, 20, 'LOW', 1, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(1, 1, '비빔밥 고추장 양념장', '비빔밥의 핵심은 양념장!\n\n**양념장 재료**\n- 고추장 3큰술\n- 참기름 2큰술\n- 설탕 1큰술\n- 식초 1큰술\n- 다진마늘 1작은술\n- 깨소금 1큰술\n\n**나물 재료**\n- 시금치, 콩나물, 당근, 애호박, 도라지\n- 계란 후라이\n\n각 나물을 볶아서 밥 위에 예쁘게 담고 양념장과 비벼 드세요!', 1, 'PUBLISHED', 63, 19, 5, 30, 'MEDIUM', 2, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 6 DAY, NOW()),
+(4, 1, '파김치 담그는 법', '쪽파로 만드는 아삭한 파김치!\n\n**재료**\n- 쪽파 1kg\n- 멸치액젓 5큰술\n- 고춧가루 1컵\n- 다진마늘 3큰술\n- 생강가루 1작은술\n- 설탕 2큰술\n- 찹쌀풀 1컵\n\n**조리법**\n1. 쪽파를 깨끗이 씻어 물기를 뺍니다.\n2. 찹쌀풀을 쑤어 식힙니다.\n3. 양념을 모두 섞습니다.\n4. 쪽파에 양념을 버무립니다.\n\n하루만 숙성시켜도 맛있어요!', 1, 'PUBLISHED', 34, 11, 2, 45, 'MEDIUM', 10, 'GENERAL', 'FALSE', 'FALSE', NOW() - INTERVAL 7 DAY, NOW()),
+
+-- 비건 레시피 게시글 (category_id = 4)
+(6, 4, '비건 두부 스크램블', '계란 대신 두부로 만드는 스크램블!\n\n**재료**\n- 두부 1모\n- 강황가루 1/4작은술\n- 양파 1/2개\n- 파프리카 1개\n- 소금, 후추\n- 올리브오일\n\n**조리법**\n1. 두부를 으깨서 물기를 뺍니다.\n2. 양파와 파프리카를 다집니다.\n3. 팬에 올리브오일을 두르고 야채를 �볶습니다.\n4. 두부를 넣고 강황가루, 소금, 후추로 간합니다.\n\n강황가루를 넣으면 색이 계란처럼 노래요!', 1, 'PUBLISHED', 34, 12, 2, 15, 'LOW', 1, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
+(6, 4, '비건 김치찌개', '멸치 육수 대신 다시마 육수로!\n\n**재료**\n- 김치 300g\n- 두부 1모\n- 표고버섯 5개\n- 대파 1대\n- 다시마 육수 3컵\n\n**조리법**\n1. 다시마 육수를 준비합니다.\n2. 김치를 볶다가 육수를 붓습니다.\n3. 두부와 버섯을 넣고 끓입니다.\n4. 대파를 넣고 마무리합니다.\n\n고기 없이도 깊은 맛이 나요!', 1, 'PUBLISHED', 28, 9, 3, 25, 'LOW', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(6, 4, '비건 볶음밥', '영양만점 비건 볶음밥!\n\n**재료**\n- 밥 2공기\n- 브로콜리 1/2개\n- 당근 1/2개\n- 양송이버섯 5개\n- 간장 2큰술\n- 참기름 1큰술\n- 마늘\n\n**조리법**\n1. 모든 야채를 잘게 다집니다.\n2. 팬에 참기름을 두르고 야채를 볶습니다.\n3. 밥을 넣고 함께 볶습니다.\n4. 간장으로 간을 맞춥니다.', 1, 'PUBLISHED', 45, 14, 4, 15, 'LOW', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(6, 4, '비건 토마토 파스타', '크림 없이 만드는 토마토 파스타!\n\n**재료**\n- 스파게티면 200g\n- 토마토 5개\n- 양파 1개\n- 마늘 5쪽\n- 바질\n- 올리브오일\n\n**조리법**\n1. 토마토를 갈거나 다집니다.\n2. 팬에 올리브오일, 마늘, 양파를 볶습니다.\n3. 토마토를 넣고 졸입니다.\n4. 삶은 면을 넣고 버무립니다.\n5. 바질을 올려 완성합니다.', 1, 'PUBLISHED', 51, 18, 5, 25, 'LOW', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 4 DAY, NOW()),
+(6, 4, '비건 버섯 덮밥', '각종 버섯으로 만드는 건강 덮밥!\n\n**재료**\n- 표고버섯, 느타리버섯, 양송이버섯 각 100g\n- 양파 1개\n- 간장 3큰술\n- 설탕 1큰술\n- 참기름\n- 밥\n\n**조리법**\n1. 버섯을 먹기 좋게 자릅니다.\n2. 팬에 버섯과 양파를 볶습니다.\n3. 간장, 설탕으로 양념합니다.\n4. 밥 위에 올리고 참기름을 뿌립니다.', 1, 'PUBLISHED', 39, 13, 2, 20, 'LOW', 1, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 5 DAY, NOW()),
+(6, 4, '비건 된장찌개', '동물성 재료 없이 구수하게!\n\n**재료**\n- 된장 2큰술\n- 두부 1모\n- 애호박 1개\n- 감자 1개\n- 표고버섯 3개\n- 다시마 육수\n\n**조리법**\n1. 다시마와 말린 표고버섯으로 육수를 냅니다.\n2. 된장을 풀어줍니다.\n3. 야채를 넣고 끓입니다.\n4. 대파를 넣고 마무리합니다.', 1, 'PUBLISHED', 42, 15, 3, 25, 'LOW', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 6 DAY, NOW()),
+(6, 4, '비건 김밥', '맛있는 야채 김밥!\n\n**재료**\n- 김 5장\n- 밥 2공기\n- 당근, 시금치, 우엉, 단무지\n- 참기름, 깨소금\n\n**조리법**\n1. 밥에 참기름과 깨소금을 섞습니다.\n2. 각 야채를 볶아 준비합니다.\n3. 김 위에 밥을 펴고 재료를 올립니다.\n4. 돌돌 말아서 썰어줍니다.\n\n소풍 도시락으로 좋아요!', 1, 'PUBLISHED', 47, 16, 4, 30, 'MEDIUM', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 8 DAY, NOW()),
+(6, 4, '비건 팟타이', '태국 요리도 비건으로!\n\n**재료**\n- 쌀국수 200g\n- 두부 1/2모\n- 숙주 100g\n- 부추 한 줌\n- 땅콩\n\n**소스**\n- 타마린드 소스 2큰술\n- 간장 2큰술\n- 라임즙 1큰술\n- 설탕 1큰술\n\n**조리법**\n1. 쌀국수를 삶아 준비합니다.\n2. 두부를 구워줍니다.\n3. 팬에 국수와 야채를 볶습니다.\n4. 소스를 넣고 버무립니다.', 1, 'PUBLISHED', 36, 12, 2, 25, 'MEDIUM', 2, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 9 DAY, NOW()),
+(6, 4, '비건 카레', '코코넛 밀크로 만드는 크리미한 카레!\n\n**재료**\n- 감자 2개\n- 당근 1개\n- 양파 1개\n- 카레가루 3큰술\n- 코코넛 밀크 1캔\n- 물 2컵\n\n**조리법**\n1. 야채를 한입 크기로 자릅니다.\n2. 냄비에 야채를 볶습니다.\n3. 물과 카레가루를 넣고 끓입니다.\n4. 코코넛 밀크를 넣고 졸입니다.', 1, 'PUBLISHED', 53, 19, 6, 30, 'LOW', 3, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 10 DAY, NOW()),
+(6, 4, '비건 라면', '동물성 재료 없이 맛있는 라면!\n\n**재료**\n- 라면 1개 (비건용)\n- 김치 100g\n- 두부 1/4모\n- 대파 1/2대\n- 참기름\n\n**조리법**\n1. 물을 끓입니다.\n2. 라면과 스프를 넣습니다.\n3. 김치, 두부를 넣습니다.\n4. 대파와 참기름으로 마무리합니다.\n\n김치가 들어가면 감칠맛이 살아나요!', 1, 'PUBLISHED', 41, 14, 3, 10, 'LOW', 1, 'VEGAN', 'FALSE', 'FALSE', NOW() - INTERVAL 11 DAY, NOW()),
+
+-- 자유 게시판 글 (category_id = 2)
+(1, 2, '요리 초보인데 추천 레시피 있나요?', '요리를 시작하려고 하는데 어떤 메뉴부터 시작하면 좋을까요?\n간단하면서도 맛있는 레시피 추천 부탁드려요!\n\n특히 실패 확률이 낮은 메뉴가 있을까요?', 0, 'PUBLISHED', 23, 5, 7, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(2, 2, '오늘 김치찌개 처음 만들어봤어요', '레시피 보고 김치찌개 처음 만들어봤는데 생각보다 쉽네요!\n다음엔 된장찌개도 도전해볼게요.\n\n근데 돼지고기 대신 참치 넣어도 되나요?', 0, 'PUBLISHED', 18, 8, 4, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(3, 2, '냉장고 파먹기 챌린지 시작!', '냉장고에 있는 재료들 다 떨어질 때까지 장 안 보기로 했어요.\n오늘은 남은 김치랑 계란으로 김치볶음밥 만들어 먹었습니다.\n\n여러분도 냉장고 파먹기 도전해보세요!', 0, 'PUBLISHED', 31, 12, 9, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
+(4, 2, '1인 가구 장보기 팁 공유해요', '혼자 살면서 장보기가 제일 어려운 것 같아요.\n자주 사면 귀찮고, 한 번에 많이 사면 버리게 되고...\n\n요즘은 주 1회 시장 가서 필요한 것만 사고 있어요.\n여러분은 어떻게 하시나요?', 0, 'PUBLISHED', 45, 15, 12, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 4 DAY, NOW()),
+(5, 2, '요리하면서 음악 듣는 분?', '저는 요리할 때 신나는 음악 틀어놓고 해요.\n그럼 더 재밌게 요리하는 것 같아요 ㅎㅎ\n\n여러분은 요리할 때 뭐 하시나요?', 0, 'PUBLISHED', 27, 9, 8, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(7, 2, '처음으로 파전 성공했어요!', '그동안 파전 만들면 항상 눅눅했는데\n이번에 레시피 보고 만들었더니 바삭하게 성공!\n\n팬을 충분히 달구는 게 포인트였네요.', 0, 'PUBLISHED', 34, 14, 6, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW(), NOW()),
+(8, 2, '다이어트 중인데 요리하기 힘들어요', '닭가슴살만 먹다보니 질려서...\n맛있으면서 건강한 레시피 없을까요?\n\n칼로리 낮은 레시피 추천 부탁드려요!', 0, 'PUBLISHED', 29, 11, 10, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
+(2, 2, '반찬 만들어서 일주일 먹기', '주말에 반찬 여러 가지 만들어두면 평일이 편해요.\n계란말이, 멸치볶음, 시금치나물 이런 거 만들어놨어요.\n\n여러분은 어떤 반찬 만들어 드시나요?', 0, 'PUBLISHED', 38, 16, 11, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 5 DAY, NOW()),
+(3, 2, '요리 유튜브 추천해주세요', '요리 배우려고 유튜브 보는데 너무 많아서 헷갈려요.\n초보자가 보기 좋은 채널 추천 부탁드려요!\n\n설명이 자세한 채널이면 좋겠어요.', 0, 'PUBLISHED', 42, 13, 15, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(1, 2, '집밥이 최고예요', '밖에서 사먹다가 집에서 해먹으니 건강해지는 느낌이에요.\n돈도 절약되고 좋네요.\n\n요즘 매일 저녁 해먹고 있습니다!', 0, 'PUBLISHED', 36, 18, 7, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 6 DAY, NOW()),
+
+-- Q&A 게시판 글 (category_id = 3)
+(7, 3, '김치찌개 돼지고기 대신 뭐 넣어도 되나요?', '돼지고기가 없는데 김치찌개를 끓이고 싶어요.\n참치나 스팸을 넣어도 괜찮을까요?\n\n아니면 고기 없이 두부만 넣어도 맛있나요?', 0, 'PUBLISHED', 15, 3, 5, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 1 DAY, NOW()),
+(7, 3, '계란말이가 자꾸 부서져요', '계란말이를 만들 때마다 말다가 부서지는데\n어떻게 하면 예쁘게 말 수 있나요?\n\n불 조절을 잘못하는 걸까요?', 0, 'PUBLISHED', 22, 6, 8, NULL, NULL, NULL, NULL, 'FALSE', 'TRUE', NOW() - INTERVAL 2 DAY, NOW()),
+(8, 3, '냉동 고기 빨리 해동하는 방법', '저녁에 요리하려는데 고기 꺼내는 걸 깜빡했어요.\n빨리 해동할 수 있는 방법 있을까요?\n\n전자레인지는 없어요 ㅠㅠ', 0, 'PUBLISHED', 28, 5, 6, NULL, NULL, NULL, NULL, 'FALSE', 'TRUE', NOW(), NOW()),
+(2, 3, '된장과 고추장 유통기한', '냉장고에 있는 된장이랑 고추장이 개봉한 지 좀 됐는데\n유통기한이 얼마나 되나요?\n\n냄새는 괜찮은 것 같은데 먹어도 될까요?', 0, 'PUBLISHED', 19, 4, 7, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(5, 3, '밥 지을 때 물 양 어떻게 맞추나요?', '전기밥솥으로 밥 지을 때 물을 얼마나 넣어야 할지 모르겠어요.\n쌀과 물의 비율이 어떻게 되나요?\n\n현미는 물을 더 많이 넣어야 하나요?', 0, 'PUBLISHED', 24, 7, 9, NULL, NULL, NULL, NULL, 'FALSE', 'TRUE', NOW() - INTERVAL 1 DAY, NOW()),
+(4, 3, '양파 자르면 눈물 안 나는 법', '양파 썰 때마다 눈물이 너무 많이 나요 ㅠㅠ\n눈물 안 나게 하는 팁 있나요?\n\n고글 쓰는 것 말고 다른 방법 알려주세요!', 0, 'PUBLISHED', 31, 8, 10, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 4 DAY, NOW()),
+(3, 3, '김치 보관은 어떻게 하나요?', '김치를 사면 어떻게 보관해야 오래 먹을 수 있나요?\n냉장고에 그냥 넣으면 되나요?\n\n김치 통에 담아야 하나요?', 0, 'PUBLISHED', 17, 5, 4, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 2 DAY, NOW()),
+(1, 3, '칼 잘 드는 법 알려주세요', '집에 있는 칼이 안 들어서 야채 자르기 힘들어요.\n칼 가는 방법이나 관리법 알려주세요.\n\n새로 사는 게 나을까요?', 0, 'PUBLISHED', 26, 6, 8, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 5 DAY, NOW()),
+(8, 3, '생강과 마늘 보관법', '생강이랑 마늘을 어떻게 보관하면 좋을까요?\n냉장고에 넣으면 마르고, 실온에 두면 싹이 나고...\n\n좋은 보관법 알려주세요!', 0, 'PUBLISHED', 21, 7, 6, NULL, NULL, NULL, NULL, 'FALSE', 'FALSE', NOW() - INTERVAL 3 DAY, NOW()),
+(5, 3, '프라이팬 눌러붙지 않게 하려면?', '요즘 프라이팬에 음식이 자꾸 눌러붙어요.\n코팅이 벗겨진 걸까요?\n\n프라이팬 관리법이나 교체 시기 알려주세요.', 0, 'PUBLISHED', 33, 9, 11, NULL, NULL, NULL, NULL, 'FALSE', 'TRUE', NOW() - INTERVAL 1 DAY, NOW());
 
 -- 7-1. 레시피 게시글 재료 데이터 (post_ingredient)
 -- posts 테이블의 레시피 게시글과 연결
@@ -249,97 +271,65 @@ INSERT INTO post_ingredient (recipe_id, name, quantity, unit, memo) VALUES
 
 -- 8. 댓글 데이터 (comment)
 INSERT INTO comment (post_id, author_id, parent_id, content, like_count, created_at, updated_at, status) VALUES
--- 김치찌개 게시글 댓글
+-- 김치찌개 게시글 댓글 (post_id=1)
 (1, 2, NULL, '김치찌개 정말 맛있어 보여요! 따라해볼게요', 3, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
 (1, 3, NULL, '묵은 김치가 없으면 어떻게 하나요?', 1, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
 (1, 1, 2, '신김치도 괜찮지만 맛이 조금 다를 수 있어요', 2, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(1, 4, NULL, '돼지고기 대신 참치 넣어도 맛있어요!', 1, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 불고기 게시글 댓글
-(4, 3, NULL, '불고기 양념 비율 감사합니다!', 5, NOW() - INTERVAL 2 DAY, NOW(), 'ACTIVE'),
-(4, 1, NULL, '다음에는 배 간 것을 넣어보세요. 더 부드러워져요', 4, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(4, 5, NULL, '양파를 많이 넣으면 더 달콤해집니다', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(4, 6, NULL, '소고기 대신 돼지고기로 해도 되나요?', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(4, 2, 4, '돼지고기로 하면 제육불고기가 되죠! 맛있어요', 3, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 파스타 게시글 댓글
-(3, 1, NULL, '파스타 도전해봤는데 대박이에요!', 6, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(3, 4, NULL, '페페론치노가 없으면 청양고추 써도 되나요?', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(3, 2, 2, '네! 청양고추도 좋아요. 매운맛 조절하세요', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(3, 5, NULL, '면 삶는 물에 소금 꼭 넣으세요!', 3, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 떡볶이 게시글 댓글
-(5, 2, NULL, '매운걸 못먹는데 도움됐어요 ㅎㅎ', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(5, 4, NULL, '우유 넣는 건 처음 들어봤어요. 신기하네요!', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(5, 7, NULL, '치즈 넣어도 맛있어요!', 2, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 계란말이 게시글 댓글
-(6, 2, NULL, '계란말이에 치즈 넣어도 맛있어요!', 3, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(6, 5, NULL, '햄을 넣으면 더 고소해요', 2, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 제육볶음 게시글 댓글
-(7, 1, NULL, '고추장 양념 최고예요!', 4, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(7, 3, NULL, '목살이 제일 맛있죠!', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(7, 5, NULL, '양파 많이 넣으면 단맛이 나서 좋아요', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
--- 순두부찌개 게시글 댓글
+-- 불고기 게시글 댓글 (post_id=3)
+(3, 3, NULL, '불고기 양념 비율 감사합니다!', 5, NOW() - INTERVAL 2 DAY, NOW(), 'ACTIVE'),
+(3, 1, NULL, '다음에는 배 간 것을 넣어보세요. 더 부드러워져요', 4, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(3, 5, NULL, '양파를 많이 넣으면 더 달콤해집니다', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- 김치볶음밥 게시글 댓글 (post_id=4)
+(4, 2, NULL, '김치볶음밥 정말 간단하네요!', 4, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(4, 4, NULL, '스팸 대신 베이컨 써도 되나요?', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- 떡볶이 게시글 댓글 (post_id=6)
+(6, 2, NULL, '매운걸 못먹는데 도움됐어요 ㅎㅎ', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+(6, 4, NULL, '우유 넣는 건 처음 들어봤어요. 신기하네요!', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
+-- 계란말이 게시글 댓글 (post_id=7)
+(7, 2, NULL, '계란말이에 치즈 넣어도 맛있어요!', 3, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
+(7, 5, NULL, '햄을 넣으면 더 고소해요', 2, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
+-- 제육볶음 게시글 댓글 (post_id=5)
+(5, 1, NULL, '고추장 양념 최고예요!', 4, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(5, 3, NULL, '목살이 제일 맛있죠!', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- 순두부찌개 게시글 댓글 (post_id=8)
 (8, 2, NULL, '혼밥 메뉴로 딱이네요!', 3, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
 (8, 4, NULL, '조개를 넣으면 더 시원해요', 2, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
--- 비건 두부 스크램블 댓글
-(9, 8, NULL, '비건 레시피 감사합니다!', 2, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(9, 6, 1, '강황가루 꿀팁 좋네요!', 1, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
--- 자유게시판 댓글
-(11, 3, NULL, '계란말이부터 시작해보세요!', 2, NOW() - INTERVAL 2 DAY, NOW(), 'ACTIVE'),
-(11, 5, NULL, '김치볶음밥 추천합니다', 1, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(11, 1, NULL, '된장찌개가 가장 쉬워요', 1, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(12, 4, NULL, '투명 용기 정말 유용하더라구요', 3, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(12, 5, NULL, '저는 냉장고 앱을 사용해요', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
--- Q&A 댓글
-(14, 1, NULL, '설탕보다는 물엿이 더 좋아요!', 2, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
-(14, 5, NULL, '다진 마늘을 더 넣으면 신맛이 줄어들어요', 1, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(15, 4, NULL, '냉동 보관하면 3개월까지 가능해요', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
-(15, 6, NULL, '1회 분량씩 나눠서 냉동하세요', 1, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(16, 2, NULL, '소금을 넣으면 면에 간이 배어요', 3, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
-(16, 3, NULL, '소금 넣지 않으면 면이 밍밍해져요', 2, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE');
+-- 비건 두부 스크램블 댓글 (post_id=11)
+(11, 8, NULL, '비건 레시피 감사합니다!', 2, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE'),
+(11, 6, 1, '강황가루 꿀팁 좋네요!', 1, NOW() - INTERVAL 3 HOUR, NOW(), 'ACTIVE'),
+-- 자유게시판 댓글 (post_id=21)
+(21, 3, NULL, '계란말이부터 시작해보세요!', 2, NOW() - INTERVAL 2 DAY, NOW(), 'ACTIVE'),
+(21, 5, NULL, '김치볶음밥 추천합니다', 1, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(21, 1, NULL, '된장찌개가 가장 쉬워요', 1, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- 자유게시판 댓글 (post_id=23)
+(23, 4, NULL, '저도 냉장고 파먹기 중이에요!', 3, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(23, 5, NULL, '일주일 동안 버틴 적 있어요 ㅎㅎ', 2, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- Q&A 댓글 (post_id=31)
+(31, 1, NULL, '참치나 스팸 둘 다 맛있어요!', 2, NOW() - INTERVAL 1 DAY, NOW(), 'ACTIVE'),
+(31, 5, NULL, '두부만 넣어도 괜찮습니다', 1, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+-- Q&A 댓글 (post_id=32)
+(32, 4, NULL, '약불에서 천천히 말아보세요', 3, NOW() - INTERVAL 12 HOUR, NOW(), 'ACTIVE'),
+(32, 6, NULL, '팬을 충분히 달구는 게 중요해요', 2, NOW() - INTERVAL 6 HOUR, NOW(), 'ACTIVE');
 
 -- 9. 좋아요 데이터 (post_like)
 INSERT INTO post_like (post_id, member_id) VALUES
--- 김치찌개 게시글 좋아요
-(1, 2),
-(1, 3),
-(1, 4),
-(1, 5),
--- 불고기 게시글 좋아요
-(4, 1),
-(4, 2),
-(4, 3),
-(4, 5),
-(4, 6),
--- 파스타 게시글 좋아요
-(3, 1),
-(3, 2),
-(3, 4),
-(3, 5),
--- 떡볶이 게시글 좋아요
-(5, 1),
-(5, 2),
-(5, 4),
--- 계란말이 게시글 좋아요
-(6, 2),
-(6, 3),
-(6, 5),
--- 제육볶음 게시글 좋아요
-(7, 1),
-(7, 3),
-(7, 4),
-(7, 5),
--- 순두부찌개 게시글 좋아요
-(8, 2),
-(8, 4),
-(8, 7),
--- 비건 게시글 좋아요
-(9, 6),
-(9, 8),
+-- 레시피 게시글 좋아요
+(1, 2), (1, 3), (1, 4), (1, 5),
+(2, 1), (2, 2), (2, 3),
+(3, 1), (3, 2), (3, 4), (3, 5),
+(4, 2), (4, 3), (4, 5),
+(5, 1), (5, 3), (5, 4),
+(6, 2), (6, 4), (6, 7),
+(7, 2), (7, 3), (7, 5),
+(8, 2), (8, 4), (8, 7),
+-- 비건 레시피 좋아요
+(11, 6), (11, 8),
+(12, 6), (12, 8),
+(13, 6), (13, 8),
 -- 자유게시판 좋아요
-(11, 1),
-(11, 3),
-(12, 2),
-(12, 4),
-(12, 5);
+(21, 1), (21, 3), (21, 5),
+(22, 2), (22, 4),
+(23, 2), (23, 4), (23, 5);
 
 -- 10. 스크랩 데이터 (post_scrap)
 INSERT INTO post_scrap (post_id, member_id, scrapped_at) VALUES
@@ -347,34 +337,29 @@ INSERT INTO post_scrap (post_id, member_id, scrapped_at) VALUES
 (1, 2, NOW() - INTERVAL 1 DAY),
 (1, 3, NOW() - INTERVAL 12 HOUR),
 (1, 7, NOW() - INTERVAL 6 HOUR),
-(4, 1, NOW() - INTERVAL 2 DAY),
-(4, 2, NOW() - INTERVAL 1 DAY),
-(4, 5, NOW() - INTERVAL 12 HOUR),
-(3, 1, NOW() - INTERVAL 1 DAY),
-(3, 4, NOW() - INTERVAL 12 HOUR),
-(3, 7, NOW() - INTERVAL 6 HOUR),
-(5, 2, NOW() - INTERVAL 12 HOUR),
-(5, 7, NOW() - INTERVAL 6 HOUR),
+(3, 1, NOW() - INTERVAL 2 DAY),
+(3, 2, NOW() - INTERVAL 1 DAY),
+(3, 5, NOW() - INTERVAL 12 HOUR),
+(4, 2, NOW() - INTERVAL 12 HOUR),
+(4, 7, NOW() - INTERVAL 6 HOUR),
+(5, 3, NOW() - INTERVAL 12 HOUR),
+(5, 5, NOW() - INTERVAL 6 HOUR),
 (6, 2, NOW() - INTERVAL 6 HOUR),
-(6, 7, NOW() - INTERVAL 3 HOUR),
-(7, 3, NOW() - INTERVAL 12 HOUR),
-(7, 5, NOW() - INTERVAL 6 HOUR),
+(7, 2, NOW() - INTERVAL 6 HOUR),
+(7, 7, NOW() - INTERVAL 3 HOUR),
 (8, 7, NOW() - INTERVAL 12 HOUR),
-(9, 6, NOW() - INTERVAL 6 HOUR),
-(9, 8, NOW() - INTERVAL 3 HOUR);
+-- 비건 레시피 스크랩
+(11, 6, NOW() - INTERVAL 6 HOUR),
+(11, 8, NOW() - INTERVAL 3 HOUR),
+(12, 6, NOW() - INTERVAL 1 DAY),
+(13, 8, NOW() - INTERVAL 2 DAY);
 
 -- 11. 미디어 데이터 (media) - 일부 게시글에 이미지 추가
 INSERT INTO media (url, media_type, owner_type, post_id, order_num) VALUES
-('/uploads/posts/kimchi_jjigae_1.jpg', 'image', 'post', 1, 1),
-('/uploads/posts/kimchi_jjigae_2.jpg', 'image', 'post', 1, 2),
-('/uploads/posts/bulgogi_1.jpg', 'image', 'post', 4, 1),
-('/uploads/posts/pasta_1.jpg', 'image', 'post', 3, 1),
-('/uploads/posts/tteokbokki_1.jpg', 'image', 'post', 5, 1),
-('/uploads/posts/egg_roll_1.jpg', 'image', 'post', 6, 1),
-('/uploads/posts/jeyuk_1.jpg', 'image', 'post', 7, 1),
-('/uploads/recipe/kimchi_jjigae.jpg', 'image', 'recipe', NULL, 1),
-('/uploads/recipe/bulgogi.jpg', 'image', 'recipe', NULL, 1),
-('/uploads/recipe/pasta.jpg', 'image', 'recipe', NULL, 1);
+('/uploads/posts/kimchi_jjigae.jpg', 'image', 'post', 1, 1),
+('/uploads/posts/bulgogi.jpg', 'image', 'post', 3, 1),
+('/uploads/posts/tteokbokki.jpg', 'image', 'post', 6, 1),
+('/uploads/posts/vegan_scramble.jpg', 'image', 'post', 11, 1);
 
 -- 완료 메시지
 SELECT '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━' AS '';
