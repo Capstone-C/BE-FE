@@ -2,6 +2,10 @@
 # Node.js 22.21.0 버전을 기반으로 빌드 환경을 구성합니다.
 FROM node:22.21.0-alpine AS builder
 
+# 빌드 시 API URL 인자
+ARG VITE_API_URL=http://localhost:8080
+ENV VITE_API_URL=$VITE_API_URL
+
 # 작업 디렉토리를 /app으로 설정합니다.
 WORKDIR /app
 
@@ -18,8 +22,8 @@ RUN pnpm install
 # 소스 코드를 복사합니다.
 COPY . .
 
-# dev용으로 앱을 빌드합니다.
-RUN pnpm build --mode development
+# 프로덕션용으로 앱을 빌드합니다.
+RUN pnpm build
 
 
 # --- 2단계: 프로덕션 환경 (Runner) ---
