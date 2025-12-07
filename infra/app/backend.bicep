@@ -123,6 +123,8 @@ resource backend 'Microsoft.App/containerApps@2023-05-01' = {
             { name: 'MYSQL_DATABASE', value: mysqlDatabase }
             { name: 'MYSQL_USER', value: mysqlUser }
             { name: 'MYSQL_PASSWORD', secretRef: 'mysql-password' }
+            { name: 'MYSQL_USE_SSL', value: 'true' }
+            { name: 'MYSQL_REQUIRE_SSL', value: 'true' }
             { name: 'JWT_SECRET', secretRef: 'jwt-secret' }
             { name: 'JWT_EXPIRATION_MILLIS', value: jwtExpirationMillis }
             { name: 'GEMINI_API_KEY', secretRef: 'gemini-api-key' }

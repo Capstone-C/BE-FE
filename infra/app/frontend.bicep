@@ -4,7 +4,8 @@ param tags object = {}
 
 param containerAppsEnvironmentName string
 param containerRegistryName string
-param imageName string = ''
+@minLength(1)
+param imageName string
 param backendUrl string
 
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01' existing = {
@@ -46,7 +47,7 @@ resource frontend 'Microsoft.App/containerApps@2023-05-01' = {
       containers: [
         {
           name: 'frontend'
-          image: !empty(imageName) ? imageName : 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          image: imageName
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
