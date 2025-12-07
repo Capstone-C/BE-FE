@@ -1,0 +1,42 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "mysqlAdminPassword": {
+      "value": "${MYSQL_PASSWORD}"
+    },
+    "jwtSecret": {
+      "value": "${JWT_SECRET}"
+    },
+    "geminiApiKey": {
+      "value": "${GEMINI_API_KEY}"
+    },
+    "naverClientId": {
+      "value": "${NAVER_CLIENT_ID}"
+    },
+    "naverClientSecret": {
+      "value": "${NAVER_CLIENT_SECRET}"
+    },
+    "awsAccessKeyId": {
+      "value": "${AWS_ACCESS_KEY_ID}"
+    },
+    "awsSecretAccessKey": {
+      "value": "${AWS_SECRET_ACCESS_KEY}"
+    },
+    "awsS3Bucket": {
+      "value": "${AWS_S3_BUCKET}"
+    },
+    "backendImageName": {
+      "value": "${SERVICE_BACKEND_IMAGE_NAME}"
+    },
+    "frontendImageName": {
+      "value": "${SERVICE_FRONTEND_IMAGE_NAME}"
+    }
+  }
+}

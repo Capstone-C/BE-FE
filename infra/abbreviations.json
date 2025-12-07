@@ -1,0 +1,8 @@
+{
+  "containerRegistryRegistries": "cr",
+  "appManagedEnvironments": "cae-",
+  "appContainerApps": "ca-",
+  "operationalInsightsWorkspaces": "log-",
+  "resourcesResourceGroups": "rg-",
+  "dBforMySQLServers": "mysql-"
+}
