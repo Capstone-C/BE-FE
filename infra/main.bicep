@@ -64,9 +64,9 @@ module monitoring './core/monitor/monitoring.bicep' = {
   name: 'monitoring'
   scope: rg
   params: {
+    name: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     location: location
     tags: tags
-    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
   }
 }
 
