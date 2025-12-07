@@ -31,6 +31,12 @@
     },
     "awsS3Bucket": {
       "value": "${AWS_S3_BUCKET}"
+    },
+    "backendImageName": {
+      "value": "${SERVICE_BACKEND_IMAGE_NAME}"
+    },
+    "frontendImageName": {
+      "value": "${SERVICE_FRONTEND_IMAGE_NAME}"
     }
   }
 }

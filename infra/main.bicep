@@ -48,6 +48,10 @@ param awsSecretAccessKey string
 param awsRegion string = 'ap-northeast-2'
 param awsS3Bucket string = 'capston-cc-images'
 
+// Container images (injected by azd)
+param backendImageName string = ''
+param frontendImageName string = ''
+
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
@@ -116,6 +120,7 @@ module backend './app/backend.bicep' = {
     tags: union(tags, { 'azd-service-name': 'backend' })
     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
     containerRegistryName: containerRegistry.outputs.name
+    imageName: backendImageName
     mysqlHost: mysql.outputs.fqdn
     mysqlDatabase: mysqlDatabaseName
     mysqlUser: mysqlAdminUser
@@ -145,6 +150,7 @@ module frontend './app/frontend.bicep' = {
     tags: union(tags, { 'azd-service-name': 'frontend' })
     containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
     containerRegistryName: containerRegistry.outputs.name
+    imageName: frontendImageName
     backendUrl: backend.outputs.uri
   }
 }
